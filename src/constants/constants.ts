@@ -1,16 +1,25 @@
 // =================================== Tipos ===================================
+
+// Define os possíveis valores de recorrência para uma conta
 export type Recurrence = "NONE" | "MONTHLY" | "WEEKLY" | "YEARLY";
 
-// ================================= Constantes ================================
+// ================================ Constantes ================================
+
+// Chave para armazenar as contas no localStorage
 export const LS_KEY = "bills";
+// Chave para armazenar as preferências do usuário no localStorage
 export const LS_PREFS = "prefs";
 
+// Mapeamento de códigos de idioma para locale padrão
 export const LANG_TO_LOCALE: Record<string, string> = {
   pt: "pt-BR",
   en: "en-US",
   es: "es-ES",
 };
 
+// ================================ Traduções ================================
+
+// Textos da aplicação em diferentes idiomas
 export const I18N = {
   pt: {
     app_title: "Contas a Pagar — v0.4",
@@ -144,9 +153,9 @@ export const I18N = {
 };
 
 // ================================== Funções ==================================
-// Retorna as traduções do idioma selecionado.
-// Se o idioma não existir no I18N, retorna em português.
 
+// Hook para retornar traduções de acordo com o idioma selecionado
+// Se o idioma não estiver definido, retorna português como padrão
 export function useI18n(language: string) {
   return I18N[language as keyof typeof I18N] || I18N.pt;
 }

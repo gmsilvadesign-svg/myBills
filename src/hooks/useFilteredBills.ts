@@ -2,30 +2,47 @@ import { useMemo } from "react";
 import { parseDate, isBefore, isSameDayISO, ymd } from '../utils/utils';
 
 export default function useFilteredBills(bills, filter, search) {
+  // Data de hoje em formato ISO
   const todayISO = ymd(new Date());
 
+  // Memoriza o resultado filtrado e ordenado
   return useMemo(() => {
     return bills
+      // Cria uma cópia para não alterar o array original
       .slice()
+      // Ordena pelas datas de vencimento
       .sort((a, b) => parseDate(a.dueDate) - parseDate(b.dueDate))
+      // Filtra contas conforme busca e filtro selecionado
       .filter(bill => {
+        // Verifica se o título, categoria, tags ou notas correspondem à pesquisa
         const matchesSearch = [bill.title, bill.category, (bill.tags||[]).join(","), bill.notes]
-          .filter(Boolean)
+          .filter(Boolean) // remove valores nulos ou vazios
           .join(" ")
           .toLowerCase()
           .includes(search.toLowerCase());
         if (!matchesSearch) return false;
 
         const due = parseDate(bill.dueDate);
-        const diffDays = Math.floor((due - new Date()) / 86400000);
+        const diffDays = Math.floor((due - new Date()) / 86400000); // diferença em dias
 
+        // Aplica filtros específicos
         switch (filter) {
-          case "today": return isSameDayISO(bill.dueDate, todayISO);
-          case "overdue": return !bill.paid && isBefore(bill.dueDate, todayISO);
-          case "next7": return !bill.paid && diffDays >= 0 && diffDays <= 7;
-          case "next30": return !bill.paid && diffDays >= 0 && diffDays <= 30;
-          default: return true;
+          case "today": 
+            // Somente contas com vencimento hoje
+            return isSameDayISO(bill.dueDate, todayISO);
+          case "overdue": 
+            // Contas não pagas e vencidas
+            return !bill.paid && isBefore(bill.dueDate, todayISO);
+          case "next7": 
+            // Contas não pagas nos próximos 7 dias
+            return !bill.paid && diffDays >= 0 && diffDays <= 7;
+          case "next30": 
+            // Contas não pagas nos próximos 30 dias
+            return !bill.paid && diffDays >= 0 && diffDays <= 30;
+          default: 
+            // Todos os casos (filtro "all")
+            return true;
         }
       });
-  }, [bills, filter, search, todayISO]);
+  }, [bills, filter, search, todayISO]); // recalcula se algum destes mudar
 }
