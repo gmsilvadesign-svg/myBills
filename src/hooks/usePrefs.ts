@@ -4,54 +4,48 @@ import { LS_PREFS } from "../constants/constants.ts";
 // ========================= Preferências (Tema/Idioma) ========================
 
 export function usePrefs() {
-  // Estado das preferências, inicializado a partir do localStorage ou com valores padrão
+  // Estado das preferências, inicializado a partir do localStorage ou valores padrão
   const [prefs, setPrefs] = useState(() => {
     try {
-      const raw = localStorage.getItem(LS_PREFS); // tenta recuperar do localStorage
-      if (raw) return JSON.parse(raw); // se existir, converte JSON para objeto
+      const raw = localStorage.getItem(LS_PREFS);
+      if (raw) return JSON.parse(raw);
     } catch {}
-    // Valores padrão caso não exista nada no localStorage
     return { theme: "system", language: "pt", currency: "BRL" };
   });
 
-  // Efeito para salvar automaticamente as preferências no localStorage sempre que mudarem
+  // Salva automaticamente no localStorage sempre que prefs mudar
   useEffect(() => {
     try {
       localStorage.setItem(LS_PREFS, JSON.stringify(prefs));
     } catch {}
   }, [prefs]);
 
-  // Efeito para aplicar o tema (claro/escuro) no <html> e <body>
+  // Aplica o tema dark/light no <html> de acordo com prefs.theme
   useEffect(() => {
-    const root = document.documentElement; // <html>
-    const body = document.body; // <body>
-    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); // detecta preferência do sistema
+    const root = document.documentElement;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
 
-    // Função que aplica o tema escuro ou claro
-    const apply = () => {
-      // Determina se o tema efetivo deve ser escuro
-      const effectiveDark = prefs.theme === 'dark' || (prefs.theme === 'system' && mq && mq.matches);
-      [root, body].forEach((el) => {
-        if (!el) return;
-        // Adiciona ou remove a classe 'dark' nos elementos
-        el.classList.toggle('dark', !!effectiveDark);
-      });
+    const applyTheme = () => {
+      const isDark =
+        prefs.theme === "dark" ||
+        (prefs.theme === "system" && mq.matches);
+      root.classList.toggle("dark", isDark);
     };
 
-    apply(); // aplica imediatamente
+    applyTheme(); // aplica imediatamente
 
     // Se o tema for 'system', escuta alterações nas preferências do sistema
-    if (prefs.theme === 'system' && mq) {
+    if (prefs.theme === "system") {
+      const listener = () => applyTheme();
       if (mq.addEventListener) {
-        mq.addEventListener('change', apply);
-        return () => mq.removeEventListener('change', apply); // limpa o listener ao desmontar
-      } else if (mq.addListener) { // suporte para navegadores antigos
-        mq.addListener(apply);
-        return () => mq.removeListener(apply);
+        mq.addEventListener("change", listener);
+        return () => mq.removeEventListener("change", listener);
+      } else if (mq.addListener) {
+        mq.addListener(listener);
+        return () => mq.removeListener(listener);
       }
     }
   }, [prefs.theme]);
 
-  // Retorna o estado das preferências e função para atualizar
   return [prefs, setPrefs];
 }

@@ -17,7 +17,7 @@ export default function SettingsModal({ open, onClose, prefs, setPrefs, t }) {
       setTheme(prefs.theme || 'system');
       setLanguage(prefs.language || 'pt');
     }
-  }, [open]);
+  }, [open, prefs]);
 
   // Não renderiza nada se o modal estiver fechado
   if (!open) return null;

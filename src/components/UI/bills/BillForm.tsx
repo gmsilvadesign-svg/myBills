@@ -100,6 +100,9 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
 
               // Chama função de salvar passada via props
               onSave(bill);
+
+              // Fecha o modal
+              onCancel();
             }}
             className="px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
           >

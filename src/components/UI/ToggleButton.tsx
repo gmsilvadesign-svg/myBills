@@ -1,5 +1,5 @@
-import clsx from 'clsx';
 // Importa a biblioteca clsx para concatenar classes condicionalmente
+import clsx from 'clsx';
 
 export default function ToggleButton({ items, selected, onChange }) {
 
