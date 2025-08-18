@@ -29,7 +29,7 @@ export const I18N = {
     filter_all: "Tudo",
     filter_today: "Hoje",
     filter_overdue: "Atrasadas",
-    filter_next7: "+7d",
+      filter_next7: "+7d",
     filter_next30: "+30d",
     search_placeholder: "Buscar título/categoria/tags",
     totals_open: "Abertas",
@@ -54,6 +54,7 @@ export const I18N = {
     calendar_title: (label: string) => `Calendário — ${label}`,
     footer: "Feito para uso pessoal. v0.4 – armazenamento local.",
     settings: "Configurações",
+    notifications: "Notificações",
     appearance: "Aparência",
     theme: "Tema",
     light: "Claro",
@@ -97,6 +98,7 @@ export const I18N = {
     calendar_title: (label: string) => `Calendar — ${label}`,
     footer: "Personal use. v0.4 – local storage.",
     settings: "Settings",
+    notifications: "Notifications",
     appearance: "Appearance",
     theme: "Theme",
     light: "Light",
@@ -140,6 +142,7 @@ export const I18N = {
     calendar_title: (label: string) => `Calendario — ${label}`,
     footer: "Uso personal. v0.4 – almacenamiento local.",
     settings: "Configuraciones",
+    notifications: "Notificaciones",
     appearance: "Apariencia",
     theme: "Tema",
     light: "Claro",
@@ -151,6 +154,7 @@ export const I18N = {
     close: "Cerrar",
   },
 };
+
 
 // ================================== Funções ==================================
 

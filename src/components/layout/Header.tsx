@@ -28,6 +28,13 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings }) {
         <ToolbarButton onClick={exportICS}>
           {t.export_ics}
         </ToolbarButton>
+        {/* Ícone de notificações */}
+        <button
+          title={t.notifications}
+          className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700"
+        >
+          🔔
+        </button>
 
         {/* Botão para abrir o modal de configurações */}
         <button
