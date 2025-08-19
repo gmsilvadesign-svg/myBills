@@ -1,5 +1,5 @@
 // Modal de confirmação com título, corpo e botões
-export default function Confirm({ open, onClose, onConfirm, title, body, t }) {
+export default function DeleteConfirm({ open, onClose, onConfirm, title, body, t }) {
 
   // Se o modal não estiver aberto, não renderiza nada
   if (!open) return null;

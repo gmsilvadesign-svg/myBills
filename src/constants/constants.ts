@@ -5,8 +5,7 @@ export type Recurrence = "NONE" | "MONTHLY" | "WEEKLY" | "YEARLY";
 
 // ================================ Constantes ================================
 
-// Chave para armazenar as contas no localStorage
-export const LS_KEY = "bills";
+
 // Chave para armazenar as preferências do usuário no localStorage
 export const LS_PREFS = "prefs";
 

@@ -54,11 +54,11 @@ export default function BillRow({ bill, markPaid, setEditing, setConfirm, t, loc
         {/* Botões apenas para contas não pagas */}
         {!bill.paid && <>
           {/* Marca como paga, sem avançar a recorrência */}
-          <button onClick={() => markPaid(bill.id, false)} className="px-3 py-1 rounded-xl bg-emerald-600 text-white">{t.mark_paid}</button>
+          <button onClick={() => markPaid(bill, false)}>{t.mark_paid}</button>
 
           {/* Marca como paga e avança a recorrência, se houver */}
           {bill.recurrence && bill.recurrence !== "NONE" &&
-            <button onClick={() => markPaid(bill.id, true)} className="px-3 py-1 rounded-xl bg-indigo-600 text-white">{t.pay_and_advance}</button>
+            <button onClick={() => markPaid(bill, true)}>{t.pay_and_advance}</button>
           }
         </>}
 

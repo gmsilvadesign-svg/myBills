@@ -86,18 +86,16 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
 
               // Criação do objeto da conta
               const bill = {
-                id: initial?.id || uid(),
                 title: title.trim(),
                 amount: Number(amount || 0),
-                dueDate: dueDate,
+                dueDate,
                 recurrence,
-                category: category.trim() || undefined,
+                category: category.trim() || null,
                 tags: tags.split(",").map((s) => s.trim()).filter(Boolean),
                 notes: notes.trim() || undefined,
                 paid: initial?.paid || false,
                 paidOn: initial?.paidOn || undefined,
-              };
-
+};
               // Chama função de salvar passada via props
               onSave(bill);
 
