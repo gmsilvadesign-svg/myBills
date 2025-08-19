@@ -27,7 +27,7 @@ export default function BillRow({ bill, markPaid, setEditing, setConfirm, t, loc
           {bill.category && <Pill>{bill.category}</Pill>}
 
           {/* Recorrência da conta, se existir e não for NONE */}
-          {bill.recurrence && bill.recurrence !== "NONE" && <Pill tone="green">{bill.recurrence.toLowerCase()}</Pill>}
+          {bill.recurrence && bill.recurrence !== "NONE" && <Pill tone="green">{t[bill.recurrence.toLowerCase()]}</Pill>}
         </div>
 
         {/* Informações adicionais da conta: vencimento, tags e data de pagamento */}

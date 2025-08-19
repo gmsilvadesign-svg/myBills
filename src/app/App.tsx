@@ -91,7 +91,15 @@ export default function App() {
           <BillForm
             initial={editing} 
             onCancel={() => setEditing(null)}
-            onSave={upsertBill}
+            onSave={(billData) => {
+              // adiciona o id caso esteja editando
+              if(editing?.id) {
+                upsertBill({ ...billData, id: editing.id });
+              } else {
+                upsertBill(billData);
+              }
+              setEditing(null); // fecha o formulário
+            }}
             t={t} locale={locale} currency={currency}
           />
         }
