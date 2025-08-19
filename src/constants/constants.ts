@@ -29,7 +29,7 @@ export const I18N = {
     filter_all: "Tudo",
     filter_today: "Hoje",
     filter_overdue: "Atrasadas",
-      filter_next7: "+7d",
+   filter_next7: "+7d",
     filter_next30: "+30d",
     search_placeholder: "Buscar título/categoria/tags",
     totals_open: "Abertas",
@@ -55,6 +55,7 @@ export const I18N = {
     footer: "Feito para uso pessoal. v0.4 – armazenamento local.",
     settings: "Configurações",
     notifications: "Notificações",
+    no_notifications: "Sem novas mensagens",
     appearance: "Aparência",
     theme: "Tema",
     light: "Claro",
@@ -99,6 +100,7 @@ export const I18N = {
     footer: "Personal use. v0.4 – local storage.",
     settings: "Settings",
     notifications: "Notifications",
+    no_notifications: "No new messages",
     appearance: "Appearance",
     theme: "Theme",
     light: "Light",
@@ -143,6 +145,7 @@ export const I18N = {
     footer: "Uso personal. v0.4 – almacenamiento local.",
     settings: "Configuraciones",
     notifications: "Notificaciones",
+    no_notifications: "Sin nuevos mensajes",
     appearance: "Apariencia",
     theme: "Tema",
     light: "Claro",
@@ -154,7 +157,6 @@ export const I18N = {
     close: "Cerrar",
   },
 };
-
 
 // ================================== Funções ==================================
 

@@ -2,7 +2,7 @@
 import { fmtMoney, ymd, parseDate, isBefore, daysInMonth, occurrencesForBillInMonth } from '../../../utils/utils.ts'
 
 // Componente MonthGrid: renderiza a grade do calendário mensal com contas
-export default function MonthGrid({ date, bills, locale, currency, t }) {
+export default function MonthGrid({ date, bills, locale, currency }) {
 
   // Extrai ano e mês da data fornecida
   const y = date.getFullYear();

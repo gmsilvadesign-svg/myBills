@@ -4,12 +4,14 @@ import { LS_PREFS } from "../constants/constants.ts";
 // ========================= Preferências (Tema/Idioma) ========================
 
 export function usePrefs() {
-  // Estado das preferências, inicializado a partir do localStorage ou valores padrão
+ // Estado das preferências, inicializado a partir do localStorage ou valores padrão
   const [prefs, setPrefs] = useState(() => {
     try {
       const raw = localStorage.getItem(LS_PREFS);
       if (raw) return JSON.parse(raw);
-    } catch {}
+      } catch (err) {
+      console.error(err);
+    }
     return { theme: "system", language: "pt", currency: "BRL" };
   });
 
@@ -17,7 +19,9 @@ export function usePrefs() {
   useEffect(() => {
     try {
       localStorage.setItem(LS_PREFS, JSON.stringify(prefs));
-    } catch {}
+    } catch (err) {
+      console.error(err);
+    }
   }, [prefs]);
 
   // Aplica o tema dark/light no <html> de acordo com prefs.theme
@@ -29,7 +33,10 @@ export function usePrefs() {
       const isDark =
         prefs.theme === "dark" ||
         (prefs.theme === "system" && mq.matches);
+      // Aplica ou remove a classe/atributo que habilita o tema escuro
       root.classList.toggle("dark", isDark);
+      root.dataset.theme = isDark ? "dark" : "light";
+      root.style.colorScheme = isDark ? "dark" : "light";
     };
 
     applyTheme(); // aplica imediatamente

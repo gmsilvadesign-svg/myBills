@@ -14,11 +14,11 @@ export default function ToggleButton({ items, selected, onChange }) {
           key={k} 
           onClick={() => onChange(k)} // Atualiza o botão selecionado
           className={clsx(
-            "px-3 py-2",
+            "px-3 py-2 text-[#E3E3E3]",
             // Aplica classes diferentes se o botão estiver selecionado ou não
             selected === k
-              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"
+              ? "bg-slate-900 dark:bg-slate-100 dark:text-slate-900"
+              : "bg-white dark:bg-slate-900"
           )}
         >
           {label} {/* Texto do botão */}

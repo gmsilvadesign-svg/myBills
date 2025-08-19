@@ -40,12 +40,11 @@ export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, 
       </div>
 
       {/* Componente que renderiza a grade do mês com todas as contas */}
-      <MonthGrid 
-        date={monthDate} 
-        bills={bills} 
-        locale={locale} 
-        currency={currency} 
-        t={t} 
+      <MonthGrid
+        date={monthDate}
+        bills={bills}
+        locale={locale}
+        currency={currency}
       />
 
     </Section>

@@ -3,6 +3,19 @@ import ToolbarButton from '../UI/ToolbarButton.tsx';
 
 // Componente Header: exibe o cabeçalho da aplicação com título, subtítulo e botões de ação
 export default function Header({ t, setEditing, exportICS, setOpenSettings }) {
+  // Abre nova aba exibindo notificações ou mensagem padrão
+  const openNotifications = () => {
+    const list = JSON.parse(localStorage.getItem('notifications') || '[]');
+    const popup = window.open('', '_blank', 'width=400,height=600');
+    if (!popup) return;
+    const content = list.length
+      ? `<ul>${list.map((n: string) => `<li>${n}</li>`).join('')}</ul>`
+      : `<p>${t.no_notifications}</p>`;
+    popup.document.write(
+      `<html><head><title>${t.notifications}</title></head><body>${content}</body></html>`
+    );
+    popup.document.close();
+  };
 
   // JSX do componente Header
   return (
@@ -28,8 +41,10 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings }) {
         <ToolbarButton onClick={exportICS}>
           {t.export_ics}
         </ToolbarButton>
+
         {/* Ícone de notificações */}
         <button
+          onClick={openNotifications}
           title={t.notifications}
           className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700"
         >

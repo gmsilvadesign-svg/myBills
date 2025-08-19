@@ -81,7 +81,16 @@ export function monthLabel(date: Date, locale = "pt-BR"): string {
 }
 
 // Gera todas as ocorrências de uma conta recorrente em um mês específico.
-export function occurrencesForBillInMonth(bill: any, year: number, monthIndex: number): string[] {
+export interface Bill {
+  id: string;
+  title: string;
+  amount: number;
+  dueDate: string;
+  recurrence?: 'NONE' | 'MONTHLY' | 'YEARLY' | 'WEEKLY';
+  paid?: boolean;
+}
+
+export function occurrencesForBillInMonth(bill: Bill, year: number, monthIndex: number): string[] {
   const occ: string[] = [];
   const base = parseDate(bill.dueDate);
 
@@ -136,7 +145,7 @@ export function nextOccurrenceISO(iso: string, recurrence: string): string {
 }
 
 // Gera um arquivo ICS (iCalendar) para um mês específico com base nas contas.
-export function buildICSForMonth(bills: any[], monthDate: Date, locale: string, currency: string): string {
+export function buildICSForMonth(bills: Bill[], monthDate: Date, locale: string, currency: string): string {
   const y = monthDate.getFullYear();
   const m = monthDate.getMonth();
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+/, "Z");
