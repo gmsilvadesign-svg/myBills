@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { LS_PREFS } from "../constants/constants.ts";
 
-// ========================= Preferências (Tema/Idioma) ========================
+//========================= Preferências (Tema/Idioma) ========================
 
 export function usePrefs() {
  // Estado das preferências, inicializado a partir do localStorage ou valores padrão
