@@ -1,8 +1,8 @@
 // Importa React e hook useState para gerenciar estados locais do formulário
-import React, { useState } from "react"
+import { useState } from "react"
 
 // Importa utilitários: uid (gerador de ID), fmtMoney (formata valores monetários), ymd (formata datas para yyyy-mm-dd)
-import { uid, fmtMoney, ymd } from '../../../utils/utils.ts'
+import { fmtMoney, ymd } from '../../../utils/utils.ts'
 
 // Importa componentes de input personalizados
 import Input from '../Input.tsx'

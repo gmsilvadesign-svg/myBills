@@ -1,5 +1,6 @@
 // src/App.jsx
 import { useState } from "react";
+import '../styles/index.css';
 import '../styles/App.css';
 import { useI18n, LANG_TO_LOCALE } from "../constants/constants"; 
 

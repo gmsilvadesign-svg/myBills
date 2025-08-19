@@ -1,8 +1,3 @@
-// Gera um identificador único (UID) combinando número aleatório e timestamp.
-export function uid(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
 // Formata um valor numérico como moeda.
 // v = valor numérico
 // currency = código da moeda (padrão: "BRL")
