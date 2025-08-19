@@ -14,14 +14,18 @@ export function useLocalBills() {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) setBills(JSON.parse(raw)); // converte JSON para array
-    } catch {} // ignora erros caso JSON esteja inválido
+    } catch {
+      /* ignored */
+    } // ignora erros caso JSON esteja inválido
   }, []);
 
   // Salva automaticamente as contas no localStorage sempre que o estado mudar
   useEffect(() => {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(bills));
-    } catch {} // ignora erros caso localStorage falhe
+    } catch {
+      /* ignored */
+    } // ignora erros caso localStorage falhe
   }, [bills]);
 
   // Retorna o estado das contas e função para atualizar

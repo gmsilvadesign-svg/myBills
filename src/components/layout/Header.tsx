@@ -2,7 +2,7 @@
 import ToolbarButton from '../UI/ToolbarButton.tsx';
 
 // Componente Header: exibe o cabeçalho da aplicação com título, subtítulo e botões de ação
-export default function Header({ t, setEditing, exportICS, setOpenSettings }) {
+export default function Header({ t, setEditing, exportICS }) {
 
   // JSX do componente Header
   return (
@@ -31,18 +31,9 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings }) {
         {/* Ícone de notificações */}
         <button
           title={t.notifications}
-          className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700"
+          className="px-3 py-2 rounded-xl border border-slate-300"
         >
           🔔
-        </button>
-
-        {/* Botão para abrir o modal de configurações */}
-        <button
-          onClick={() => setOpenSettings(true)}
-          title={t.settings}
-          className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700"
-        >
-          ⚙️
         </button>
       </div>
     </header>

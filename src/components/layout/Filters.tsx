@@ -37,7 +37,7 @@ export default function Filters({ view, setView, filter, setFilter, search, setS
         value={search} 
         onChange={e => setSearch(e.target.value)} 
         placeholder={t.search_placeholder}
-        className="flex-1 min-w-[220px] rounded-2xl border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700"
+        className="flex-1 min-w-[220px] rounded-2xl border border-slate-300 px-3 py-2"
       />
 
       {/* Component que exibe os totais de contas em pills, incluindo tradução, locale e moeda */}

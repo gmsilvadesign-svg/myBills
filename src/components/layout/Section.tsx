@@ -11,8 +11,8 @@ export default function Section({ title, children }) {
         {title}
       </div>
 
-      {/* Conteúdo da seção, com fundo branco (ou dark mode), bordas arredondadas, sombra e padding */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow p-4">
+      {/* Conteúdo da seção, com fundo branco, bordas arredondadas, sombra e padding */}
+      <div className="bg-white rounded-2xl shadow p-4">
         {children}
       </div>
 

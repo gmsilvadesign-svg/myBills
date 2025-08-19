@@ -19,9 +19,9 @@ export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, 
       <div className="flex items-center gap-3 mb-3">
 
         {/* Botão para ir para o mês anterior */}
-        <button 
-          onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))} 
-          className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-800"
+        <button
+          onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))}
+          className="px-3 py-1 rounded-xl bg-slate-200"
         >
           ◀
         </button>
@@ -30,9 +30,9 @@ export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, 
         <div className="font-semibold">{monthLabel(monthDate, locale)}</div>
 
         {/* Botão para ir para o próximo mês */}
-        <button 
-          onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))} 
-          className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-800"
+        <button
+          onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))}
+          className="px-3 py-1 rounded-xl bg-slate-200"
         >
           ▶
         </button>
@@ -40,12 +40,11 @@ export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, 
       </div>
 
       {/* Componente que renderiza a grade do mês com todas as contas */}
-      <MonthGrid 
-        date={monthDate} 
-        bills={bills} 
-        locale={locale} 
-        currency={currency} 
-        t={t} 
+      <MonthGrid
+        date={monthDate}
+        bills={bills}
+        locale={locale}
+        currency={currency}
       />
 
     </Section>

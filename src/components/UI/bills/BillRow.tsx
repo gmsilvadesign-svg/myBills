@@ -63,10 +63,10 @@ export default function BillRow({ bill, markPaid, setEditing, setConfirm, t, loc
         </>}
 
         {/* Botão para editar a conta */}
-        <button onClick={() => setEditing(bill)} className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-800">{t.edit}</button>
+        <button onClick={() => setEditing(bill)} className="px-3 py-1 rounded-xl bg-slate-200">{t.edit}</button>
 
         {/* Botão para deletar a conta (abre modal de confirmação) */}
-        <button onClick={() => setConfirm({ open: true, id: bill.id })} className="px-3 py-1 rounded-xl bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">{t.delete}</button>
+        <button onClick={() => setConfirm({ open: true, id: bill.id })} className="px-3 py-1 rounded-xl bg-red-100 text-red-700">{t.delete}</button>
       </div>
 
     </div>

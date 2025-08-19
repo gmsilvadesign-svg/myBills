@@ -13,7 +13,7 @@ export default function BillsList({ bills, markPaid, setEditing, setConfirm, t, 
     <Section title={t.section_bills}>
 
       {/* Container com linhas separadas por bordas (divide-y) */}
-      <div className="divide-y divide-slate-200 dark:divide-slate-800">
+      <div className="divide-y divide-slate-200">
 
         {/* Mensagem quando não há contas */}
         {bills.length === 0 && <div className="text-slate-500">{t.no_bills}</div>}

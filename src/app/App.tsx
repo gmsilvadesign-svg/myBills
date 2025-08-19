@@ -1,19 +1,15 @@
-// Importa o React e o hook useState para gerenciar estados locais do componente
-import React, { useState } from "react"; 
+// Importa o hook useState para gerenciar estados locais do componente
+import { useState } from "react";
 
 // Importa o CSS principal da aplicação
-import '../styles/App.css'; 
+import '../styles/App.css';
 
 // useI18n: hook para tradução/idioma
-// LANG_TO_LOCALE: mapeamento de idioma para locale (ex: pt-BR, en-US)
-import { useI18n, LANG_TO_LOCALE } from "../constants/constants"; 
+import { useI18n } from "../constants/constants";
 
 // buildICSForMonth: gera arquivo ICS (calendário) para o mês com as contas
 // download: função para baixar arquivos no navegador
-import { buildICSForMonth, download } from '../utils/utils.ts'; 
-
-// hook customizado para gerenciar preferências do usuário (idioma, moeda etc.)
-import { usePrefs } from '../hooks/usePrefs.ts';
+import { buildICSForMonth, download } from '../utils/utils.ts';
 
 // hook customizado para gerenciar as contas salvas localmente
 import { useLocalBills } from '../hooks/useLocalBills.ts'; 
@@ -45,24 +41,17 @@ import BillForm from '../components/UI/bills/BillForm.tsx';
 // Modal de confirmação (ex: para deletar uma conta)
 import Confirm from '../components/UI/modals/Confirm'; 
 
-// Modal de configurações (idioma, moeda, preferências)
-import SettingsModal from '../components/UI/modals/Settings.tsx'; 
-
 // Componente do rodapé da aplicação
-import Footer from '../components/layout/Footer'; 
+import Footer from '../components/layout/Footer';
 
 export default function App() {
-  // Armazena preferências do usuário (idioma, moeda)
-  const [prefs, setPrefs] = usePrefs(); 
-  
-  // Define o locale baseado na preferência de idioma do usuário (fallback pt-BR)
-  const locale = LANG_TO_LOCALE[prefs.language] || "pt-BR"; 
+  // Idioma, locale e moeda fixos
+  const language = 'pt';
+  const locale = 'pt-BR';
+  const currency = 'BRL';
 
-  // Define a moeda baseada na preferência do usuário (fallback BRL)
-  const currency = prefs.currency || "BRL"; 
-
-  // Função de tradução baseada no idioma do usuário
-  const t = useI18n(prefs.language); 
+  // Função de tradução baseada no idioma fixo
+  const t = useI18n(language);
 
   // Estado com todas as contas armazenadas localmente
   const [bills, setBills] = useLocalBills(); 
@@ -85,11 +74,8 @@ export default function App() {
   // Data do mês atual para exibição no calendário
   const [monthDate, setMonthDate] = useState(new Date()); 
 
-  // Controle de abertura do modal de configurações
-  const [openSettings, setOpenSettings] = useState(false); 
-
   // Contas filtradas de acordo com pesquisa e filtro selecionado
-  const filtered = useFilteredBills(bills, filter, search); 
+  const filtered = useFilteredBills(bills, filter, search);
 
   // Totais calculados a partir das contas
   const totals = useTotals(bills); 
@@ -106,18 +92,17 @@ export default function App() {
 
   // JSX principal do App
   return (
-    // Container principal da aplicação com estilo responsivo e suporte a dark mode
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-4 md:p-8">
+    // Container principal da aplicação
+    <div className="min-h-screen bg-white text-slate-900 p-4 md:p-8">
 
       {/* Centraliza o conteúdo e define largura máxima */}
       <div className="max-w-6xl mx-auto">
 
-        {/* Cabeçalho com título, botões de exportar e abrir configurações */}
-        <Header 
-          t={t} 
-          setEditing={setEditing} 
-          exportICS={exportICS} 
-          setOpenSettings={setOpenSettings}
+        {/* Cabeçalho com título e botões de exportar */}
+        <Header
+          t={t}
+          setEditing={setEditing}
+          exportICS={exportICS}
         />
 
         {/* Componente de filtros e troca de visualização */}
@@ -179,15 +164,6 @@ export default function App() {
           t={t} 
           onClose={()=>setConfirm({open:false,id:null})} 
           onConfirm={()=>removeBill(confirm.id)} 
-        />
-
-        {/* Modal de configurações */}
-        <SettingsModal 
-          open={openSettings} 
-          onClose={()=>setOpenSettings(false)} 
-          prefs={prefs} 
-          setPrefs={setPrefs} 
-          t={t} 
         />
 
         {/* Rodapé da aplicação */}

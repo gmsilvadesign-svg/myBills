@@ -1,5 +1,5 @@
-// Importa React e hook useState para gerenciar estados locais do formulário
-import React, { useState } from "react"
+// Importa hook useState para gerenciar estados locais do formulário
+import { useState } from "react"
 
 // Importa utilitários: uid (gerador de ID), fmtMoney (formata valores monetários), ymd (formata datas para yyyy-mm-dd)
 import { uid, fmtMoney, ymd } from '../../../utils/utils.ts'
@@ -26,8 +26,8 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
     // Overlay escuro cobrindo toda a tela, centraliza o modal
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-      {/* Modal do formulário com fundo branco, dark mode, bordas arredondadas e sombra */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-xl shadow-xl">
+      {/* Modal do formulário com fundo branco, bordas arredondadas e sombra */}
+      <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-xl">
 
         {/* Título do formulário (novo ou edição) */}
         <div className="text-lg font-semibold mb-4">{initial ? t.edit : t.new_bill}</div>
@@ -70,9 +70,9 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
         {/* Botões de ação do formulário */}
         <div className="flex gap-3 justify-end">
           {/* Botão de cancelar */}
-          <button 
-            onClick={onCancel} 
-            className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800"
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl bg-slate-200"
           >
             {t.cancel}
           </button>
@@ -104,7 +104,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
               // Fecha o modal
               onCancel();
             }}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+            className="px-4 py-2 rounded-xl bg-slate-900 text-white"
           >
             {t.save}
           </button>

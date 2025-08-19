@@ -7,15 +7,6 @@ export type Recurrence = "NONE" | "MONTHLY" | "WEEKLY" | "YEARLY";
 
 // Chave para armazenar as contas no localStorage
 export const LS_KEY = "bills";
-// Chave para armazenar as preferências do usuário no localStorage
-export const LS_PREFS = "prefs";
-
-// Mapeamento de códigos de idioma para locale padrão
-export const LANG_TO_LOCALE: Record<string, string> = {
-  pt: "pt-BR",
-  en: "en-US",
-  es: "es-ES",
-};
 
 // ================================ Traduções ================================
 
@@ -53,17 +44,8 @@ export const I18N = {
     confirm: "Confirmar",
     calendar_title: (label: string) => `Calendário — ${label}`,
     footer: "Feito para uso pessoal. v0.4 – armazenamento local.",
-    settings: "Configurações",
     notifications: "Notificações",
-    appearance: "Aparência",
-    theme: "Tema",
-    light: "Claro",
-    dark: "Escuro",
-    system: "Sistema",
-    language: "Idioma",
-    general: "Geral",
     save: "Salvar",
-    close: "Fechar",
   },
   en: {
     app_title: "Bills — v0.4",
@@ -97,17 +79,8 @@ export const I18N = {
     confirm: "Confirm",
     calendar_title: (label: string) => `Calendar — ${label}`,
     footer: "Personal use. v0.4 – local storage.",
-    settings: "Settings",
     notifications: "Notifications",
-    appearance: "Appearance",
-    theme: "Theme",
-    light: "Light",
-    dark: "Dark",
-    system: "System",
-    language: "Language",
-    general: "General",
     save: "Save",
-    close: "Close",
   },
   es: {
     app_title: "Cuentas por Pagar — v0.4",
@@ -141,17 +114,8 @@ export const I18N = {
     confirm: "Confirmar",
     calendar_title: (label: string) => `Calendario — ${label}`,
     footer: "Uso personal. v0.4 – almacenamiento local.",
-    settings: "Configuraciones",
     notifications: "Notificaciones",
-    appearance: "Apariencia",
-    theme: "Tema",
-    light: "Claro",
-    dark: "Oscuro",
-    system: "Sistema",
-    language: "Idioma",
-    general: "General",
     save: "Guardar",
-    close: "Cerrar",
   },
 };
 
