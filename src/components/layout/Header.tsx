@@ -25,7 +25,7 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings }) {
       {/* Container para título e subtítulo, ocupa todo o espaço disponível */}
       <div className="flex-1">
         {/* Título da aplicação */}
-        <div className="text-2xl font-bold">{t.app_title}</div>
+        <div className="text-2xl font-bold text-red-700">{t.app_title}</div>
         {/* Subtítulo da aplicação */}
         <div className="text-slate-500">{t.subtitle}</div>
       </div>
