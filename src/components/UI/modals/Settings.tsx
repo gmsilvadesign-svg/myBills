@@ -36,7 +36,6 @@ export default function SettingsModal({ open, onClose, prefs, setPrefs, t }) {
             >
               <option value="light">{t.light}</option>
               <option value="dark">{t.dark}</option>
-              <option value="system">{t.system}</option>
             </Select>
           </div>
 

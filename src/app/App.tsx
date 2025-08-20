@@ -4,7 +4,6 @@ import '../styles/index.css';
 import '../styles/App.css';
 import { useI18n, LANG_TO_LOCALE } from "../constants/constants"; 
 
-
 // Componentes
 import Header from '../components/layout/Header';
 import Filters from '../components/layout/Filters';

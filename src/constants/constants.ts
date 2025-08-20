@@ -1,7 +1,7 @@
 // ================================ Constantes =================================
 
 // Mapeamento de códigos de idioma para locale padrão
-export const LANG_TO_LOCALE: Record<string, string> = {
+export const LANG_TO_LOCALE: Record<string, unknown> = {
   pt: "pt-BR",
   en: "en-US",
   es: "es-ES",
