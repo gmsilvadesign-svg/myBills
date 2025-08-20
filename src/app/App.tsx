@@ -2,7 +2,7 @@
 import { useState } from "react";
 import '../styles/index.css';
 import '../styles/App.css';
-import { useI18n, LANG_TO_LOCALE } from "../constants/constants"; 
+import { useI18n, LANG_TO_LOCALE } from "../constants/translation"; 
 
 // Componentes
 import Header from '../components/layout/Header';
@@ -28,7 +28,7 @@ export default function App() {
   const t = useI18n(prefs.language);
 
   // Hook do Firebase
-  const { bills, upsertBill, removeBill, markPaid } = useFirebaseBills();
+  const { bills, loading, upsertBill, removeBill, markPaid } = useFirebaseBills();
 
   // Estados locais
   const [view, setView] = useState("list");
@@ -73,9 +73,11 @@ export default function App() {
         {view === "list" &&
           <BillsList 
             bills={filtered}
+            loading={loading} 
             markPaid={markPaid}
             setEditing={setEditing}
             setConfirm={setConfirm}
+  
             t={t} locale={locale} currency={currency}
           />
         }

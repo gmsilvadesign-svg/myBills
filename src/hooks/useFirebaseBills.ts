@@ -5,8 +5,8 @@ import { ymd, nextOccurrenceISO } from "../utils/utils";
 
 export default function useFirebaseBills() {
   const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true); // começa carregando
 
-  // Listener em tempo real do Firestore
   useEffect(() => {
     const billsRef = collection(db, "bills");
 
@@ -15,16 +15,17 @@ export default function useFirebaseBills() {
       (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setBills(data);
+        setLoading(false); // primeira resposta chegou → para de carregar
       },
       (error) => {
         console.error("Erro no listener do Firestore:", error);
+        setLoading(false);
       }
     );
 
     return () => unsubscribe();
   }, []);
 
-  // Cria uma nova bill
   const addBill = async (bill: any) => {
     const ref = collection(db, "bills");
     await addDoc(ref, {
@@ -40,7 +41,6 @@ export default function useFirebaseBills() {
     });
   };
 
-  // Atualiza uma bill existente
   const updateBill = async (bill: any) => {
     if (!bill.id) throw new Error("Bill ID is required to update");
     const ref = doc(db, "bills", bill.id);
@@ -57,7 +57,6 @@ export default function useFirebaseBills() {
     });
   };
 
-  // Atalho para criar ou atualizar
   const upsertBill = async (bill: any) => {
     if (bill.id) {
       await updateBill(bill);
@@ -66,13 +65,11 @@ export default function useFirebaseBills() {
     }
   };
 
-  // Remove uma bill
   const removeBill = async (id: string) => {
     const ref = doc(db, "bills", id);
     await deleteDoc(ref);
   };
 
-  // Marca como pago (ou avança recorrência)
   const markPaid = async (bill: any, advance = false) => {
     if (!bill.id) throw new Error("Bill ID is required to mark as paid");
     const billRef = doc(db, "bills", bill.id);
@@ -91,5 +88,5 @@ export default function useFirebaseBills() {
     }
   };
 
-  return { bills, addBill, updateBill, upsertBill, removeBill, markPaid };
+  return { bills, loading, addBill, updateBill, upsertBill, removeBill, markPaid };
 }

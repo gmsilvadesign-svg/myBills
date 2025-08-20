@@ -5,21 +5,18 @@ import Section from '../../layout/Section.tsx'
 import BillRow from './BillRow.tsx'
 
 // Componente BillsList: exibe uma lista de contas em formato de seção
-export default function BillsList({ bills, markPaid, setEditing, setConfirm, t, locale, currency }) {
-
-  // JSX da lista de contas
+export default function BillsList({ bills, loading, markPaid, setEditing, setConfirm, t, locale, currency }) {
+  
+  
   return (
-    // Seção com título traduzido
     <Section title={t.section_bills}>
-
-      {/* Container com linhas separadas por bordas (divide-y) */}
       <div className="divide-y divide-slate-200 dark:divide-slate-800">
+        
+        {/* Estado 1: ainda carregando */}
+        {loading && <div className="text-slate-500">{t.loading_bills}</div>}
 
-        {/* Mensagem quando não há contas */}
-        {bills.length === 0 && <div className="text-slate-500">{t.no_bills}</div>}
-
-        {/* Mapeia as contas e renderiza cada BillRow */}
-        {bills.map(b => (
+        {/* Estado 2: carregou e tem contas */}
+        {!loading && bills.length > 0 && bills.map(b => (
           <BillRow 
             key={b.id} 
             bill={b} 
@@ -32,8 +29,11 @@ export default function BillsList({ bills, markPaid, setEditing, setConfirm, t, 
           />
         ))}
 
+        {/* Estado 3: carregou mas não tem contas */}
+        {!loading && bills.length === 0 && (
+          <div className="text-slate-500">{t.no_bills}</div>
+        )}
       </div>
-
     </Section>
   )
 }

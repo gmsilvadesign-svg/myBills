@@ -16,7 +16,7 @@ export default function BillRow({ bill, markPaid, setEditing, setConfirm, t, loc
     <div className="py-3 flex items-center gap-3">
 
       {/* Container principal do título, categoria e recorrência */}
-      <div className="flex-1">
+      <div className="w-70 flex-1">
 
         {/* Título da conta com categorias e recorrência */}
         <div className="font-medium flex items-center gap-2">
@@ -29,21 +29,21 @@ export default function BillRow({ bill, markPaid, setEditing, setConfirm, t, loc
           {/* Recorrência da conta, se existir e não for NONE */}
           {bill.recurrence && bill.recurrence !== "NONE" && <Pill tone="green">{t[bill.recurrence.toLowerCase()]}</Pill>}
         </div>
-
-        {/* Informações adicionais da conta: vencimento, tags e data de pagamento */}
-        <div className="text-sm text-slate-500">
-          {t.due_on} {formatDate(bill.dueDate, locale)}
-          {bill.tags?.length ? ` · ${bill.tags.join(", ")}` : ""}
-          {bill.paid && bill.paidOn ? ` · ${t.paid_on} ${formatDate(bill.paidOn, locale)}` : ""}
-        </div>
-
       </div>
-
+     
+      {/* Informações adicionais da conta: vencimento, tags e data de pagamento */}
+      <div className="text-sm text-slate-500">
+        {bill.paid && bill.paidOn
+          ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
+          : `${t.due_on} ${formatDate(bill.dueDate, locale)}`}
+      </div>
+          
       {/* Valor da conta, alinhado à direita */}
       <div className="w-36 text-right font-semibold">{fmtMoney(bill.amount, currency, locale)}</div>
 
+
       {/* Status da conta (vencida, pendente, paga) */}
-      <div className="w-40 text-right">
+      <div className="">
         {!bill.paid && overdue && <Pill tone="red">{t.overdue}</Pill>}
         {!bill.paid && !overdue && <Pill tone="amber">{t.pending}</Pill>}
         {bill.paid && <Pill tone="green">{t.paid}</Pill>}
