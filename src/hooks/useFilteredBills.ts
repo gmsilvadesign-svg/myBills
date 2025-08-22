@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { parseDate, isBefore, isSameDayISO, ymd } from '../utils/utils';
+import * as Types from '../types';
 
-export default function useFilteredBills(bills, filter, search) {
+export default function useFilteredBills(bills: Types.Bill[], filter: Types.FilterType, search: string) {
   // Data de hoje em formato ISO
   const todayISO = ymd(new Date());
 
@@ -11,7 +12,7 @@ export default function useFilteredBills(bills, filter, search) {
       // Cria uma cópia para não alterar o array original
       .slice()
       // Ordena pelas datas de vencimento
-      .sort((a, b) => parseDate(a.dueDate) - parseDate(b.dueDate))
+      .sort((a, b) => parseDate(a.dueDate).getTime() - parseDate(b.dueDate).getTime())
       // Filtra contas conforme busca e filtro selecionado
       .filter(bill => {
         // Verifica se o título, categoria, tags ou notas correspondem à pesquisa
@@ -23,7 +24,7 @@ export default function useFilteredBills(bills, filter, search) {
         if (!matchesSearch) return false;
 
         const due = parseDate(bill.dueDate);
-        const diffDays = Math.floor((due - new Date()) / 86400000); // diferença em dias
+        const diffDays = Math.floor((due.getTime() - Date.now()) / 86400000); // diferença em dias
 
         // Aplica filtros específicos
         switch (filter) {

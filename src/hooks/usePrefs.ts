@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Dispatch, SetStateAction } from "react";
+import * as Types from "../types";
 
-export function usePrefs() {
-  const [prefs, setPrefs] = useState(() => {
-    try {
-      const raw = localStorage.getItem("prefs");
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return { theme: "system", language: "pt" };
+export function usePrefs(): [Types.UserPreferences, Dispatch<SetStateAction<Types.UserPreferences>>] {
+  const [prefs, setPrefs] = useState<Types.UserPreferences>(() => {
+    const raw = localStorage.getItem("prefs");
+    if (raw) return JSON.parse(raw) as Types.UserPreferences;
+    return { theme: "system", language: "pt", currency: "BRL" } as Types.UserPreferences;
   });
 
   // Salvar no localStorage

@@ -1,13 +1,21 @@
-// Componente Footer: exibe o rodapé da aplicação
-export default function Footer({ t }) {
+import { memo } from 'react';
+import { CSS_CLASSES } from '../../styles/constants';
 
-  // JSX do rodapé
+interface FooterProps {
+  t: Record<string, string>;
+}
+
+const Footer = memo(function Footer({ t }: FooterProps) {
   return (
-    // Elemento <footer> com margem superior e texto pequeno, estilizado com Tailwind
-    <footer className="mt-10 text-xs text-slate-500">
-
+    <footer 
+      className={`mt-10 text-xs ${CSS_CLASSES.text.muted}`}
+      role="contentinfo"
+      aria-label={t.footer_info || "Informações do rodapé"}
+    >
       {/* Texto do rodapé, utilizando tradução (i18n) */}
       <div>{t.footer}</div>
     </footer>
-  )
-}
+  );
+});
+
+export default Footer;

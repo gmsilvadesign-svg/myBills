@@ -76,16 +76,9 @@ export function monthLabel(date: Date, locale = "pt-BR"): string {
 }
 
 // Gera todas as ocorrências de uma conta recorrente em um mês específico.
-export interface Bill {
-  id: string;
-  title: string;
-  amount: number;
-  dueDate: string;
-  recurrence?: 'NONE' | 'MONTHLY' | 'YEARLY' | 'WEEKLY';
-  paid?: boolean;
-}
+import * as Types from '../types';
 
-export function occurrencesForBillInMonth(bill: Bill, year: number, monthIndex: number): string[] {
+export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthIndex: number): string[] {
   const occ: string[] = [];
   const base = parseDate(bill.dueDate);
 
@@ -140,7 +133,7 @@ export function nextOccurrenceISO(iso: string, recurrence: string): string {
 }
 
 // Gera um arquivo ICS (iCalendar) para um mês específico com base nas contas.
-export function buildICSForMonth(bills: Bill[], monthDate: Date, locale: string, currency: string): string {
+export function buildICSForMonth(bills: Types.Bill[], monthDate: Date, locale: string, currency: string): string {
   const y = monthDate.getFullYear();
   const m = monthDate.getMonth();
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+/, "Z");
@@ -198,4 +191,11 @@ export function download(filename: string, text: string): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function daysDifference(fromISO: string, toISO: string): number {
+  const from = parseDate(fromISO);
+  const to = parseDate(toISO);
+  const diffTime = to.getTime() - from.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }

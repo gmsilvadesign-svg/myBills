@@ -1,5 +1,17 @@
-// Componente tipo "Pill" (rótulo) com cores variáveis
-export default function Pill({ children, tone = "slate" }) {
+// Importa React.memo para otimização de performance
+import { memo } from 'react'
+
+// Definição dos tons disponíveis para o componente
+type PillTone = 'slate' | 'green' | 'red' | 'amber' | 'blue';
+
+// Interface para as props do componente
+interface PillProps {
+  children: React.ReactNode;
+  tone?: PillTone;
+}
+
+// Componente tipo "Pill" (rótulo) com cores variáveis - otimizado com React.memo
+const Pill = memo(function Pill({ children, tone = "slate" }: PillProps) {
 
   // Mapeamento de tons para classes de cor (modo claro e dark)
   const tones = {
@@ -12,8 +24,10 @@ export default function Pill({ children, tone = "slate" }) {
 
   // JSX do rótulo: aplica padding, borda arredondada e tom conforme a prop
   return (
-    <span className={`px-2 py-1 rounded-full text-xs ${tones[tone]}`}>
+    <span className={`px-2 py-1 rounded-full text-xs min-w-[80px] text-center inline-block ${tones[tone]}`}>
       {children}
     </span>
   );
-}
+})
+
+export default Pill

@@ -1,25 +1,41 @@
-// Importa o componente Pill para exibir rótulos estilizados
-import Pill from './Pill.tsx';
+import { memo } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import Pill from './Pill';
+import * as Types from '../../types';
+import { fmtMoney } from '../../utils/utils';
 
-// Importa função para formatar valores monetários
-import { fmtMoney } from '../../utils/utils.ts';
+interface TotalsPillsProps {
+  totals: Types.Totals;
+  onFilterOverdue?: () => void;
+}
 
-export default function TotalsPills({ totals, t, locale, currency }) {
+const TotalsPills = memo(function TotalsPills({ totals, onFilterOverdue }: TotalsPillsProps) {
+  const { t, locale, currency } = useTranslation();
 
-  // JSX do container de totais com rótulos coloridos
   return (
-    <div className="ml-auto flex items-center gap-2">
-      
-      {/* Pill para mostrar o total de contas em aberto */}
+    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
       <Pill tone="amber">
-        {t.totals_open}: {fmtMoney(totals.allOpen, currency, locale)}
+        <span className="hidden sm:inline">{t.totals_open}: </span>
+        <span className="sm:hidden">Abertas: </span>
+        {fmtMoney(totals.allOpen, currency, locale)}
       </Pill>
-
-      {/* Pill para mostrar o total de contas do mês */}
       <Pill tone="blue">
-        {t.totals_month}: {fmtMoney(totals.monthOpen, currency, locale)}
+        <span className="hidden sm:inline">{t.totals_month}: </span>
+        <span className="sm:hidden">Mês: </span>
+        {fmtMoney(totals.monthOpen, currency, locale)}
       </Pill>
-
+      {totals.overdue > 0 && (
+        <button
+          onClick={onFilterOverdue}
+          className="px-2 py-1 rounded-full text-xs min-w-[80px] text-center inline-block bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1"
+        >
+          <span className="hidden sm:inline">{t.overdue}: </span>
+          <span className="sm:hidden">Atrasadas: </span>
+          {fmtMoney(totals.overdue, currency, locale)}
+        </button>
+      )}
     </div>
   );
-}
+});
+
+export default TotalsPills;

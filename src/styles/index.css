@@ -2,13 +2,20 @@
 body {
   margin: 0;
   min-height: 100vh;
-  display: flex;
-  place-items: center;
   background-color: #ffffff;
+  color: #1e293b;
   transition: background-color 0.3s, color 0.3s;
+  /* Evita deslocamento da tela quando barra de rolagem aparece/desaparece */
+  overflow-y: scroll;
 }
-
 /* Modo escuro */
 body.dark {
-  background-color: #242424;
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* Melhora a visibilidade do foco para acessibilidade */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }

@@ -1,14 +1,37 @@
-// Importa componente Section para agrupar conteúdo com título
-import Section from '../../layout/Section.tsx'
+// Importa React e componentes necessários
+import { useCallback } from 'react'
+import Section from '../../layout/Section'
 
 // Importa componente MonthGrid, que exibe o calendário mensal com as contas
 import MonthGrid from '../bills/MonthGrid'
 
 // Importa função utilitária monthLabel para formatar o nome do mês baseado em locale
-import { monthLabel } from '../../../utils/utils.ts'
+import { monthLabel } from '../../../utils/utils'
+
+// Importa tipos
+import * as Types from '../../../types'
+
+// Interface para as props do componente
+interface BillsCalendarProps {
+  bills: Types.Bill[];
+  monthDate: Date;
+  setMonthDate: (date: Date) => void;
+  locale: string;
+  currency: string;
+  t: Record<string, string>; // Traduções
+}
 
 // Componente BillsCalendar: exibe as contas em formato de calendário mensal
-export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, currency, t }) {
+export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, currency, t }: BillsCalendarProps) {
+
+  // Funções de navegação otimizadas com useCallback
+  const goToPreviousMonth = useCallback(() => {
+    setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1));
+  }, [monthDate, setMonthDate]);
+
+  const goToNextMonth = useCallback(() => {
+    setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1));
+  }, [monthDate, setMonthDate]);
 
   // JSX do calendário
   return (
@@ -16,28 +39,34 @@ export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, 
     <Section title={t.calendar_title(monthLabel(monthDate, locale))}>
 
       {/* Controles para navegar entre meses */}
-      <div className="flex items-center gap-3 mb-3">
+      <nav className="flex items-center justify-between mb-4" aria-label={t.calendar_navigation || "Navegação do calendário"}>
 
         {/* Botão para ir para o mês anterior */}
         <button 
-          onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))} 
-          className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-800"
+          onClick={goToPreviousMonth} 
+          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+          aria-label={t.previous_month || "Mês anterior"}
         >
-          ◀
+          <svg className="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
 
         {/* Exibe o nome do mês atual */}
-        <div className="font-semibold">{monthLabel(monthDate, locale)}</div>
+        <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-200" aria-live="polite">{monthLabel(monthDate, locale)}</h3>
 
         {/* Botão para ir para o próximo mês */}
         <button 
-          onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))} 
-          className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-800"
+          onClick={goToNextMonth} 
+          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+          aria-label={t.next_month || "Próximo mês"}
         >
-          ▶
+          <svg className="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </button>
 
-      </div>
+      </nav>
 
       {/* Componente que renderiza a grade do mês com todas as contas */}
       <MonthGrid
