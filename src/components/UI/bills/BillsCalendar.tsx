@@ -1,15 +1,15 @@
 // Importa React e componentes necessários
 import { useCallback } from 'react'
-import Section from '../../layout/Section'
+import Section from '@/components/layout/Section'
 
 // Importa componente MonthGrid, que exibe o calendário mensal com as contas
-import MonthGrid from '../bills/MonthGrid'
+import MonthGrid from '@/components/UI/bills/MonthGrid'
 
 // Importa função utilitária monthLabel para formatar o nome do mês baseado em locale
-import { monthLabel } from '../../../utils/utils'
+import { monthLabel } from '@/utils/utils'
 
 // Importa tipos
-import * as Types from '../../../types'
+import * as Types from '@/types'
 
 // Interface para as props do componente
 interface BillsCalendarProps {

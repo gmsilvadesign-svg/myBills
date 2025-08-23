@@ -1,5 +1,5 @@
 import { useId, memo } from 'react';
-import * as Types from '../../types';
+import * as Types from '@/types';
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement>, Types.WithError {
   label: string;

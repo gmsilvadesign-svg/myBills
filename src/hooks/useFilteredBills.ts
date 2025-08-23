@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { parseDate, isBefore, isSameDayISO, ymd } from '../utils/utils';
-import * as Types from '../types';
+import { useMemo } from 'react';
+import { parseDate, isBefore, isSameDayISO, ymd } from '@/utils/utils';
+import * as Types from '@/types';
 
 export default function useFilteredBills(bills: Types.Bill[], filter: Types.FilterType, search: string) {
   // Data de hoje em formato ISO

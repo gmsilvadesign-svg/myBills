@@ -21,7 +21,7 @@ vi.mock('firebase/app', () => mockFirebase)
 vi.mock('firebase/firestore', () => mockFirebase)
 
 // Mock do contexto de notificação
-vi.mock('../contexts/NotificationContext', () => ({
+vi.mock('@/contexts/NotificationContext', () => ({
   useNotification: () => ({
     showNotification: vi.fn(),
   }),
@@ -31,7 +31,7 @@ vi.mock('../contexts/NotificationContext', () => ({
 }))
 
 // Mock do contexto de tradução
-vi.mock('../contexts/TranslationContext', () => ({
+vi.mock('@/contexts/TranslationContext', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
     locale: 'pt-BR',

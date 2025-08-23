@@ -1,5 +1,5 @@
 import { useState, useEffect, Dispatch, SetStateAction } from "react";
-import * as Types from "../types";
+import * as Types from "@/types";
 
 export function usePrefs(): [Types.UserPreferences, Dispatch<SetStateAction<Types.UserPreferences>>] {
   const [prefs, setPrefs] = useState<Types.UserPreferences>(() => {

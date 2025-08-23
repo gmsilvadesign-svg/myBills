@@ -1,6 +1,6 @@
 import { collection, addDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { ymd } from "./utils";
+import { db } from "@/firebase";
+import { ymd } from "@/utils/utils";
 
 export async function addSampleBills() {
   const billsRef = collection(db, "bills");

@@ -1,7 +1,21 @@
-import { memo } from 'react'
-import Pill from '../Pill'
-import { fmtMoney, formatDate, isBefore, ymd, daysDifference } from '../../../utils/utils'
-import * as Types from '../../../types'
+// React
+import { memo } from 'react';
+
+// Components
+import Pill from '@/components/UI/Pill';
+
+// Utils
+import { 
+  fmtMoney, 
+  formatDate, 
+  isBefore, 
+  ymd, 
+  daysDifference 
+} from '@/utils/utils';
+
+// Types
+import * as Types from '@/types';
+
 interface BillRowProps {
   bill: Types.Bill;
   markPaid: (bill: Types.Bill, advance: boolean) => void;

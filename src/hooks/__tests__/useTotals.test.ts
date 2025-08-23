@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import useTotals from '../useTotals'
-import type { Bill } from '../../types'
+import useTotals from '@/hooks/useTotals'
+import type { Bill } from '@/types'
 
 describe('useTotals Hook', () => {
   const mockBills: Bill[] = [

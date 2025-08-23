@@ -6,7 +6,7 @@ import {
   isBefore,
   daysInMonth,
   occurrencesForBillInMonth
-} from '../utils'
+} from '@/utils/utils'
 
 describe('Utils Functions', () => {
   describe('fmtMoney', () => {

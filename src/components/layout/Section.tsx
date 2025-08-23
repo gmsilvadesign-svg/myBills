@@ -1,6 +1,6 @@
 // Importa React.memo para otimização de performance
 import { memo } from 'react'
-import { CSS_CLASSES } from '../../styles/constants';
+import { CSS_CLASSES } from '@/styles/constants';
 
 // Interface para as props do componente
 interface SectionProps {

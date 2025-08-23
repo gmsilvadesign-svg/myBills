@@ -1,8 +1,17 @@
+// React
 import { memo } from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+
+// Hooks
+import { useTranslation } from '@/hooks/useTranslation';
+
+// Components
 import Pill from './Pill';
-import * as Types from '../../types';
-import { fmtMoney } from '../../utils/utils';
+
+// Utils
+import { fmtMoney } from '@/utils/utils';
+
+// Types
+import * as Types from '@/types';
 
 interface TotalsPillsProps {
   totals: Types.Totals;

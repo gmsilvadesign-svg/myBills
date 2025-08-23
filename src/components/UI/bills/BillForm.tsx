@@ -1,9 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from "react"
-import { fmtMoney, ymd } from '../../../utils/utils'
-import Input from '../Input'
-import Select from '../Select'
-import Textarea from '../Textarea'
-import * as Types from '../../../types'
+// React
+import { useState, useEffect, useRef, useCallback } from "react";
+
+// Utils
+import { fmtMoney, ymd } from '@/utils/utils';
+
+// Components
+import Input from '@/components/UI/Input';
+import Select from '@/components/UI/Select';
+import Textarea from '@/components/UI/Textarea';
+
+// Types
+import * as Types from '@/types';
 interface BillFormProps {
   initial?: Partial<Types.Bill>;
   onSave: (bill: Omit<Types.Bill, 'id'>) => void;

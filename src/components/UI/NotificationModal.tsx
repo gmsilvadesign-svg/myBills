@@ -1,4 +1,4 @@
-import Modal from './modals/Modal';
+import Modal from '@/components/UI/modals/Modal';
 
 interface NotificationModalProps {
   isOpen: boolean;

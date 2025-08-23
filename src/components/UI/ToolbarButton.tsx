@@ -1,7 +1,7 @@
 // Importa React.memo para otimização de performance
 import { memo } from 'react'
 
-import * as Types from '../../types';
+import * as Types from '@/types';
 
 // Interface para as props do componente
 interface ToolbarButtonProps extends Types.WithAriaLabel {

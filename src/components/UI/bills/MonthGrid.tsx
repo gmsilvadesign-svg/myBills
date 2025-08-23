@@ -1,6 +1,6 @@
 import { memo } from 'react'
-import * as Types from '../../../types';
-import { fmtMoney, ymd, parseDate, isBefore, daysInMonth, occurrencesForBillInMonth } from '../../../utils/utils'
+import * as Types from '@/types';
+import { fmtMoney, ymd, parseDate, isBefore, daysInMonth, occurrencesForBillInMonth } from '@/utils/utils'
 
 // Interface para as props do componente
 interface MonthGridProps {

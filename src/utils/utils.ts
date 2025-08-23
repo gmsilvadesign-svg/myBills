@@ -76,7 +76,7 @@ export function monthLabel(date: Date, locale = "pt-BR"): string {
 }
 
 // Gera todas as ocorrências de uma conta recorrente em um mês específico.
-import * as Types from '../types';
+import * as Types from '@/types';
 
 export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthIndex: number): string[] {
   const occ: string[] = [];

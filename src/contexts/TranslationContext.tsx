@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
-import { useI18n } from '../constants/translation';
-import { usePrefs } from '../hooks/usePrefs';
-import { TranslationContext } from './TranslationContextDefinition';
+import { useI18n } from '@/constants/translation';
+import { usePrefs } from '@/hooks/usePrefs';
+import { TranslationContext } from '@/contexts/TranslationContextDefinition';
 
 interface TranslationProviderProps {
   children: ReactNode;

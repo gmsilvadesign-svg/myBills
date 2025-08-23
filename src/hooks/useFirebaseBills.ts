@@ -1,10 +1,26 @@
+// React
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { ymd, nextOccurrenceISO } from "../utils/utils";
-import { useNotification } from "./useNotification";
-import { useTranslation } from "./useTranslation";
-import * as Types from "../types";
+
+// Firebase
+import { 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  doc, 
+  updateDoc, 
+  deleteDoc 
+} from "firebase/firestore";
+import { db } from "@/firebase";
+
+// Utils
+import { ymd, nextOccurrenceISO } from "@/utils/utils";
+
+// Hooks
+import { useNotification } from "@/hooks/useNotification";
+import { useTranslation } from "@/hooks/useTranslation";
+
+// Types
+import * as Types from "@/types";
 
 export default function useFirebaseBills() {
   const [bills, setBills] = useState<Types.Bill[]>([]);

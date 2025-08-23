@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { resetFirebaseData, checkFirebaseStatus } from '../../../utils/resetFirebase';
-import { checkFirebaseHealth, checkFirebaseConfig } from '../../../utils/firebaseHealth';
-import { useNotification } from '../../../hooks/useNotification';
-import Modal from './Modal';
-import { CSS_CLASSES, cn } from '../../../styles/constants';
+import { resetFirebaseData, checkFirebaseStatus } from '@/utils/resetFirebase';
+import { checkFirebaseHealth, checkFirebaseConfig } from '@/utils/firebaseHealth';
+import { useNotification } from '@/hooks/useNotification';
+import Modal from '@/components/UI/modals/Modal';
+import { CSS_CLASSES, cn } from '@/styles/constants';
 
 interface AdminPanelProps {
   isOpen: boolean;

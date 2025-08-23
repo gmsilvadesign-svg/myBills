@@ -1,7 +1,7 @@
 import { useState, ReactNode } from 'react';
-import NotificationModal from '../components/UI/NotificationModal';
-import * as Types from '../types';
-import { NotificationContext } from './NotificationContextDefinition';
+import NotificationModal from '@/components/UI/NotificationModal';
+import * as Types from '@/types';
+import { NotificationContext } from '@/contexts/NotificationContextDefinition';
 
 interface NotificationProviderProps {
   children: ReactNode;

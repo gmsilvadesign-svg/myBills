@@ -1,23 +1,40 @@
+// React
 import { useState } from "react";
+
+// Styles
 import "../styles/index.css";
 import "../styles/App.css";
+
+// Constants & Types
 import { useI18n, LANG_TO_LOCALE } from "../constants/translation";
 import * as Types from "../types";
+
+// Layout Components
 import Header from "../components/layout/Header";
 import Filters from "../components/layout/Filters";
+import Footer from "../components/layout/Footer";
+
+// UI Components
 import BillsList from "../components/UI/bills/BillsList";
 import BillsCalendar from "../components/UI/bills/BillsCalendar";
 import BillForm from "../components/UI/bills/BillForm";
+import TotalsPills from "../components/UI/TotalsPills";
+
+// Modals
 import DeleteConfirm from "../components/UI/modals/DeleteConfirm";
 import SettingsModal from "../components/UI/modals/Settings";
-import Footer from "../components/layout/Footer";
-import TotalsPills from "../components/UI/TotalsPills";
+
+// Hooks
 import { usePrefs } from "../hooks/usePrefs";
 import useFilteredBills from "../hooks/useFilteredBills";
 import useTotals from "../hooks/useTotals";
 import useFirebaseBills from "../hooks/useFirebaseBills";
+
+// Contexts
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { TranslationProvider } from "../contexts/TranslationContext";
+
+// Utils
 import { addSampleBills } from "../utils/addSampleData";
 
 function App() {

@@ -1,11 +1,11 @@
-// Importa hooks React para estado e efeito
+// React
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// Importa componente Select para dropdowns
+// Components
 import Select from '../Select';
 
-// Importa tipos
-import * as Types from '../../../types';
+// Types
+import * as Types from '@/types';
 
 // Modal de configurações (tema, idioma) - acessibilidade aprimorada
 

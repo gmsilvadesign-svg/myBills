@@ -1,4 +1,4 @@
-import { checkFirebaseStatus } from './resetFirebase';
+import { checkFirebaseStatus } from '@/utils/resetFirebase';
 
 /**
  * Script de teste para as funções do Firebase

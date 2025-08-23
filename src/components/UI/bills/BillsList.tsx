@@ -1,7 +1,7 @@
 import { memo } from 'react'
-import Section from '../../layout/Section'
-import BillRow from './BillRow'
-import * as Types from '../../../types'
+import Section from '@/components/layout/Section'
+import BillRow from '@/components/UI/bills/BillRow'
+import * as Types from '@/types'
 interface BillsListProps {
   bills: Types.Bill[];
   loading: boolean;

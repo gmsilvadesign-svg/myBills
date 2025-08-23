@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import ToggleButton from '../UI/ToggleButton';
-import * as Types from '../../types';
+import ToggleButton from '@/components/UI/ToggleButton';
+import * as Types from '@/types';
 
 interface FiltersProps {
   view: Types.ViewType;

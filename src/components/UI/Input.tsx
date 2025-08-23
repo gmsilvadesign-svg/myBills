@@ -1,5 +1,5 @@
 import { useId, forwardRef } from 'react';
-import * as Types from '../../types';
+import * as Types from '@/types';
 
 // Interface para as props do componente
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, Types.WithError {

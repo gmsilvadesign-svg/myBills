@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import * as Types from '../../types';
+import * as Types from '@/types';
 
 // Interface para as props do componente
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement>, Types.WithError {

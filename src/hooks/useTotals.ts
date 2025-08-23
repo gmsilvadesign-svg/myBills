@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { parseDate, isBefore, ymd } from '../utils/utils';
-import * as Types from '../types';
+import { parseDate, isBefore, ymd } from '@/utils/utils';
+import * as Types from '@/types';
 
 export default function useTotals(bills: Types.Bill[]) {
   return useMemo(() => {

@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import TotalsPills from '../TotalsPills'
+import TotalsPills from '@/components/UI/TotalsPills'
 
 // Mock do hook useTotals
-vi.mock('../../../hooks/useTotals', () => ({
+vi.mock('@/hooks/useTotals', () => ({
   default: () => ({
     allOpen: 250.50,
     monthOpen: 450.75,

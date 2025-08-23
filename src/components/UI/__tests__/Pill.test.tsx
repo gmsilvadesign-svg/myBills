@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import Pill from '../Pill'
+import Pill from '@/components/UI/Pill'
 
 describe('Pill Component', () => {
   it('renders with text content', () => {

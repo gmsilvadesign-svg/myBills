@@ -1,9 +1,19 @@
+// React
 import { useCallback, useState } from 'react';
-import ToolbarButton from '../UI/ToolbarButton';
-import NotificationsModal from '../UI/modals/NotificationsModal';
-import AdminPanel from '../UI/modals/AdminPanel';
-import * as Types from '../../types';
-import { CSS_CLASSES, cn } from '../../styles/constants';
+
+// Components
+import ToolbarButton from '@/components/UI/ToolbarButton';
+
+// Modals
+import NotificationsModal from '@/components/UI/modals/NotificationsModal';
+import AdminPanel from '@/components/UI/modals/AdminPanel';
+
+// Styles & Utils
+import { CSS_CLASSES, cn } from '@/styles/constants';
+
+// Types
+import * as Types from '@/types';
+
 interface HeaderProps {
   t: Record<string, string>; // Traduções
   setEditing: (bill: Partial<Types.Bill> | null) => void;

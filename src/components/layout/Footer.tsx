@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { CSS_CLASSES } from '../../styles/constants';
+import { CSS_CLASSES } from '@/styles/constants';
 
 interface FooterProps {
   t: Record<string, string>;
