@@ -9,5 +9,17 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/app/main.tsx"></script>
+    <script>
+      // Registrar service worker para notificações
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+          .then((registration) => {
+            console.log('Service Worker registrado com sucesso:', registration);
+          })
+          .catch((error) => {
+            console.log('Falha ao registrar Service Worker:', error);
+          });
+      }
+    </script>
   </body>
 </html>

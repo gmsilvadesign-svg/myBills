@@ -29,6 +29,7 @@ import { usePrefs } from "@/hooks/usePrefs";
 import useFilteredBills from "@/hooks/useFilteredBills";
 import useTotals from "@/hooks/useTotals";
 import useFirebaseBills from "@/hooks/useFirebaseBills";
+import { useBillNotifications } from "@/hooks/useBillNotifications";
 
 // Contexts
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -57,6 +58,9 @@ function App() {
 
   const filteredBills = useFilteredBills(bills, filter, search);
   const totals = useTotals(bills);
+  
+  // Hook de notificações
+  const { expiringBills } = useBillNotifications(bills);
   const exportICS = () => {
     import("@/utils/utils").then(({ buildICSForMonth, download }) => {
       const ics = buildICSForMonth(bills, monthDate, locale, currency);
@@ -156,12 +160,13 @@ function App() {
          />
  
          <SettingsModal
-           open={openSettings}
-           onClose={() => setOpenSettings(false)}
-           prefs={prefs}
-           setPrefs={setPrefs}
-           t={t}
-         />
+          open={openSettings}
+          onClose={() => setOpenSettings(false)}
+          prefs={prefs}
+          setPrefs={setPrefs}
+          t={t}
+          bills={bills}
+        />
 
          <Footer t={t} />
        </div>

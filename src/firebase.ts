@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getMessaging, isSupported } from "firebase/messaging";
 
 // Usa variáveis de ambiente para configuração do Firebase
 const firebaseConfig = {
@@ -16,3 +17,9 @@ const app = initializeApp(firebaseConfig);
 
 // Exporta Firestore
 export const db = getFirestore(app);
+
+// Exporta Messaging (com verificação de suporte)
+export const messaging = async () => {
+  const supported = await isSupported();
+  return supported ? getMessaging(app) : null;
+};
