@@ -23,22 +23,9 @@ const Filters = memo(function Filters({ view, setView, filter, setFilter, search
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
         {/* Botão toggle para alternar entre visualização "lista" e "calendário" */}
         <ToggleButton 
-          items={[["list", t.view_list], ["calendar", t.view_calendar]]} 
+          items={[["general", t.general], ["list", t.view_list], ["calendar", t.view_calendar], ["purchases", t.purchases || 'Compras']]} 
           selected={view} 
           onChange={setView} 
-        />
-
-        {/* Botão toggle para alternar entre filtros de contas */}
-        <ToggleButton 
-          items={[
-            ["all", t.filter_all],
-            ["today", t.filter_today],
-            ["overdue", t.filter_overdue],
-            ["next7", t.filter_next7],
-            ["next30", t.filter_next30]
-          ]} 
-          selected={filter} 
-          onChange={setFilter} 
         />
       </div>
 

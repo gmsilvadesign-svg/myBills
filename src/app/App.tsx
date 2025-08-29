@@ -18,7 +18,16 @@ import Footer from "@/components/layout/Footer";
 import BillsList from "@/components/UI/bills/BillsList";
 import BillsCalendar from "@/components/UI/bills/BillsCalendar";
 import BillForm from "@/components/UI/bills/BillForm";
-import TotalsPills from "@/components/UI/TotalsPills";
+// import TotalsPills from "@/components/UI/TotalsPills";
+import IncomeForm from "@/components/UI/incomes/IncomeForm";
+import PurchasesView from "@/components/UI/purchases/PurchasesView";
+import PurchasesModal from "@/components/UI/modals/PurchasesModal";
+import PurchaseForm from "@/components/UI/purchases/PurchaseForm";
+import TotalsStrip from "@/components/UI/TotalsStrip";
+import LineChart from "@/components/UI/charts/LineChart";
+import PieChart from "@/components/UI/charts/PieChart";
+import IncomesModal from "@/components/UI/modals/IncomesModal";
+import Select from "@/components/UI/Select";
 
 // Modals
 import DeleteConfirm from "@/components/UI/modals/DeleteConfirm";
@@ -29,6 +38,8 @@ import { usePrefs } from "@/hooks/usePrefs";
 import useFilteredBills from "@/hooks/useFilteredBills";
 import useTotals from "@/hooks/useTotals";
 import useFirebaseBills from "@/hooks/useFirebaseBills";
+import useFirebaseIncomes from "@/hooks/useFirebaseIncomes";
+import useFirebasePurchases from "@/hooks/useFirebasePurchases";
 import { useBillNotifications } from "@/hooks/useBillNotifications";
 
 // Contexts
@@ -37,6 +48,7 @@ import { TranslationProvider } from "@/contexts/TranslationContext";
 
 // Utils
 import { addSampleBills } from "@/utils/addSampleData";
+import { occurrencesForBillInMonth } from "@/utils/utils";
 
 function App() {
   const [prefs, setPrefs] = usePrefs();
@@ -45,6 +57,7 @@ function App() {
   const t = useI18n(prefs.language);
   const { bills, loading, upsertBill, removeBill, markPaid } =
     useFirebaseBills();
+  const { incomes, loading: loadingIncomes, upsertIncome, removeIncome } = useFirebaseIncomes();
   const [view, setView] = useState<Types.ViewType>("list");
   const [filter, setFilter] = useState<Types.FilterType>("all");
   const [search, setSearch] = useState("");
@@ -53,8 +66,14 @@ function App() {
     open: false,
     id: null,
   });
+  const [editingIncome, setEditingIncome] = useState<Partial<Types.Income> | null>(null);
+  const [editingPurchase, setEditingPurchase] = useState<Partial<Types.Purchase> | null>(null);
   const [monthDate, setMonthDate] = useState(new Date());
   const [openSettings, setOpenSettings] = useState(false);
+  const { purchases, loading: loadingPurchases, upsertPurchase, removePurchase } = useFirebasePurchases();
+  const [openPurchasesModal, setOpenPurchasesModal] = useState(false);
+  const [openIncomesModal, setOpenIncomesModal] = useState(false);
+  const [chartRange, setChartRange] = useState<'6m' | '12m' | '1y'>('12m');
 
   const filteredBills = useFilteredBills(bills, filter, search);
   const totals = useTotals(bills);
@@ -77,11 +96,19 @@ function App() {
         <Header
            t={t}
            setEditing={setEditing}
+           setEditingIncome={setEditingIncome}
+           setEditingPurchase={setEditingPurchase}
            exportICS={exportICS}
            setOpenSettings={setOpenSettings}
            addSampleData={addSampleBills}
          />
  
+         {/* Totais fixos centralizados acima das opções */}
+         <TotalsStrip 
+           totals={totals}
+           onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
+         />
+
          <Filters
            view={view}
            setView={setView}
@@ -92,33 +119,40 @@ function App() {
            t={t}
          />
 
-         {/* Component que exibe os totais de contas em pills */}
-         <div className="flex justify-end mb-4">
-           <TotalsPills 
-             totals={totals} 
-             onFilterOverdue={() => {
-               setFilter('overdue');
-               setView('list');
-             }}
-           />
-         </div>
+         {/* Removido: Totais agora sempre visíveis acima das opções */}
  
-         {view === "list" && (
-           <BillsList
-             bills={filteredBills}
-             loading={loading}
-             markPaid={markPaid}
-             setEditing={setEditing}
-             setConfirm={setConfirm}
-             t={t}
-             locale={locale}
-             currency={currency}
-           />
-         )}
+        {view === "list" && (
+          <>
+            <div className="mb-3 max-w-xs">
+              <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
+                <option value="all">{t.filter_all}</option>
+                <option value="today">{t.filter_today}</option>
+                <option value="overdue">{t.filter_overdue}</option>
+                <option value="next7">{t.filter_next7}</option>
+                <option value="next30">{t.filter_next30}</option>
+              </Select>
+            </div>
+            <BillsList
+              bills={filteredBills}
+              loading={loading}
+              markPaid={markPaid}
+              setEditing={setEditing}
+              setConfirm={setConfirm}
+              t={t}
+              locale={locale}
+              currency={currency}
+              purchasesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); return purchases.filter(p => { const d = new Date(p.date); return d.getFullYear() === y && d.getMonth() === m; }).reduce((s, p) => s + Number(p.amount || 0), 0); })()}
+              onOpenPurchases={() => setOpenPurchasesModal(true)}
+              incomesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); try { return incomes.filter(i => (require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0)).reduce((s,x)=> s+Number(x.amount||0),0);} catch { return incomes.filter(i => { const d = new Date(i.dueDate); return d.getFullYear()===y && d.getMonth()===m; }).reduce((s,x)=> s+Number(x.amount||0),0);} })()}
+              onOpenIncomes={() => setOpenIncomesModal(true)}
+            />
+          </>
+        )}
  
          {view === "calendar" && (
            <BillsCalendar
              bills={bills}
+             purchases={purchases}
              monthDate={monthDate}
              setMonthDate={setMonthDate}
              t={t}
@@ -144,6 +178,38 @@ function App() {
              t={t}
              locale={locale}
              currency={currency}
+          />
+        )}
+
+         {editingIncome && (
+           <IncomeForm
+             initial={editingIncome}
+             onCancel={() => setEditingIncome(null)}
+             onSave={(incomeData) => {
+               if (editingIncome?.id) {
+                 upsertIncome({ ...incomeData, id: editingIncome.id });
+               } else {
+                 upsertIncome(incomeData);
+               }
+               setEditingIncome(null);
+             }}
+             t={t}
+           />
+         )}
+
+         {editingPurchase && (
+           <PurchaseForm
+             initial={editingPurchase}
+             onCancel={() => setEditingPurchase(null)}
+             onSave={(purchaseData) => {
+               if (editingPurchase?.id) {
+                 upsertPurchase({ ...purchaseData, id: editingPurchase.id });
+               } else {
+                 upsertPurchase(purchaseData);
+               }
+               setEditingPurchase(null);
+             }}
+             t={t}
            />
          )}
  
@@ -159,7 +225,7 @@ function App() {
            }}
          />
  
-         <SettingsModal
+        <SettingsModal
           open={openSettings}
           onClose={() => setOpenSettings(false)}
           prefs={prefs}
@@ -167,6 +233,148 @@ function App() {
           t={t}
           bills={bills}
         />
+
+        <PurchasesModal
+          open={openPurchasesModal}
+          onClose={() => setOpenPurchasesModal(false)}
+          purchases={purchases}
+          onEdit={(p) => setEditingPurchase(p)}
+          onDelete={(id) => removePurchase(id)}
+          t={t}
+          locale={locale}
+          currency={currency}
+        />
+
+        <IncomesModal
+          open={openIncomesModal}
+          onClose={() => setOpenIncomesModal(false)}
+          incomes={incomes}
+          onEdit={(i) => setEditingIncome(i)}
+          onDelete={(id) => removeIncome(id)}
+          t={t}
+          locale={locale}
+          currency={currency}
+        />
+         {view === 'general' && (
+           <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
+             <h3 className="text-lg font-semibold mb-2">Balanço geral do mês</h3>
+             {/* Cálculo simples: soma despesas do mês - soma rendas do mês */}
+             {(() => {
+               const now = new Date();
+               const y = now.getFullYear();
+               const m = now.getMonth();
+               const inMonth = (d: string) => {
+                 const dd = new Date(d);
+                 return dd.getFullYear() === y && dd.getMonth() === m;
+               };
+               const monthExpenses = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s, b) => s + Number(b.amount || 0), 0);
+               // Considera recorrência para rendas: inclui item se tiver ocorrência no mês
+               const monthIncomes = incomes.filter(i => {
+                 try {
+                   const occ = occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m);
+                   return occ.length > 0;
+                 } catch {
+                   return inMonth(i.dueDate);
+                 }
+               }).reduce((s, i) => s + Number(i.amount || 0), 0);
+              const monthPurchases = purchases.filter(p => inMonth(p.date)).reduce((s, p) => s + Number(p.amount || 0), 0);
+              const balance = monthIncomes - monthExpenses - monthPurchases;
+               return (
+                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                   <div className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200">
+                     <div className="text-xs">Despesas do mês</div>
+                     <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
+                   </div>
+                   <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200">
+                     <div className="text-xs">Rendas do mês</div>
+                     <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}</div>
+                   </div>
+                   <div className="rounded-xl p-3 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                     <div className="text-xs">Balanço</div>
+                    <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}</div>
+                  </div>
+                  <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200">
+                    <div className="text-xs">Compras do mês</div>
+                    <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}</div>
+                  </div>
+                 </div>
+               );
+            })()}
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-slate-600 dark:text-slate-300">Período:</span>
+                <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
+                <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>12m</button>
+                <button onClick={() => setChartRange('1y')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='1y' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>1 ano</button>
+              </div>
+              {(() => {
+                const now = new Date();
+                const months = (chartRange === '6m' ? 6 : 12);
+                const labels: string[] = [];
+                const exp: number[] = [];
+                const inc: number[] = [];
+                for (let i = months - 1; i >= 0; i--) {
+                  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                  labels.push(d.toLocaleDateString(locale, { month: 'short' }));
+                  const y = d.getFullYear();
+                  const m = d.getMonth();
+                  const inMonth = (iso: string) => { const dd = new Date(iso); return dd.getFullYear()===y && dd.getMonth()===m; };
+                  const monthBills = bills.filter(b => inMonth(b.dueDate)).reduce((s,b)=> s + Number(b.amount||0), 0);
+                  const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
+                  let monthInc = 0;
+                  try {
+                    monthInc = incomes.filter(it => { try { return (require('@/utils/utils').occurrencesForBillInMonth({ dueDate: it.dueDate, recurrence: it.recurrence } as any, y, m).length>0); } catch { return inMonth(it.dueDate); } }).reduce((s,i)=> s + Number(i.amount||0), 0);
+                  } catch {
+                    monthInc = incomes.filter(i => inMonth(i.dueDate)).reduce((s,i)=> s + Number(i.amount||0), 0);
+                  }
+                  // adiciona atrasadas no mês atual
+                  let overdueAdd = 0;
+                  if (i === 0) {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    overdueAdd = bills.filter(b => !b.paid && new Date(b.dueDate) < today).reduce((s,b)=> s + Number(b.amount||0), 0);
+                  }
+                  exp.push(monthBills + monthPurch + overdueAdd);
+                  inc.push(monthInc);
+                }
+                return (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Gasto x Renda (mensal)</h4>
+                    <LineChart labels={labels} series={[{ name: 'Gastos', color: '#ef4444', values: exp }, { name: 'Renda', color: '#10b981', values: inc }]} />
+                  </div>
+                );
+              })()}
+              {(() => {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth();
+                const inMonth = (iso: string) => { const d = new Date(iso); return d.getFullYear()===y && d.getMonth()===m; };
+                const expenseByCat = new Map<string, number>();
+                bills.filter(b => inMonth(b.dueDate) && !b.paid).forEach(b => expenseByCat.set(`Despesa: ${b.category || 'Sem categoria'}`, (expenseByCat.get(`Despesa: ${b.category || 'Sem categoria'}`)||0) + Number(b.amount||0)));
+                purchases.filter(p => inMonth(p.date)).forEach(p => expenseByCat.set(`Compra: ${p.category || 'Outros'}`, (expenseByCat.get(`Compra: ${p.category || 'Outros'}`)||0) + Number(p.amount||0)));
+                const incomeByCat = new Map<string, number>();
+                incomes.forEach(i => {
+                  let has = false;
+                  try { has = require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0; } catch { has = inMonth(i.dueDate); }
+                  if (has) incomeByCat.set(`Renda: ${i.category || 'Outros'}`, (incomeByCat.get(`Renda: ${i.category || 'Outros'}`)||0) + Number(i.amount||0));
+                });
+                const expData = Array.from(expenseByCat, ([label, value]) => ({ label, value, color: '#ef4444' }));
+                const incData = Array.from(incomeByCat, ([label, value]) => ({ label, value, color: '#10b981' }));
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuição de gastos (mês)</h4>
+                      <PieChart data={expData} paletteType="warm" />
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuição de renda (mês)</h4>
+                      <PieChart data={incData} paletteType="cool" />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+           </div>
+         )}
 
          <Footer t={t} />
        </div>

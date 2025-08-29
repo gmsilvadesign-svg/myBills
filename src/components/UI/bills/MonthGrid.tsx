@@ -6,6 +6,7 @@ import { fmtMoney, ymd, parseDate, isBefore, daysInMonth, occurrencesForBillInMo
 interface MonthGridProps {
   date: Date;
   bills: Types.Bill[];
+  purchases?: Types.Purchase[];
   locale: string;
   currency: string;
 }
@@ -16,7 +17,7 @@ type BillWithOverdue = Types.Bill & {
 };
 
 // Componente que renderiza um calendário mensal com contas
-const MonthGrid = memo(function MonthGrid({ date, bills, locale, currency }: MonthGridProps) {
+const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale, currency }: MonthGridProps) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const today = ymd(new Date());
@@ -53,6 +54,19 @@ const MonthGrid = memo(function MonthGrid({ date, bills, locale, currency }: Mon
       totalsByDay.set(dayOfMonth, (totalsByDay.get(dayOfMonth) || 0) + (Number(b.amount) || 0));
     });
   });
+
+  // Agrega compras por dia (consolidadas)
+  const purchasesSumByDay = new Map<number, number>();
+  purchases.forEach((p) => {
+    const d = parseDate(p.date);
+    if (d.getFullYear() !== year || d.getMonth() !== month) return;
+    const dayOfMonth = d.getDate();
+    purchasesSumByDay.set(dayOfMonth, (purchasesSumByDay.get(dayOfMonth) || 0) + (Number(p.amount) || 0));
+  });
+  // Soma compras ao total do dia
+  for (const [day, sum] of purchasesSumByDay.entries()) {
+    totalsByDay.set(day, (totalsByDay.get(day) || 0) + sum);
+  }
 
   // Gera array de dias do mês
   const days = Array.from({ length: totalDays }, (_, i) => {
@@ -108,6 +122,12 @@ const MonthGrid = memo(function MonthGrid({ date, bills, locale, currency }: Mon
 
             {/* Lista de contas do dia */}
             <div className="flex-1 space-y-1 ">
+              {(() => { const sum = (purchasesSumByDay.get(d.getDate()) || 0); return sum ? (
+                <div className="rounded-lg px-2 py-1 text-xs flex items-center justify-between whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200">
+                  <span className="flex-shrink-0" title="Compras">Compras</span>
+                  <span className="font-medium text-right flex-shrink-0 ml-2">{fmtMoney(sum, currency, locale)}</span>
+                </div>
+              ) : null; })()}
               {(itemsByDay.get(d.getDate()) || []).slice(0, 3).map((it) => (
                 <div 
                   key={it.id} 

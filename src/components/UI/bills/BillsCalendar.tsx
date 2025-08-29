@@ -14,6 +14,7 @@ import * as Types from '@/types'
 // Interface para as props do componente
 interface BillsCalendarProps {
   bills: Types.Bill[];
+  purchases?: Types.Purchase[];
   monthDate: Date;
   setMonthDate: (date: Date) => void;
   locale: string;
@@ -22,7 +23,7 @@ interface BillsCalendarProps {
 }
 
 // Componente BillsCalendar: exibe as contas em formato de calendário mensal
-export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, currency, t }: BillsCalendarProps) {
+export default function BillsCalendar({ bills, purchases = [], monthDate, setMonthDate, locale, currency, t }: BillsCalendarProps) {
 
   // Funções de navegação otimizadas com useCallback
   const goToPreviousMonth = useCallback(() => {
@@ -68,10 +69,11 @@ export default function BillsCalendar({ bills, monthDate, setMonthDate, locale, 
 
       </nav>
 
-      {/* Componente que renderiza a grade do mês com todas as contas */}
+      {/* Componente que renderiza a grade do mês com todas as contas e compras por dia */}
       <MonthGrid
         date={monthDate}
         bills={bills}
+        purchases={purchases}
         locale={locale}
         currency={currency}
       />

@@ -14,6 +14,17 @@ export interface Bill {
   tags?: string[];
 }
 
+// Tipo para uma fonte de renda
+export interface Income {
+  id?: string;
+  title: string;
+  amount: number;
+  dueDate: string; // data base/prevista (ISO YYYY-MM-DD)
+  recurrence: 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  category: string; // obrigatório para listagem
+  notes?: string | null;
+}
+
 // Tipo para as preferências do usuário
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
@@ -25,7 +36,19 @@ export interface UserPreferences {
 export type FilterType = 'all' | 'today' | 'overdue' | 'next7' | 'next30';
 
 // Tipo para as visualizações disponíveis
-export type ViewType = 'list' | 'calendar';
+export type ViewType = 'general' | 'list' | 'calendar' | 'purchases';
+
+// Tipo para uma compra
+export interface Purchase {
+  id?: string;
+  title: string;
+  amount: number;
+  date: string; // ISO YYYY-MM-DD
+  category?: string | null;
+  notes?: string | null;
+}
+
+// (sem tipo extra: ViewType já inclui 'purchases')
 
 // Tipo para os totais calculados
 export interface Totals {

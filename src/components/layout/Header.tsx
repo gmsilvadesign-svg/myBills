@@ -17,12 +17,14 @@ import * as Types from '@/types';
 interface HeaderProps {
   t: Record<string, string>; // Traduções
   setEditing: (bill: Partial<Types.Bill> | null) => void;
+  setEditingIncome?: (income: Partial<Types.Income> | null) => void;
+  setEditingPurchase?: (purchase: Partial<Types.Purchase> | null) => void;
   exportICS: () => void;
   setOpenSettings: (open: boolean) => void;
   addSampleData?: () => void;
 }
 
-export default function Header({ t, setEditing, exportICS, setOpenSettings, addSampleData }: HeaderProps) {
+export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData }: HeaderProps) {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openAdminPanel, setOpenAdminPanel] = useState(false);
 
@@ -33,6 +35,10 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings, addS
     setEditing({});
   }, [setEditing]);
 
+  const handleNewIncome = useCallback(() => {
+    setEditingIncome && setEditingIncome({});
+  }, [setEditingIncome]);
+
   const handleOpenSettings = useCallback(() => {
     setOpenSettings(true);
   }, [setOpenSettings]);
@@ -41,12 +47,19 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings, addS
     setOpenAdminPanel(true);
   }, []);
 
+  const handleNewPurchase = useCallback(() => {
+    setEditingPurchase && setEditingPurchase({});
+  }, [setEditingPurchase]);
+
   // JSX do componente Header
   return (
     <header className={cn(CSS_CLASSES.flex.responsive, 'md:items-center', CSS_CLASSES.flex.gap4, 'md:gap-6', CSS_CLASSES.spacing.mb6)}>
       <div className="flex-1">
-        <div className="text-xl sm:text-2xl font-bold text-red-700">{t.app_title}</div>
-        <div className={CSS_CLASSES.text.subtitle}>{t.subtitle}</div>
+        <div className="text-xl sm:text-2xl font-bold">
+          <span className="text-green-400">A</span>
+          <span className="text-green-700">- PAGAR</span>
+          <span className="text-slate-400"> V004</span>
+        </div>
       </div>
 
       <nav className={cn(CSS_CLASSES.flex.wrap, CSS_CLASSES.flex.gap2, 'items-center justify-center md:justify-end')} aria-label={t.main_actions || "Ações principais"}>
@@ -57,6 +70,26 @@ export default function Header({ t, setEditing, exportICS, setOpenSettings, addS
         >
           {t.new_bill}
         </ToolbarButton>
+
+        {/* Botão para abrir formulário de nova compra */}
+        {setEditingPurchase && (
+          <ToolbarButton 
+            onClick={handleNewPurchase}
+            ariaLabel={t.new_purchase || "+ Compra"}
+          >
+            {t.new_purchase || "+ Compra"}
+          </ToolbarButton>
+        )}
+
+        {/* Botão para criar uma nova fonte de renda */}
+        {setEditingIncome && (
+          <ToolbarButton 
+            onClick={handleNewIncome}
+            ariaLabel={t.new_income || "+ Fonte de Renda"}
+          >
+            {t.new_income || "+ Fonte de Renda"}
+          </ToolbarButton>
+        )}
 
         {/* Botão temporário para adicionar dados de exemplo */}
         {addSampleData && (

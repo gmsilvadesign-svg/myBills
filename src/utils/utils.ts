@@ -110,6 +110,14 @@ export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthI
     return occ;
   }
 
+  if (bill.recurrence === "DAILY") {
+    const totalDays = daysInMonth(year, monthIndex);
+    for (let d = 1; d <= totalDays; d++) {
+      occ.push(ymd(new Date(year, monthIndex, d)));
+    }
+    return occ;
+  }
+
   return occ;
 }
 
