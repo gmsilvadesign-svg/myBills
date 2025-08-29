@@ -37,7 +37,7 @@ const BillRow = memo(function BillRow({ bill, markPaid, setEditing, setConfirm, 
         <button
           onClick={(e) => {
             e.preventDefault();
-            markPaid(bill, false);
+            markPaid(bill, bill.recurrence && bill.recurrence !== 'NONE');
           }}
           className="px-3 py-4 rounded-2xl bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-300 dark:hover:from-red-800/40 dark:hover:to-red-700/40 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-red-200 dark:border-red-700 min-w-[110px] text-center"
           aria-label={`${t.mark_paid}: ${bill.title}`}
@@ -52,7 +52,7 @@ const BillRow = memo(function BillRow({ bill, markPaid, setEditing, setConfirm, 
         <button
           onClick={(e) => {
             e.preventDefault();
-            markPaid(bill, false);
+            markPaid(bill, bill.recurrence && bill.recurrence !== 'NONE');
           }}
           className="px-3 py-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-700 dark:from-amber-900/30 dark:to-amber-800/30 dark:text-amber-300 dark:hover:from-amber-800/40 dark:hover:to-amber-700/40 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-amber-200 dark:border-amber-700 min-w-[110px] text-center"
           aria-label={`${t.mark_paid}: ${bill.title}`}

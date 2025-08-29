@@ -27,6 +27,8 @@ import TotalsStrip from "@/components/UI/TotalsStrip";
 import LineChart from "@/components/UI/charts/LineChart";
 import PieChart from "@/components/UI/charts/PieChart";
 import IncomesModal from "@/components/UI/modals/IncomesModal";
+import PurchasesTab from "@/components/UI/purchases/PurchasesTab";
+import IncomesTab from "@/components/UI/incomes/IncomesTab";
 import Select from "@/components/UI/Select";
 
 // Modals
@@ -59,7 +61,7 @@ function App() {
     useFirebaseBills();
   const { incomes, loading: loadingIncomes, upsertIncome, removeIncome } = useFirebaseIncomes();
   const [view, setView] = useState<Types.ViewType>("list");
-  const [filter, setFilter] = useState<Types.FilterType>("all");
+  const [filter, setFilter] = useState<Types.FilterType>("month");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Partial<Types.Bill> | null>(null);
   const [confirm, setConfirm] = useState<Types.ConfirmState>({
@@ -105,7 +107,9 @@ function App() {
  
          {/* Totais fixos centralizados acima das opções */}
          <TotalsStrip 
-           totals={totals}
+           bills={bills}
+           incomes={incomes}
+           purchases={purchases}
            onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
          />
 
@@ -121,33 +125,55 @@ function App() {
 
          {/* Removido: Totais agora sempre visíveis acima das opções */}
  
-        {view === "list" && (
-          <>
-            <div className="mb-3 max-w-xs">
-              <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
-                <option value="all">{t.filter_all}</option>
-                <option value="today">{t.filter_today}</option>
-                <option value="overdue">{t.filter_overdue}</option>
-                <option value="next7">{t.filter_next7}</option>
-                <option value="next30">{t.filter_next30}</option>
-              </Select>
-            </div>
-            <BillsList
-              bills={filteredBills}
-              loading={loading}
-              markPaid={markPaid}
-              setEditing={setEditing}
-              setConfirm={setConfirm}
-              t={t}
-              locale={locale}
-              currency={currency}
-              purchasesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); return purchases.filter(p => { const d = new Date(p.date); return d.getFullYear() === y && d.getMonth() === m; }).reduce((s, p) => s + Number(p.amount || 0), 0); })()}
-              onOpenPurchases={() => setOpenPurchasesModal(true)}
-              incomesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); try { return incomes.filter(i => (require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0)).reduce((s,x)=> s+Number(x.amount||0),0);} catch { return incomes.filter(i => { const d = new Date(i.dueDate); return d.getFullYear()===y && d.getMonth()===m; }).reduce((s,x)=> s+Number(x.amount||0),0);} })()}
-              onOpenIncomes={() => setOpenIncomesModal(true)}
-            />
-          </>
-        )}
+         {(view === "list" || view === 'purchases' || view === 'incomes') && (
+           <>
+             <div className="mb-3 max-w-xs">
+               <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
+                 <option value="today">{t.filter_today}</option>
+                 <option value="month">{t.filter_month || t.totals_month}</option>
+                 <option value="all">{t.filter_all}</option>
+               </Select>
+             </div>
+            {view === 'list' && (
+              <BillsList
+                bills={filteredBills}
+                loading={loading}
+                markPaid={markPaid}
+                setEditing={setEditing}
+                setConfirm={setConfirm}
+                t={t}
+                locale={locale}
+                currency={currency}
+                purchasesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); return purchases.filter(p => { const d = new Date(p.date); return d.getFullYear() === y && d.getMonth() === m; }).reduce((s, p) => s + Number(p.amount || 0), 0); })()}
+                onOpenPurchases={() => setOpenPurchasesModal(true)}
+                incomesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); try { return incomes.filter(i => (require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0)).reduce((s,x)=> s+Number(x.amount||0),0);} catch { return incomes.filter(i => { const d = new Date(i.dueDate); return d.getFullYear()===y && d.getMonth()===m; }).reduce((s,x)=> s+Number(x.amount||0),0);} })()}
+                onOpenIncomes={() => setOpenIncomesModal(true)}
+              />
+            )}
+            {view === 'purchases' && (
+              <PurchasesTab
+                purchases={purchases}
+                onEdit={(p) => setEditingPurchase(p)}
+                onRemove={(id) => removePurchase(id)}
+                t={t}
+                locale={locale}
+                currency={currency}
+                filter={filter}
+              />
+            )}
+            {view === 'incomes' && (
+              <IncomesTab
+                incomes={incomes}
+                onEdit={(i) => setEditingIncome(i)}
+                onRemove={(id) => removeIncome(id)}
+                t={t}
+                locale={locale}
+                currency={currency}
+                filter={filter}
+              />
+            )}
+           </>
+         )}
  
          {view === "calendar" && (
            <BillsCalendar
@@ -178,6 +204,17 @@ function App() {
              t={t}
              locale={locale}
              currency={currency}
+          />
+        )}
+
+        {view === 'purchases' && (
+          <PurchasesTab
+            purchases={purchases}
+            onEdit={(p) => setEditingPurchase(p)}
+            onRemove={(id) => removePurchase(id)}
+            t={t}
+            locale={locale}
+            currency={currency}
           />
         )}
 

@@ -36,13 +36,11 @@ export const getExpiringBills = (
 
   return bills
     .filter(bill => {
-      // Filtra por tipo se especificado
-      if (config.enabledTypes.length > 0 && !config.enabledTypes.includes(bill.type)) {
-        return false;
-      }
+      // Bills são despesas por padrão; se tipos estiverem filtrando e não incluir 'expense', ignora
+      if (config.enabledTypes && config.enabledTypes.length > 0 && !config.enabledTypes.includes('expense')) return false;
       
       // Filtra por categoria se especificado
-      if (config.enabledCategories.length > 0 && !config.enabledCategories.includes(bill.category)) {
+      if (config.enabledCategories.length > 0 && bill.category && !config.enabledCategories.includes(bill.category)) {
         return false;
       }
       
@@ -51,14 +49,14 @@ export const getExpiringBills = (
         return false;
       }
       
-      const billDate = new Date(bill.date);
+      const billDate = new Date(bill.dueDate as any);
       billDate.setHours(0, 0, 0, 0);
       
       // Verifica se está dentro do período de notificação
       return billDate >= today && billDate <= targetDate;
     })
     .map(bill => {
-      const billDate = new Date(bill.date);
+      const billDate = new Date(bill.dueDate as any);
       billDate.setHours(0, 0, 0, 0);
       const daysUntilExpiry = Math.ceil((billDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
@@ -80,11 +78,9 @@ export const formatBillNotificationMessage = (bill: ExpiringBill): { title: stri
       ? 'amanhã' 
       : `em ${bill.daysUntilExpiry} dias`;
   
-  const typeText = bill.type === 'income' ? 'receber' : 'pagar';
-  
   return {
     title: `Conta ${bill.daysUntilExpiry === 0 ? 'vence hoje!' : 'vencendo'}`,
-    body: `${bill.description} - R$ ${bill.amount.toFixed(2)} para ${typeText} ${daysText}`
+    body: `${bill.title} - R$ ${Number(bill.amount || 0).toFixed(2)} para pagar ${daysText}`
   };
 };
 
@@ -108,7 +104,7 @@ export const formatMultipleBillsNotification = (bills: ExpiringBill[]): { title:
   } else {
     title = `${upcomingBills.length} conta(s) vencendo`;
     const nextBill = upcomingBills[0];
-    body = `Próxima: ${nextBill.description} em ${nextBill.daysUntilExpiry} dia(s)`;
+    body = `Próxima: ${nextBill.title} em ${nextBill.daysUntilExpiry} dia(s)`;
   }
   
   return { title, body };

@@ -121,7 +121,10 @@ export default function useFirebaseBills() {
       if (!bill.id) throw new Error("Bill ID is required to mark as paid");
       const billRef = doc(db, "bills", bill.id);
 
-      if (advance && bill.recurrence && bill.recurrence !== "NONE") {
+      const isRecurring = !!bill.recurrence && bill.recurrence !== "NONE";
+      const shouldAdvance = isRecurring || advance;
+
+      if (shouldAdvance) {
         await updateDoc(billRef, {
           paid: false,
           paidOn: null,

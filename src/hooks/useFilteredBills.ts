@@ -31,6 +31,10 @@ export default function useFilteredBills(bills: Types.Bill[], filter: Types.Filt
           case "today": 
             // Somente contas com vencimento hoje
             return isSameDayISO(bill.dueDate, todayISO);
+          case "month":
+            // Contas com vencimento no mês atual
+            const _now = new Date();
+            return due.getMonth() === _now.getMonth() && due.getFullYear() === _now.getFullYear();
           case "overdue": 
             // Contas não pagas e vencidas
             return !bill.paid && isBefore(bill.dueDate, todayISO);

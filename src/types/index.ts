@@ -33,10 +33,10 @@ export interface UserPreferences {
 }
 
 // Tipo para os filtros disponíveis
-export type FilterType = 'all' | 'today' | 'overdue' | 'next7' | 'next30';
+export type FilterType = 'all' | 'today' | 'month' | 'overdue' | 'next7' | 'next30';
 
 // Tipo para as visualizações disponíveis
-export type ViewType = 'general' | 'list' | 'calendar' | 'purchases';
+export type ViewType = 'general' | 'list' | 'calendar' | 'purchases' | 'incomes';
 
 // Tipo para uma compra
 export interface Purchase {

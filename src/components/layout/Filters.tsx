@@ -23,19 +23,13 @@ const Filters = memo(function Filters({ view, setView, filter, setFilter, search
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
         {/* Botão toggle para alternar entre visualização "lista" e "calendário" */}
         <ToggleButton 
-          items={[["general", t.general], ["list", t.view_list], ["calendar", t.view_calendar], ["purchases", t.purchases || 'Compras']]} 
+          items={[["general", t.general], ["list", t.view_list], ["calendar", t.view_calendar], ["purchases", t.purchases || 'Compras'], ["incomes", t.incomes || 'Rendas']]} 
           selected={view} 
           onChange={setView} 
         />
       </div>
 
-      {/* Input de pesquisa de contas - responsivo */}
-      <input 
-        value={search} 
-        onChange={e => setSearch(e.target.value)} 
-        placeholder={t.search_placeholder}
-        className="flex-1 min-w-[200px] sm:min-w-[220px] rounded-xl border bg-white text-slate-900 border-slate-300 px-3 py-2 dark:text-white dark:bg-slate-900 dark:border-slate-700"
-      />
+      {/* Campo de pesquisa removido conforme solicitado */}
 
 
     </div>
