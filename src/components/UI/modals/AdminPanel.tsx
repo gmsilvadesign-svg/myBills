@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { resetFirebaseData, checkFirebaseStatus } from '@/utils/resetFirebase';
 import { checkFirebaseHealth, checkFirebaseConfig } from '@/utils/firebaseHealth';
 import { useNotification } from '@/hooks/useNotification';
+import { seedAutoData, clearAutoData } from '@/utils/autoData';
 import Modal from '@/components/UI/modals/Modal';
 import { CSS_CLASSES, cn } from '@/styles/constants';
 
@@ -15,6 +16,8 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const { showNotification } = useNotification();
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isClearingAuto, setIsClearingAuto] = useState(false);
 
   const handleResetFirebase = async () => {
     if (!confirm('⚠️ ATENÇÃO: Esta ação irá DELETAR TODOS os dados do Firebase. Esta ação é IRREVERSÍVEL. Tem certeza?')) {
@@ -68,6 +71,32 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     }
   };
 
+  const handleSeedAuto = async () => {
+    setIsSeeding(true);
+    try {
+      const { batchId, totalDocs } = await seedAutoData(12);
+      showNotification(`Dados automáticos gerados (lote ${batchId}) • ${totalDocs} documentos.`, 'success');
+    } catch (e) {
+      console.error(e);
+      showNotification('Erro ao gerar dados automáticos.', 'error');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const handleClearAuto = async () => {
+    setIsClearingAuto(true);
+    try {
+      await clearAutoData();
+      showNotification('Dados automáticos removidos.', 'success');
+    } catch (e) {
+      console.error(e);
+      showNotification('Erro ao remover dados automáticos.', 'error');
+    } finally {
+      setIsClearingAuto(false);
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="🔧 Painel de Administração">
       <div className={cn(CSS_CLASSES.flex.col, 'gap-6')}>
@@ -79,6 +108,33 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
         </div>
 
         <div className={cn(CSS_CLASSES.flex.col, 'gap-4')}>
+          <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
+            <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>⚙️ Dados automáticos (12 meses)</h4>
+            <p className={cn(CSS_CLASSES.text.muted, 'mb-3')}>Preenche os próximos 12 meses com contas recorrentes, renda mensal e compras padrão de uma pessoa de classe média.</p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleSeedAuto}
+                disabled={isSeeding}
+                className={cn(
+                  CSS_CLASSES.button.primary,
+                  isSeeding && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                {isSeeding ? 'Gerando…' : 'Preencher 12 meses automaticamente'}
+              </button>
+              <button
+                onClick={handleClearAuto}
+                disabled={isClearingAuto}
+                className={cn(
+                  CSS_CLASSES.button.secondary,
+                  isClearingAuto && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                {isClearingAuto ? 'Limpando…' : 'Limpar dados automáticos'}
+              </button>
+            </div>
+          </div>
+
           <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
             <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>🔍 Diagnósticos</h4>
             <div className={cn(CSS_CLASSES.flex.col, 'gap-3')}>
