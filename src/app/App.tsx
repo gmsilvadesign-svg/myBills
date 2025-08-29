@@ -75,7 +75,7 @@ function App() {
   const { purchases, loading: loadingPurchases, upsertPurchase, removePurchase } = useFirebasePurchases();
   const [openPurchasesModal, setOpenPurchasesModal] = useState(false);
   const [openIncomesModal, setOpenIncomesModal] = useState(false);
-  const [chartRange, setChartRange] = useState<'6m' | '12m' | '1y'>('12m');
+  const [chartRange, setChartRange] = useState<'6m' | '12m'>('12m');
 
   const filteredBills = useFilteredBills(bills, filter, search);
   const totals = useTotals(bills);
@@ -333,7 +333,7 @@ function App() {
                 <span className="text-slate-600 dark:text-slate-300">Período:</span>
                 <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
                 <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>12m</button>
-                <button onClick={() => setChartRange('1y')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='1y' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>1 ano</button>
+                {/* Botão 1 ano removido */}
               </div>
               {(() => {
                 const now = new Date();
@@ -389,7 +389,7 @@ function App() {
                 const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Gasto x Renda (mensal)</h4>
+                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Gráfico Financeiro</h4>
                     <LineChart 
                       labels={labels} 
                       series={[{ name: 'Gastos', color: '#ef4444', values: exp }, { name: 'Renda', color: '#10b981', values: inc }]}
