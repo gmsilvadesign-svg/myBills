@@ -207,16 +207,7 @@ function App() {
           />
         )}
 
-        {view === 'purchases' && (
-          <PurchasesTab
-            purchases={purchases}
-            onEdit={(p) => setEditingPurchase(p)}
-            onRemove={(id) => removePurchase(id)}
-            t={t}
-            locale={locale}
-            currency={currency}
-          />
-        )}
+        {/* Removido: duplicação da aba de compras */}
 
          {editingIncome && (
            <IncomeForm

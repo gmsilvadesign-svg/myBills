@@ -77,7 +77,7 @@ export const I18N = {
     totals_month: "Mês",
     totals_open: "Abertas",
     view_calendar: "Calendário",
-    view_list: "Lista",
+    view_list: "Contas",
     weekly: "Semanal",
     yearly: "Anual",
   },
