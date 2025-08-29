@@ -419,11 +419,11 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuição de gastos (mês)</h4>
-                      <PieChart data={expData} paletteType="warm" />
+                      <PieChart data={expData} paletteType="warm" formatValue={(v) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)} />
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuição de renda (mês)</h4>
-                      <PieChart data={incData} paletteType="cool" />
+                      <PieChart data={incData} paletteType="cool" formatValue={(v) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)} />
                     </div>
                   </div>
                 );

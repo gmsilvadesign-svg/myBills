@@ -6,6 +6,8 @@ interface PieChartProps {
   data: Slice[];
   size?: number;
   paletteType?: 'warm' | 'cool';
+  // Optional value formatter (e.g., currency)
+  formatValue?: (n: number) => string;
 }
 
 function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
@@ -40,8 +42,9 @@ function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
   return out;
 }
 
-export default function PieChart({ data, size = 180, paletteType }: PieChartProps) {
-  const total = data.reduce((s, d) => s + (d.value || 0), 0) || 1;
+export default function PieChart({ data, size = 180, paletteType, formatValue }: PieChartProps) {
+  const totalRaw = data.reduce((s, d) => s + (d.value || 0), 0);
+  const total = totalRaw > 0 ? totalRaw : 1;
   // Ensure distinct colors per item if not provided or if all equal
   const allEqualColor = data.length > 1 && data.every(d => d.color === data[0].color);
   const colors = palette(data.length, paletteType || 'warm');
@@ -81,13 +84,19 @@ export default function PieChart({ data, size = 180, paletteType }: PieChartProp
         </text>
       </svg>
       <div className="text-xs space-y-1">
-        {colored.map(d => (
-          <div key={d.label} className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
-            <span className="text-slate-600 dark:text-slate-300 truncate max-w-[180px]" title={d.label}>{d.label}</span>
-            <span className="text-slate-500 dark:text-slate-400">{d.value.toLocaleString()}</span>
-          </div>
-        ))}
+        {colored.map(d => {
+          const pct = (d.value / total) * 100;
+          const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
+          const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
+          return (
+            <div key={d.label} className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
+              <span className="text-slate-600 dark:text-slate-300 truncate max-w-[180px]" title={d.label}>{d.label}</span>
+              <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{valueStr}</span>
+              <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{pctStr}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
