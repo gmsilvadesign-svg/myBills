@@ -347,27 +347,55 @@ function App() {
                   const y = d.getFullYear();
                   const m = d.getMonth();
                   const inMonth = (iso: string) => { const dd = new Date(iso); return dd.getFullYear()===y && dd.getMonth()===m; };
-                  const monthBills = bills.filter(b => inMonth(b.dueDate)).reduce((s,b)=> s + Number(b.amount||0), 0);
+                  const monthBills = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s,b)=> s + Number(b.amount||0), 0);
                   const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
-                  let monthInc = 0;
-                  try {
-                    monthInc = incomes.filter(it => { try { return (require('@/utils/utils').occurrencesForBillInMonth({ dueDate: it.dueDate, recurrence: it.recurrence } as any, y, m).length>0); } catch { return inMonth(it.dueDate); } }).reduce((s,i)=> s + Number(i.amount||0), 0);
-                  } catch {
-                    monthInc = incomes.filter(i => inMonth(i.dueDate)).reduce((s,i)=> s + Number(i.amount||0), 0);
-                  }
+                  // Renda planejada do mês (mesma lógica dos cards)
+                  let monthInc = incomes.reduce((sum, i) => {
+                    const base = new Date(i.dueDate);
+                    const rec = (i as any).recurrence || 'NONE';
+                    if (rec === 'MONTHLY') return sum + Number(i.amount || 0);
+                    if (rec === 'WEEKLY') {
+                      const weekday = base.getDay();
+                      let count = 0;
+                      const totalDays = new Date(y, m + 1, 0).getDate();
+                      for (let d2 = 1; d2 <= totalDays; d2++) if (new Date(y, m, d2).getDay() === weekday) count++;
+                      return sum + count * Number(i.amount || 0);
+                    }
+                    if (rec === 'DAILY') {
+                      const totalDays = new Date(y, m + 1, 0).getDate();
+                      return sum + totalDays * Number(i.amount || 0);
+                    }
+                    if (rec === 'YEARLY') return base.getMonth() === m ? sum + Number(i.amount || 0) : sum;
+                    // NONE
+                    return inMonth(i.dueDate) ? sum + Number(i.amount || 0) : sum;
+                  }, 0);
                   // adiciona atrasadas no mês atual
                   let overdueAdd = 0;
                   if (i === 0) {
                     const today = new Date(); today.setHours(0,0,0,0);
                     overdueAdd = bills.filter(b => !b.paid && new Date(b.dueDate) < today).reduce((s,b)=> s + Number(b.amount||0), 0);
                   }
-                  exp.push(monthBills + monthPurch + overdueAdd);
+                  exp.push(monthBills + monthPurch);
                   inc.push(monthInc);
                 }
+                // Savings rate (percentual da economia mensal)
+                const pct = labels.map((_, i) => {
+                  const spend = exp[i];
+                  const income = inc[i];
+                  if (!income || income <= 0) return 0;
+                  const saving = income - spend;
+                  return Math.max(0, Math.min(1, saving / income));
+                });
+                const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Gasto x Renda (mensal)</h4>
-                    <LineChart labels={labels} series={[{ name: 'Gastos', color: '#ef4444', values: exp }, { name: 'Renda', color: '#10b981', values: inc }]} />
+                    <LineChart 
+                      labels={labels} 
+                      series={[{ name: 'Gastos', color: '#ef4444', values: exp }, { name: 'Renda', color: '#10b981', values: inc }]}
+                      formatY={formatCurrency}
+                      percentOverlay={pct}
+                    />
                   </div>
                 );
               })()}
