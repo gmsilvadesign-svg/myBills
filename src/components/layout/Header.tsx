@@ -10,6 +10,7 @@ import AdminPanel from '@/components/UI/modals/AdminPanel';
 
 // Styles & Utils
 import { CSS_CLASSES, cn } from '@/styles/constants';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types
 import * as Types from '@/types';
@@ -27,6 +28,7 @@ interface HeaderProps {
 export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData }: HeaderProps) {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openAdminPanel, setOpenAdminPanel] = useState(false);
+  const { user, signInWithGoogle, signOutApp } = useAuth();
 
   const handleOpenNotifications = useCallback(() => {
     setOpenNotifications(true);
@@ -108,6 +110,13 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
         >
           {t.export_ics}
         </ToolbarButton>
+
+        {/* Autenticação */}
+        {!user ? (
+          <ToolbarButton onClick={signInWithGoogle} ariaLabel="Entrar">Entrar</ToolbarButton>
+        ) : (
+          <ToolbarButton onClick={signOutApp} ariaLabel="Sair">Sair</ToolbarButton>
+        )}
 
         {/* Ícone de notificações */}
         <button

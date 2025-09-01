@@ -2,12 +2,14 @@
 import { useEffect, useState } from 'react';
 
 // Firebase
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import { db, isLocalMode } from '@/firebase';
+import * as local from '@/utils/localDb';
 
 // Hooks
 import { useNotification } from '@/hooks/useNotification';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types
 import * as Types from '@/types';
@@ -17,9 +19,20 @@ export default function useFirebaseIncomes() {
   const [loading, setLoading] = useState(true);
   const { showNotification } = useNotification();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const ref = collection(db, 'incomes');
+    if (!user) {
+      setIncomes([]);
+      setLoading(false);
+      return;
+    }
+    if (isLocalMode) {
+      setIncomes(local.list('incomes', user.uid) as Types.Income[]);
+      setLoading(false);
+      return;
+    }
+    const ref = query(collection(db, 'incomes'), where('userId','==', user.uid));
     const unsubscribe = onSnapshot(
       ref,
       (snapshot) => {
@@ -34,10 +47,16 @@ export default function useFirebaseIncomes() {
       }
     );
     return () => unsubscribe();
-  }, [showNotification, t]);
+  }, [showNotification, t, user]);
 
   const addIncome = async (income: Omit<Types.Income, 'id'>) => {
     try {
+      if (!user) throw new Error('not-authenticated');
+      if (isLocalMode) {
+        local.add('incomes', { ...income, userId: user.uid });
+        setIncomes(local.list('incomes', user.uid) as Types.Income[]);
+        return;
+      }
       const ref = collection(db, 'incomes');
       await addDoc(ref, {
         title: income.title,
@@ -46,6 +65,9 @@ export default function useFirebaseIncomes() {
         recurrence: income.recurrence,
         category: income.category,
         notes: income.notes || null,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
       console.error('Erro ao adicionar renda:', error);
@@ -57,6 +79,9 @@ export default function useFirebaseIncomes() {
   const updateIncome = async (income: Types.Income) => {
     try {
       if (!income.id) throw new Error('Income ID is required to update');
+      if (isLocalMode) {
+        local.update('incomes', income.id, income as any); setIncomes(local.list('incomes', user?.uid) as Types.Income[]); return;
+      }
       const ref = doc(db, 'incomes', income.id);
       await updateDoc(ref, {
         title: income.title,
@@ -65,6 +90,7 @@ export default function useFirebaseIncomes() {
         recurrence: income.recurrence,
         category: income.category,
         ...(income.notes && { notes: income.notes }),
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
       console.error('Erro ao atualizar renda:', error);
@@ -94,4 +120,3 @@ export default function useFirebaseIncomes() {
 
   return { incomes, loading, addIncome, updateIncome, upsertIncome, removeIncome } as const;
 }
-

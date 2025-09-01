@@ -1,5 +1,5 @@
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "@/firebase";
 import { ymd } from "@/utils/utils";
 
 export async function addSampleBills() {
@@ -65,7 +65,8 @@ export async function addSampleBills() {
 
   try {
     for (const bill of sampleBills) {
-      await addDoc(billsRef, bill);
+      const uid = auth.currentUser?.uid || 'dev';
+      await addDoc(billsRef, { ...bill, userId: uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       console.log(`Conta adicionada: ${bill.title}`);
     }
     console.log("Todas as contas de exemplo foram adicionadas com sucesso!");

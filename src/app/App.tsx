@@ -47,12 +47,15 @@ import { useBillNotifications } from "@/hooks/useBillNotifications";
 // Contexts
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import SignIn from "@/components/UI/SignIn";
 
 // Utils
 import { addSampleBills } from "@/utils/addSampleData";
 import { occurrencesForBillInMonth } from "@/utils/utils";
 
 function App() {
+  const { user, loading: authLoading } = useAuth();
   const [prefs, setPrefs] = usePrefs();
   const locale = LANG_TO_LOCALE[prefs.language] || "pt-BR";
   const currency = prefs.currency || "BRL";
@@ -91,6 +94,33 @@ function App() {
       download(fname, ics);
     });
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-600">Carregando…</div>
+    );
+  }
+
+  if (!user) {
+    // Mostra painel de login; hooks internos não assinam nada sem user
+    return (
+      <div className="min-h-screen justify-center p-8 flex overflow-x-auto">
+        <div className="w-full max-w-2xl">
+          <Header
+            t={t}
+            setEditing={setEditing}
+            setEditingIncome={setEditingIncome}
+            setEditingPurchase={setEditingPurchase}
+            exportICS={exportICS}
+            setOpenSettings={setOpenSettings}
+            addSampleData={addSampleBills}
+          />
+          <SignIn />
+          <Footer t={t} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen justify-center p-8 flex overflow-x-auto">
@@ -442,7 +472,9 @@ export default function AppWithProviders() {
   return (
     <NotificationProvider>
       <TranslationProvider>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </TranslationProvider>
     </NotificationProvider>
   );

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { resetFirebaseData, checkFirebaseStatus } from '@/utils/resetFirebase';
 import { checkFirebaseHealth, checkFirebaseConfig } from '@/utils/firebaseHealth';
 import { useNotification } from '@/hooks/useNotification';
-import { seedAutoData, clearAutoData } from '@/utils/autoData';
+import { seedAutoData, clearAutoData, hasAutoData } from '@/utils/autoData';
 import Modal from '@/components/UI/modals/Modal';
 import { CSS_CLASSES, cn } from '@/styles/constants';
+import Switch from '@/components/UI/Switch';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -16,25 +17,26 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const { showNotification } = useNotification();
+
+  // Estado do preenchimento automático
   const [isSeeding, setIsSeeding] = useState(false);
   const [isClearingAuto, setIsClearingAuto] = useState(false);
+  // Inicia liberado (false). Se já houver dados automáticos, atualiza após checagem, sem travar a UI.
+  const [autoEnabled, setAutoEnabled] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [progressPhase, setProgressPhase] = useState<string>('');
 
   const handleResetFirebase = async () => {
-    if (!confirm('⚠️ ATENÇÃO: Esta ação irá DELETAR TODOS os dados do Firebase. Esta ação é IRREVERSÍVEL. Tem certeza?')) {
-      return;
-    }
-
-    if (!confirm('🚨 ÚLTIMA CONFIRMAÇÃO: Todos os dados serão perdidos permanentemente. Continuar?')) {
-      return;
-    }
+    if (!confirm('ATENÇÃO: Esta ação irá DELETAR TODOS os dados do Firebase. Esta ação é IRREVERSÍVEL. Tem certeza?')) return;
+    if (!confirm('ÚLTIMA CONFIRMAÇÃO: Todos os dados serão perdidos permanentemente. Continuar?')) return;
 
     setIsResetting(true);
     try {
       await resetFirebaseData();
-      showNotification('✅ Firebase resetado com sucesso! Todos os dados foram removidos.', 'success', 8000);
+      showNotification('Firebase resetado com sucesso! Todos os dados foram removidos.', 'success', 8000);
     } catch (error) {
       console.error('Erro ao resetar Firebase:', error);
-      showNotification('❌ Erro ao resetar Firebase. Verifique o console para mais detalhes.', 'error');
+      showNotification('Erro ao resetar Firebase. Verifique o console para mais detalhes.', 'error');
     } finally {
       setIsResetting(false);
     }
@@ -44,10 +46,10 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     setIsChecking(true);
     try {
       await checkFirebaseStatus();
-      showNotification('📊 Status do Firebase verificado. Verifique o console para detalhes.', 'info');
+      showNotification('Status do Firebase verificado. Verifique o console para detalhes.', 'info');
     } catch (error) {
       console.error('Erro ao verificar status:', error);
-      showNotification('❌ Erro ao verificar status do Firebase.', 'error');
+      showNotification('Erro ao verificar status do Firebase.', 'error');
     } finally {
       setIsChecking(false);
     }
@@ -57,15 +59,12 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     setIsCheckingHealth(true);
     try {
       checkFirebaseConfig();
-      const isHealthy = await checkFirebaseHealth();
-      if (isHealthy) {
-        showNotification('✅ Firebase está funcionando corretamente!', 'success');
-      } else {
-        showNotification('⚠️ Problemas detectados no Firebase. Verifique o console.', 'error');
-      }
+      const healthy = await checkFirebaseHealth();
+      if (healthy) showNotification('Firebase está funcionando corretamente!', 'success');
+      else showNotification('Problemas detectados no Firebase. Verifique o console.', 'error');
     } catch (error) {
       console.error('Erro ao verificar saúde:', error);
-      showNotification('❌ Erro ao verificar saúde do Firebase.', 'error');
+      showNotification('Erro ao verificar saúde do Firebase.', 'error');
     } finally {
       setIsCheckingHealth(false);
     }
@@ -73,9 +72,21 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   const handleSeedAuto = async () => {
     setIsSeeding(true);
+    setProgress(0);
+    setProgressPhase('Preenchendo');
     try {
-      const { batchId, totalDocs } = await seedAutoData(12);
+      const { batchId, totalDocs } = await seedAutoData(12, (p, phase) => {
+        setProgress(Math.round(p * 100));
+        if (phase) setProgressPhase(phase);
+        if (p >= 1) {
+          setIsSeeding(false);
+          setAutoEnabled(true);
+        }
+      });
       showNotification(`Dados automáticos gerados (lote ${batchId}) • ${totalDocs} documentos.`, 'success');
+      setAutoEnabled(true);
+      setProgress(100);
+      setProgressPhase('Concluído');
     } catch (e) {
       console.error(e);
       showNotification('Erro ao gerar dados automáticos.', 'error');
@@ -86,9 +97,21 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   const handleClearAuto = async () => {
     setIsClearingAuto(true);
+    setProgress(0);
+    setProgressPhase('Limpando');
     try {
-      await clearAutoData();
+      await clearAutoData((p, phase) => {
+        setProgress(Math.round(p * 100));
+        if (phase) setProgressPhase(phase);
+        if (p >= 1) {
+          setIsClearingAuto(false);
+          setAutoEnabled(false);
+        }
+      });
       showNotification('Dados automáticos removidos.', 'success');
+      setAutoEnabled(false);
+      setProgress(100);
+      setProgressPhase('Concluído');
     } catch (e) {
       console.error(e);
       showNotification('Erro ao remover dados automáticos.', 'error');
@@ -97,8 +120,22 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     }
   };
 
+  // Estado inicial do switch ao abrir o painel
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const exists = await hasAutoData();
+        if (mounted) setAutoEnabled(exists);
+      } catch {
+        if (mounted) setAutoEnabled(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="🔧 Painel de Administração">
+    <Modal isOpen={isOpen} onClose={onClose} title="🛠️ Painel de Administração">
       <div className={cn(CSS_CLASSES.flex.col, 'gap-6')}>
         <div className={cn(CSS_CLASSES.container.card, 'p-4 border-yellow-200 bg-yellow-50')}>
           <h3 className={cn(CSS_CLASSES.text.subtitle, 'text-yellow-800 mb-2')}>⚠️ Zona de Perigo</h3>
@@ -110,33 +147,36 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
         <div className={cn(CSS_CLASSES.flex.col, 'gap-4')}>
           <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
             <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>⚙️ Dados automáticos (12 meses)</h4>
-            <p className={cn(CSS_CLASSES.text.muted, 'mb-3')}>Preenche os próximos 12 meses com contas recorrentes, renda mensal e compras padrão de uma pessoa de classe média.</p>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleSeedAuto}
-                disabled={isSeeding}
-                className={cn(
-                  CSS_CLASSES.button.primary,
-                  isSeeding && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                {isSeeding ? 'Gerando…' : 'Preencher 12 meses automaticamente'}
-              </button>
-              <button
-                onClick={handleClearAuto}
-                disabled={isClearingAuto}
-                className={cn(
-                  CSS_CLASSES.button.secondary,
-                  isClearingAuto && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                {isClearingAuto ? 'Limpando…' : 'Limpar dados automáticos'}
-              </button>
+            <p className={cn(CSS_CLASSES.text.muted, 'mb-3')}>
+              Ativar preenchimento: quando ligado, gera 12 meses com contas recorrentes, rendas e compras realistas. Quando desligado, limpa os dados automáticos.
+            </p>
+            <div className="flex items-center gap-3 w-full">
+              <Switch
+                checked={autoEnabled}
+                onChange={(v) => v ? handleSeedAuto() : handleClearAuto()}
+                disabled={isSeeding || isClearingAuto}
+                label={autoEnabled ? 'Ativar preenchimento (ligado)' : 'Ativar preenchimento'}
+                ariaLabel="Ativar preenchimento automático"
+              />
+              {(isSeeding || isClearingAuto) && (
+                <div className="flex items-center gap-3 grow">
+                  <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-40 sm:w-56 overflow-hidden">
+                    <div
+                      className="h-2 bg-blue-600 transition-all duration-200"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className={cn(CSS_CLASSES.text.muted)}>{progressPhase} {progress}%</span>
+                </div>
+              )}
+              {!isSeeding && !isClearingAuto && progressPhase === 'Concluído' && (
+                <span className="text-green-600 dark:text-green-400">Concluído</span>
+              )}
             </div>
           </div>
 
           <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
-            <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>🔍 Diagnósticos</h4>
+            <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>🧪 Diagnósticos</h4>
             <div className={cn(CSS_CLASSES.flex.col, 'gap-3')}>
               <div>
                 <p className={cn(CSS_CLASSES.text.muted, 'mb-2')}>
@@ -150,10 +190,10 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                     isCheckingHealth && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  {isCheckingHealth ? '🔄 Verificando...' : '🔍 Verificar Saúde'}
+                  {isCheckingHealth ? 'Verificando…' : 'Verificar Saúde'}
                 </button>
               </div>
-              
+
               <div>
                 <p className={cn(CSS_CLASSES.text.muted, 'mb-2')}>
                   Verifica quantos documentos existem no Firebase.
@@ -166,7 +206,7 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                     isChecking && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  {isChecking ? '🔄 Verificando...' : '📊 Verificar Status'}
+                  {isChecking ? 'Verificando…' : 'Verificar Status'}
                 </button>
               </div>
             </div>
@@ -185,18 +225,13 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                 'disabled:opacity-50 disabled:cursor-not-allowed font-medium'
               )}
             >
-              {isResetting ? '🔄 Resetando...' : '🗑️ Reset Firebase'}
+              {isResetting ? 'Resetando…' : 'Reset Firebase'}
             </button>
           </div>
         </div>
 
         <div className={cn(CSS_CLASSES.flex.row, 'justify-end gap-3 pt-4 border-t')}>
-          <button
-            onClick={onClose}
-            className={CSS_CLASSES.button.secondary}
-          >
-            Fechar
-          </button>
+          <button onClick={onClose} className={CSS_CLASSES.button.secondary}>Fechar</button>
         </div>
       </div>
     </Modal>
