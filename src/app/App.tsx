@@ -48,6 +48,7 @@ import { useBillNotifications } from "@/hooks/useBillNotifications";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { PreviewProvider, usePreview } from "@/contexts/PreviewContext";
 import SignIn from "@/components/UI/SignIn";
 
 // Utils
@@ -122,9 +123,11 @@ function App() {
     );
   }
 
+  const { width } = usePreview();
+
   return (
     <div className="min-h-screen justify-center p-8 flex overflow-x-auto">
-      <div className="">
+      <div className="w-full" style={width ? { maxWidth: width, margin: '0 auto' } : undefined}>
         <Header
            t={t}
            setEditing={setEditing}
@@ -155,6 +158,7 @@ function App() {
 
          {/* Removido: Totais agora sempre visíveis acima das opções */}
  
+         <div className="min-h-[60vh]">
          {(view === "list" || view === 'purchases' || view === 'incomes') && (
            <>
              <div className="mb-3 max-w-xs">
@@ -201,9 +205,10 @@ function App() {
                 currency={currency}
                 filter={filter}
               />
-            )}
-           </>
-         )}
+           )}
+          </>
+        )}
+         </div>
  
          {view === "calendar" && (
            <BillsCalendar
@@ -473,7 +478,9 @@ export default function AppWithProviders() {
     <NotificationProvider>
       <TranslationProvider>
         <AuthProvider>
-          <App />
+          <PreviewProvider>
+            <App />
+          </PreviewProvider>
         </AuthProvider>
       </TranslationProvider>
     </NotificationProvider>

@@ -6,6 +6,7 @@ import { seedAutoData, clearAutoData, hasAutoData } from '@/utils/autoData';
 import Modal from '@/components/UI/modals/Modal';
 import { CSS_CLASSES, cn } from '@/styles/constants';
 import Switch from '@/components/UI/Switch';
+import { usePreview } from '@/contexts/PreviewContext';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   const [autoEnabled, setAutoEnabled] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [progressPhase, setProgressPhase] = useState<string>('');
+  const { mode, setMode } = usePreview();
 
   const handleResetFirebase = async () => {
     if (!confirm('ATENÇÃO: Esta ação irá DELETAR TODOS os dados do Firebase. Esta ação é IRREVERSÍVEL. Tem certeza?')) return;
@@ -142,6 +144,18 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
           <p className={cn(CSS_CLASSES.text.muted, 'text-yellow-700 mb-4')}>
             As ações abaixo podem afetar permanentemente os dados da aplicação.
           </p>
+        </div>
+
+        <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
+          <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>🖥️ Tamanho da Tela (preview)</h4>
+          <p className={cn(CSS_CLASSES.text.muted, 'mb-3')}>Simula larguras típicas de dispositivos para testar a responsividade. “Navegador” usa a largura atual.</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setMode('browser')} className={cn(CSS_CLASSES.button.secondary, mode==='browser' && 'ring-2 ring-blue-500')}>Navegador</button>
+            <button onClick={() => setMode('mobile-s')} className={cn(CSS_CLASSES.button.secondary, mode==='mobile-s' && 'ring-2 ring-blue-500')}>Mobile S (360)</button>
+            <button onClick={() => setMode('mobile-m')} className={cn(CSS_CLASSES.button.secondary, mode==='mobile-m' && 'ring-2 ring-blue-500')}>Mobile M (390)</button>
+            <button onClick={() => setMode('mobile-l')} className={cn(CSS_CLASSES.button.secondary, mode==='mobile-l' && 'ring-2 ring-blue-500')}>Mobile L (414)</button>
+            <button onClick={() => setMode('tablet')} className={cn(CSS_CLASSES.button.secondary, mode==='tablet' && 'ring-2 ring-blue-500')}>Tablet (768)</button>
+          </div>
         </div>
 
         <div className={cn(CSS_CLASSES.flex.col, 'gap-4')}>
