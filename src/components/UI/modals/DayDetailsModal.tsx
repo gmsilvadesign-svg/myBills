@@ -1,0 +1,136 @@
+import { useEffect, memo } from 'react'
+import * as Types from '@/types'
+import { ymd, parseDate, formatDate, isBefore, occurrencesForBillInMonth } from '@/utils/utils'
+import Pill from '@/components/UI/Pill'
+
+interface DayDetailsModalProps {
+  open: boolean;
+  onClose: () => void;
+  dateISO: string;
+  bills: Types.Bill[];
+  purchases: Types.Purchase[];
+  t: Record<string, any>;
+  locale: string;
+  currency: string;
+}
+
+function money(v: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)
+}
+
+const DayDetailsModal = memo(function DayDetailsModal({ open, onClose, dateISO, bills, purchases, t, locale, currency }: DayDetailsModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const d = parseDate(dateISO);
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  const day = d.getDate();
+
+  // Filtro de contas que ocorrem neste dia (considera recorrência)
+  const dayBills = bills.filter((b) => {
+    try {
+      return occurrencesForBillInMonth(b, y, m).includes(dateISO);
+    } catch {
+      // fallback para itens sem recorrência
+      const bd = parseDate(b.dueDate);
+      return bd.getFullYear() === y && bd.getMonth() === m && bd.getDate() === day;
+    }
+  });
+
+  // Compras deste dia
+  const dayPurchases = purchases.filter((p) => {
+    const pd = parseDate(p.date);
+    return pd.getFullYear() === y && pd.getMonth() === m && pd.getDate() === day;
+  });
+
+  const todayISO = ymd(new Date());
+  const openSum = dayBills.filter(b => !b.paid && !isBefore(b.dueDate, todayISO)).reduce((s, b) => s + Number(b.amount || 0), 0);
+  const overdueSum = dayBills.filter(b => !b.paid && isBefore(b.dueDate, todayISO)).reduce((s, b) => s + Number(b.amount || 0), 0);
+  const purchasesSum = dayPurchases.reduce((s, p) => s + Number(p.amount || 0), 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-3xl shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">{t.view_calendar || 'Calendário'} — {formatDate(dateISO, locale)}</h2>
+          <button onClick={onClose} className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700">{t.close || 'Fechar'}</button>
+        </div>
+
+        {/* Totais do dia */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 text-center">
+            <div className="text-xs">{t.totals_open || 'Abertas'}</div>
+            <div className="text-base font-semibold">{money(openSum, currency, locale)}</div>
+          </div>
+          <div className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200 text-center">
+            <div className="text-xs">{t.filter_overdue || 'Atrasadas'}</div>
+            <div className="text-base font-semibold">{money(overdueSum, currency, locale)}</div>
+          </div>
+          <div className="rounded-xl p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 text-center">
+            <div className="text-xs">{t.purchases || 'Compras'}</div>
+            <div className="text-base font-semibold">{money(purchasesSum, currency, locale)}</div>
+          </div>
+        </div>
+
+        {/* Lista de contas (padrão semelhante ao menu Contas) */}
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2">{t.section_bills || 'Contas'}</h3>
+          <div className="divide-y divide-slate-200 dark:divide-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            {dayBills.length === 0 && (
+              <div className="py-6 text-center text-slate-500">{t.no_bills || 'Sem contas neste dia.'}</div>
+            )}
+            {dayBills.map((b) => {
+              const overdue = !b.paid && isBefore(b.dueDate, todayISO);
+              return (
+                <div key={b.id || b.title + b.dueDate} className="py-3 px-4 flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {b.paid ? (
+                      <Pill tone="green">{t.paid}</Pill>
+                    ) : overdue ? (
+                      <Pill tone="red">{t.overdue}</Pill>
+                    ) : (
+                      <Pill tone="amber">{t.pending}</Pill>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate" title={b.title}>{b.title}</div>
+                    <div className="text-xs text-slate-500">{b.category || ''}</div>
+                  </div>
+                  <div className="text-right font-semibold min-w-[120px]">{money(Number(b.amount || 0), currency, locale)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Lista de compras do dia (se houver) */}
+        {dayPurchases.length > 0 && (
+          <div>
+            <h3 className="font-semibold mb-2">{t.purchases || 'Compras'}</h3>
+            <div className="divide-y divide-slate-200 dark:divide-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+              {dayPurchases.map((p) => (
+                <div key={p.id || p.title + p.date} className="py-3 px-4 flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate" title={p.title}>{p.title}</div>
+                    <div className="text-xs text-slate-500">{p.category || ''}</div>
+                  </div>
+                  <div className="text-right font-semibold min-w-[120px]">{money(Number(p.amount || 0), currency, locale)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+})
+
+export default DayDetailsModal
+

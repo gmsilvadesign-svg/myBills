@@ -156,18 +156,17 @@ function App() {
            t={t}
          />
 
-         {/* Removido: Totais agora sempre visíveis acima das opções */}
- 
-         <div className="min-h-[60vh]">
-         {(view === "list" || view === 'purchases' || view === 'incomes') && (
-           <>
-             <div className="mb-3 max-w-xs">
-               <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
-                 <option value="today">{t.filter_today}</option>
-                 <option value="month">{t.filter_month || t.totals_month}</option>
-                 <option value="all">{t.filter_all}</option>
-               </Select>
-             </div>
+        {/* Removido: Totais agora sempre visíveis acima das opções */}
+
+        {(view === "list" || view === 'purchases' || view === 'incomes') && (
+          <div className="min-h-[60vh]">
+            <div className="mb-3 max-w-xs">
+              <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
+                <option value="today">{t.filter_today}</option>
+                <option value="month">{t.filter_month || t.totals_month}</option>
+                <option value="all">{t.filter_all}</option>
+              </Select>
+            </div>
             {view === 'list' && (
               <BillsList
                 bills={filteredBills}
@@ -205,10 +204,9 @@ function App() {
                 currency={currency}
                 filter={filter}
               />
-           )}
-          </>
+            )}
+          </div>
         )}
-         </div>
  
          {view === "calendar" && (
            <BillsCalendar

@@ -1,12 +1,13 @@
 // Importa React e componentes necessários
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import Section from '@/components/layout/Section'
 
 // Importa componente MonthGrid, que exibe o calendário mensal com as contas
 import MonthGrid from '@/components/UI/bills/MonthGrid'
+import DayDetailsModal from '@/components/UI/modals/DayDetailsModal'
 
 // Importa função utilitária monthLabel para formatar o nome do mês baseado em locale
-import { monthLabel } from '@/utils/utils'
+import { monthLabel, ymd } from '@/utils/utils'
 
 // Importa tipos
 import * as Types from '@/types'
@@ -33,6 +34,9 @@ export default function BillsCalendar({ bills, purchases = [], monthDate, setMon
   const goToNextMonth = useCallback(() => {
     setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1));
   }, [monthDate, setMonthDate]);
+
+  // Modal de detalhes do dia
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   // JSX do calendário
   return (
@@ -76,6 +80,19 @@ export default function BillsCalendar({ bills, purchases = [], monthDate, setMon
         purchases={purchases}
         locale={locale}
         currency={currency}
+        onDayClick={(iso) => setSelectedDay(iso)}
+      />
+
+      {/* Modal com itens do dia */}
+      <DayDetailsModal
+        open={!!selectedDay}
+        onClose={() => setSelectedDay(null)}
+        dateISO={selectedDay || ymd(monthDate)}
+        bills={bills}
+        purchases={purchases}
+        locale={locale}
+        currency={currency}
+        t={t}
       />
 
     </Section>
