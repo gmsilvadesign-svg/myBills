@@ -139,12 +139,13 @@ function App() {
          />
  
          {/* Totais fixos centralizados acima das opções */}
-         <TotalsStrip 
-           bills={bills}
-           incomes={incomes}
-           purchases={purchases}
-           onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
-         />
+        <TotalsStrip 
+          bills={bills}
+          incomes={incomes}
+          purchases={purchases}
+          onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
+          filter={filter}
+        />
 
          <Filters
            view={view}

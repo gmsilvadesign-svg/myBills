@@ -9,9 +9,10 @@ interface TotalsStripProps {
   incomes: Types.Income[];
   purchases: Types.Purchase[];
   onFilterOverdue?: () => void;
+  filter?: Types.FilterType;
 }
 
-const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFilterOverdue }: TotalsStripProps) {
+const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFilterOverdue, filter = 'month' }: TotalsStripProps) {
   const { t, locale, currency } = useTranslation();
   const todayISO = ymd(new Date());
   const now = new Date();
@@ -80,12 +81,18 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
     }
   }, 0);
 
-  // Compras do mês (cadastradas)
-  const purchasesMonth = purchases.filter(p => inMonth(p.date))
-    .reduce((s, p) => s + Number(p.amount || 0), 0);
+  // Compras conforme o filtro ativo (para manter consistência com a aba Compras)
+  const isToday = (iso: string) => { const d = parseDate(iso); const t = new Date(); return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth() && d.getDate()===t.getDate(); };
+  const purchasesTotal = purchases.filter(p => {
+    if (filter === 'today') return isToday(p.date);
+    if (filter === 'month') return inMonth(p.date);
+    if (filter === 'all') return true;
+    // Demais filtros não se aplicam a compras: manter mês como padrão
+    return inMonth(p.date);
+  }).reduce((s, p) => s + Number(p.amount || 0), 0);
 
   // Economia = renda do mês - (total de contas do mês + compras do mês)
-  const savings = incomeMonth - (monthBillsTotal + purchasesMonth);
+  const savings = incomeMonth - (monthBillsTotal + purchasesTotal);
   const pct = incomeMonth > 0 ? (savings / incomeMonth) * 100 : 0;
   const pctFmt = incomeMonth > 0
     ? new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(pct / 100)
@@ -110,7 +117,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
         </div>
         <div className="rounded-xl p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 text-center shadow-sm">
           <div className="text-xs sm:text-sm font-medium">{t.purchases || 'Compras'}</div>
-          <div className="text-base sm:text-lg font-semibold">{fmtMoney(purchasesMonth, currency, locale)}</div>
+          <div className="text-base sm:text-lg font-semibold">{fmtMoney(purchasesTotal, currency, locale)}</div>
         </div>
         <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 text-center shadow-sm">
           <div className="text-xs sm:text-sm font-medium">{t.totals_open}</div>
