@@ -111,11 +111,13 @@ export default function useFirebaseBills() {
       const isRecurring = !!bill.recurrence && bill.recurrence !== 'NONE';
       const shouldAdvance = isRecurring || advance;
       if (isLocalMode) {
-        const patch: Partial<Types.Bill> = shouldAdvance ? { paid: false, paidOn: null, dueDate: nextOccurrenceISO(bill.dueDate, bill.recurrence) } : { paid: true, paidOn: ymd(new Date()) };
+        const patch: Partial<Types.Bill> = shouldAdvance 
+          ? { paid: false, paidOn: ymd(new Date()), dueDate: nextOccurrenceISO(bill.dueDate, bill.recurrence) }
+          : { paid: true, paidOn: ymd(new Date()) };
         local.update('bills', bill.id, patch as any); setBills(local.list('bills', user?.uid) as Types.Bill[]); return;
       }
       const billRef = doc(db, 'bills', bill.id);
-      if (shouldAdvance) await updateDoc(billRef, { paid: false, paidOn: null, dueDate: nextOccurrenceISO(bill.dueDate, bill.recurrence), updatedAt: serverTimestamp() });
+      if (shouldAdvance) await updateDoc(billRef, { paid: false, paidOn: ymd(new Date()), dueDate: nextOccurrenceISO(bill.dueDate, bill.recurrence), updatedAt: serverTimestamp() });
       else await updateDoc(billRef, { paid: true, paidOn: ymd(new Date()), updatedAt: serverTimestamp() });
     } catch (error) {
       console.error('Erro ao marcar como pago:', error);
@@ -124,5 +126,22 @@ export default function useFirebaseBills() {
     }
   };
 
-  return { bills, loading, addBill, updateBill, upsertBill, removeBill, markPaid } as const;
+  const unmarkPaid = async (bill: Types.Bill) => {
+    try {
+      if (!bill.id) throw new Error('Bill ID is required to unmark as paid');
+      if (isLocalMode) {
+        local.update('bills', bill.id, { paid: false, paidOn: null } as any);
+        setBills(local.list('bills', user?.uid) as Types.Bill[]);
+        return;
+      }
+      const billRef = doc(db, 'bills', bill.id);
+      await updateDoc(billRef, { paid: false, paidOn: null, updatedAt: serverTimestamp() });
+    } catch (error) {
+      console.error('Erro ao desmarcar como pago:', error);
+      showNotification(t.error_update, 'error');
+      throw error;
+    }
+  };
+
+  return { bills, loading, addBill, updateBill, upsertBill, removeBill, markPaid, unmarkPaid } as const;
 }

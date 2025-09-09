@@ -19,6 +19,8 @@ import * as Types from '@/types'
 interface BillRowProps {
   bill: Types.Bill
   markPaid: (bill: Types.Bill, advance: boolean) => void
+  unmarkPaid?: (bill: Types.Bill) => void
+  paidInCurrentMonth?: boolean
   setEditing: (bill: Types.Bill) => void
   setConfirm: (confirm: Types.ConfirmState) => void
   t: Record<string, any>
@@ -34,12 +36,14 @@ const BillRow = memo(function BillRow({
   t,
   locale,
   currency,
+  paidInCurrentMonth,
 }: BillRowProps) {
-  const overdue = !bill.paid && isBefore(bill.dueDate, ymd(new Date()))
+  const isPaid = !!bill.paid || !!paidInCurrentMonth
+  const overdue = !isPaid && isBefore(bill.dueDate, ymd(new Date()))
   const overdueDays = overdue ? daysDifference(bill.dueDate, ymd(new Date())) : 0
 
   const renderStatus = () => {
-    if (!bill.paid && overdue) {
+    if (!isPaid && overdue) {
       return (
         <button
           onClick={(e) => {
@@ -54,7 +58,7 @@ const BillRow = memo(function BillRow({
         </button>
       )
     }
-    if (!bill.paid && !overdue) {
+    if (!isPaid && !overdue) {
       return (
         <button
           onClick={(e) => {
@@ -71,8 +75,14 @@ const BillRow = memo(function BillRow({
     }
     return (
       <button
-        className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-300 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-xs font-medium cursor-default transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 dark:border-green-700 min-w-[110px] text-center"
-        disabled
+        onClick={(e) => {
+          if (!unmarkPaid) return
+          e.preventDefault()
+          unmarkPaid(bill)
+        }}
+        className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-300 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 dark:border-green-700 min-w-[110px] text-center"
+        aria-label={`${t.mark_unpaid || 'Desmarcar pago'}: ${bill.title}`}
+        title={t.mark_unpaid || 'Desmarcar pago'}
       >
         {t.paid}
       </button>
@@ -139,7 +149,7 @@ const BillRow = memo(function BillRow({
           )}
           {/* 6) Tempo / Data */}
           <div className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
-            {bill.paid && bill.paidOn
+            {(isPaid && bill.paidOn)
               ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
               : overdue
               ? (t.days_overdue as (days: number) => string)(overdueDays)
@@ -168,7 +178,7 @@ const BillRow = memo(function BillRow({
           {bill.category && <Pill><span className="whitespace-nowrap">{bill.category}</span></Pill>}
           {bill.recurrence && bill.recurrence !== 'NONE' && <Pill tone="green"><span className="whitespace-nowrap">{t[bill.recurrence.toLowerCase()]}</span></Pill>}
           <div className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
-            {bill.paid && bill.paidOn
+            {(isPaid && bill.paidOn)
               ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
               : overdue
               ? (t.days_overdue as (days: number) => string)(overdueDays)
@@ -182,4 +192,3 @@ const BillRow = memo(function BillRow({
 })
 
 export default BillRow
-

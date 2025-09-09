@@ -61,7 +61,7 @@ function App() {
   const locale = LANG_TO_LOCALE[prefs.language] || "pt-BR";
   const currency = prefs.currency || "BRL";
   const t = useI18n(prefs.language);
-  const { bills, loading, upsertBill, removeBill, markPaid } =
+  const { bills, loading, upsertBill, removeBill, markPaid, unmarkPaid } =
     useFirebaseBills();
   const { incomes, loading: loadingIncomes, upsertIncome, removeIncome } = useFirebaseIncomes();
   const [view, setView] = useState<Types.ViewType>("list");
@@ -170,9 +170,20 @@ function App() {
             </div>
             {view === 'list' && (
               <BillsList
-                bills={filteredBills}
+                bills={(function(){
+                  if (filter !== 'month') return filteredBills;
+                  const now = new Date();
+                  const y = now.getFullYear();
+                  const m = now.getMonth();
+                  const inSameMonth = (iso?: string | null) => { if (!iso) return false; const d = new Date(iso); return d.getFullYear()===y && d.getMonth()===m; };
+                  const extras = bills.filter(b => inSameMonth(b.paidOn));
+                  const all = [...filteredBills, ...extras];
+                  const seen = new Set<string>();
+                  return all.filter(b => { const id = (b as any).id as string | undefined; if (!id) return true; if (seen.has(id)) return false; seen.add(id); return true; });
+                })()}
                 loading={loading}
                 markPaid={markPaid}
+                unmarkPaid={unmarkPaid}
                 setEditing={setEditing}
                 setConfirm={setConfirm}
                 t={t}
