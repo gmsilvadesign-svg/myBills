@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+.general-summary h3 {
+  display: none;
+}
+
+/* Substitui o ícone do menu (três barras retas e simétricas) */
+header nav button:last-child > span {
+  display: none;
+}
+header nav button:last-child {
+  position: relative;
+}
+header nav button:last-child::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 2px;
+  background: #10b981; /* emerald */
+  border-radius: 0; /* barras retangulares */
+  box-shadow: 0 -6px 0 0 #10b981, 0 6px 0 0 #10b981;
+}
+
+.dark header nav button:last-child::after {
+  background: #34d399; /* emerald-400 */
+  box-shadow: 0 -6px 0 0 #34d399, 0 6px 0 0 #34d399;
+}

@@ -54,7 +54,7 @@ import SignIn from "@/components/UI/SignIn";
 
 // Utils
 import { addSampleBills } from "@/utils/addSampleData";
-import { occurrencesForBillInMonth } from "@/utils/utils";
+import { occurrencesForBillInMonth, parseDate } from "@/utils/utils";
 
 function App() {
   const { user, loading: authLoading } = useAuth();
@@ -337,7 +337,7 @@ function App() {
           currency={currency}
         />
          {view === 'general' && (
-           <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
+           <div className="general-summary mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
              <h3 className="text-lg font-semibold mb-2">Balanço geral do mês</h3>
              {/* Cálculo simples: soma despesas do mês - soma rendas do mês */}
              {(() => {
@@ -361,7 +361,7 @@ function App() {
               const monthPurchases = purchases.filter(p => inMonth(p.date)).reduce((s, p) => s + Number(p.amount || 0), 0);
               const balance = monthIncomes - monthExpenses - monthPurchases;
                return (
-                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                 <div className="hidden grid grid-cols-1 sm:grid-cols-4 gap-3">
                    <div className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200">
                      <div className="text-xs">Despesas do mês</div>
                      <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
@@ -381,7 +381,7 @@ function App() {
                  </div>
                );
             })()}
-            <div className="mt-6 space-y-4">
+            <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-slate-600 dark:text-slate-300">Período:</span>
                 <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
@@ -399,12 +399,12 @@ function App() {
                   labels.push(d.toLocaleDateString(locale, { month: 'short' }));
                   const y = d.getFullYear();
                   const m = d.getMonth();
-                  const inMonth = (iso: string) => { const dd = new Date(iso); return dd.getFullYear()===y && dd.getMonth()===m; };
+                  const inMonth = (iso: string) => { const dd = parseDate(iso); return dd.getFullYear()===y && dd.getMonth()===m; };
                   const monthBills = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s,b)=> s + Number(b.amount||0), 0);
                   const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
                   // Renda planejada do mês (mesma lógica dos cards)
                   let monthInc = incomes.reduce((sum, i) => {
-                    const base = new Date(i.dueDate);
+                    const base = parseDate(i.dueDate);
                     const rec = (i as any).recurrence || 'NONE';
                     if (rec === 'MONTHLY') return sum + Number(i.amount || 0);
                     if (rec === 'WEEKLY') {
@@ -456,17 +456,34 @@ function App() {
                 const now = new Date();
                 const y = now.getFullYear();
                 const m = now.getMonth();
-                const inMonth = (iso: string) => { const d = new Date(iso); return d.getFullYear()===y && d.getMonth()===m; };
-                const expenseByCat = new Map<string, number>();
-                bills.filter(b => inMonth(b.dueDate) && !b.paid).forEach(b => expenseByCat.set(`Despesa: ${b.category || 'Sem categoria'}`, (expenseByCat.get(`Despesa: ${b.category || 'Sem categoria'}`)||0) + Number(b.amount||0)));
-                purchases.filter(p => inMonth(p.date)).forEach(p => expenseByCat.set(`Compra: ${p.category || 'Outros'}`, (expenseByCat.get(`Compra: ${p.category || 'Outros'}`)||0) + Number(p.amount||0)));
+                const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear()===y && d.getMonth()===m; };
+                // Gastos: agrupar apenas em "Despesas: Fixas", "Despesas: Variáveis" e "Compras"
+                // Considera todas as contas do mês (pagas e em aberto)
+                const monthBillsAll = bills.filter(b => inMonth(b.dueDate));
+                const isFixed = (cat?: string | null) => {
+                  const s = (cat || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+                  return s.includes('fixa');
+                };
+                const fixedSum = monthBillsAll.filter(b => isFixed(b.category)).reduce((s,b)=> s + Number(b.amount||0), 0);
+                const totalBills = monthBillsAll.reduce((s,b)=> s + Number(b.amount||0), 0);
+                const variableSum = Math.max(0, totalBills - fixedSum);
+                const purchasesSum = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
+                const expData = [
+                  { label: 'Despesas: Fixas', value: fixedSum, color: '#ef4444' },
+                  { label: 'Despesas: Variáveis', value: variableSum, color: '#f59e0b' },
+                  { label: 'Compras', value: purchasesSum, color: '#be185d' },
+                ];
+                
+                // Renda: exibir por categoria, sem prefixo "Renda:"
                 const incomeByCat = new Map<string, number>();
                 incomes.forEach(i => {
                   let has = false;
                   try { has = require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0; } catch { has = inMonth(i.dueDate); }
-                  if (has) incomeByCat.set(`Renda: ${i.category || 'Outros'}`, (incomeByCat.get(`Renda: ${i.category || 'Outros'}`)||0) + Number(i.amount||0));
+                  if (has) {
+                    const label = i.category || 'Outros';
+                    incomeByCat.set(label, (incomeByCat.get(label)||0) + Number(i.amount||0));
+                  }
                 });
-                const expData = Array.from(expenseByCat, ([label, value]) => ({ label, value, color: '#ef4444' }));
                 const incData = Array.from(incomeByCat, ([label, value]) => ({ label, value, color: '#10b981' }));
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

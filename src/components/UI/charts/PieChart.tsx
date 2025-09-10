@@ -51,23 +51,26 @@ export default function PieChart({ data, size = 180, paletteType, formatValue }:
   const colored = data.map((d, i) => ({ ...d, color: (allEqualColor || !d.color || paletteType) ? colors[i] : d.color }));
   const radius = size / 2;
   const center = size / 2;
+  const strokeWidth = 24; // doubled thickness
+  const ringRadius = radius - strokeWidth / 2;
+  const circumference = 2 * Math.PI * ringRadius;
 
   let accum = 0;
   const circles = colored.map((d, i) => {
     const frac = d.value / total;
-    const dash = Math.max(0, frac * Math.PI * (size - 10));
-    const gap = Math.max(0, Math.PI * (size - 10) - dash);
-    const offset = (accum / total) * Math.PI * (size - 10);
+    const dash = Math.max(0, frac * circumference);
+    const gap = Math.max(0, circumference - dash);
+    const offset = (accum / total) * circumference;
     accum += d.value;
     return (
       <circle
         key={i}
-        r={radius - 6}
+        r={ringRadius}
         cx={center}
         cy={center}
         fill="transparent"
         stroke={d.color}
-        strokeWidth={12}
+        strokeWidth={strokeWidth}
         strokeDasharray={`${dash} ${gap}`}
         strokeDashoffset={-offset}
         transform={`rotate(-90 ${center} ${center})`}
