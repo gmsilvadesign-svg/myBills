@@ -99,19 +99,21 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
   else if (pct > 10) pctColor = 'text-emerald-700 dark:text-emerald-200 font-medium';
   else if (pct > 5) pctColor = 'text-yellow-500 font-medium';
   else if (pct > 0) pctColor = 'text-orange-500 font-medium';
+  // Total de gastos (contas + compras) do mês
+  const expensesTotal = monthBillsTotal + purchasesTotal;
 
   // Configuração dos pilares (valores e estilos)
   const items = [
     { key: 'income', label: 'Renda', value: incomeMonth, color: 'bg-emerald-500 dark:bg-emerald-400', textColor: 'text-emerald-700 dark:text-emerald-200' },
     { key: 'savings', label: 'Economia', value: savings, color: (savings >= 0 ? 'bg-teal-500 dark:bg-teal-400' : 'bg-red-500 dark:bg-red-500'), textColor: (savings >= 0 ? 'text-teal-700 dark:text-teal-200' : 'text-red-600 dark:text-red-400'), pctColor },
+    { key: 'expenses', label: 'Gastos', value: expensesTotal, color: 'bg-indigo-500 dark:bg-indigo-400', textColor: 'text-indigo-700 dark:text-indigo-200' },
     { key: 'purchases', label: t.purchases || 'Compras', value: purchasesTotal, color: 'bg-blue-500 dark:bg-blue-400', textColor: 'text-blue-700 dark:text-blue-200' },
     { key: 'open', label: t.totals_open, value: monthOpen, color: 'bg-amber-500 dark:bg-amber-400', textColor: 'text-amber-700 dark:text-amber-200' },
-    { key: 'overdue', label: t.filter_overdue, value: monthOverdue, color: 'bg-red-500 dark:bg-red-400', textColor: 'text-red-700 dark:text-red-200', onClick: onFilterOverdue },
   ] as const;
 
   const maxAbs = Math.max(1, ...items.map(i => Math.abs(Number(i.value || 0))));
 
-  const fmtPrime = (n: number) => `${Math.round(n)}'`;
+  const fmtPrime = (n: number) => `${Math.round(n)}%`;
 
   const percentFor = (v: number) => {
     if (incomeMonth > 0) return fmtPrime((v / incomeMonth) * 100);
@@ -123,7 +125,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
     <div className="w-full flex items-center justify-center mb-4">
       <div className="w-full max-w-6xl">
         {/* Área das barras com a linha-base ao centro da própria área */}
-        <div className="relative h-40 px-2 flex items-end justify-center gap-4">
+        <div className="relative h-40 px-2 flex items-end justify-center gap-6">
           <div className="absolute left-0 right-0 top-1/2 border-t border-slate-200 dark:border-slate-700 pointer-events-none" />
           {items.map((it) => {
             const abs = Math.abs(Number(it.value || 0));
@@ -138,6 +140,14 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
                     className={`absolute left-0 right-0 bottom-0 ${it.color} rounded-t-xl shadow-md`}
                     style={{ height: `${pos * 100}%` }}
                   />
+                  {pos > 0 && (
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-slate-600 dark:text-slate-300"
+                      style={{ bottom: `${pos * 100}%` }}
+                    >
+                      {percentFor(Number(it.value || 0))}
+                    </div>
+                  )}
                 </div>
                 {/* metade inferior (negativo) */}
                 <div className="absolute left-0 right-0 bottom-0 h-1/2">
@@ -145,6 +155,14 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
                     className={`absolute left-0 right-0 top-0 ${it.color} rounded-b-xl shadow-md`}
                     style={{ height: `${neg * 100}%` }}
                   />
+                  {neg > 0 && (
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-slate-600 dark:text-slate-300"
+                      style={{ top: `${neg * 100}%` }}
+                    >
+                      {percentFor(Number(it.value || 0))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -159,7 +177,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
           })}
         </div>
         {/* Rótulos imediatamente abaixo das barras */}
-        <div className="flex items-start justify-center gap-4 px-2 mt-1">
+        <div className="flex items-start justify-center gap-6 px-2 mt-1">
           {items.map((it) => {
             const valueColor = it.key === 'savings' ? it.textColor : 'text-slate-900 dark:text-slate-100';
             const pctTxtColor = it.key === 'savings' && (it as any).pctColor ? (it as any).pctColor : 'text-slate-500';

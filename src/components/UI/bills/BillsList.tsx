@@ -2,6 +2,7 @@ import { memo } from 'react'
 import Section from '@/components/layout/Section'
 import BillRow from '@/components/UI/bills/BillRow'
 import * as Types from '@/types'
+import { parseDate } from '@/utils/utils'
 
 interface BillsListProps {
   bills: Types.Bill[];
@@ -35,7 +36,7 @@ const BillsList = memo(function BillsList({
   const m = now.getMonth()
   const inMonth = (iso?: string | null) => {
     if (!iso) return false
-    const d = new Date(iso)
+    const d = parseDate(iso)
     return d.getFullYear() === y && d.getMonth() === m
   }
   const isPaidThisMonth = (b: Types.Bill) => !!b.paidOn && inMonth(b.paidOn)

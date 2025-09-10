@@ -17,7 +17,7 @@ import { db, isLocalMode } from '@/firebase';
 import * as local from '@/utils/localDb';
 
 // Utils
-import { ymd, nextOccurrenceISO } from '@/utils/utils';
+import { ymd, nextOccurrenceISO, prevOccurrenceISO } from '@/utils/utils';
 
 // Hooks
 import { useNotification } from '@/hooks/useNotification';
@@ -129,13 +129,16 @@ export default function useFirebaseBills() {
   const unmarkPaid = async (bill: Types.Bill) => {
     try {
       if (!bill.id) throw new Error('Bill ID is required to unmark as paid');
+      // Se for recorrente e foi avançado ao marcar pago, desfaz também o avanço do vencimento
+      const shouldRevertDue = !!bill.recurrence && bill.recurrence !== 'NONE' && !!bill.paidOn;
+      const revertedDue = shouldRevertDue ? prevOccurrenceISO(bill.dueDate, bill.recurrence) : bill.dueDate;
       if (isLocalMode) {
-        local.update('bills', bill.id, { paid: false, paidOn: null } as any);
+        local.update('bills', bill.id, { paid: false, paidOn: null, dueDate: revertedDue } as any);
         setBills(local.list('bills', user?.uid) as Types.Bill[]);
         return;
       }
       const billRef = doc(db, 'bills', bill.id);
-      await updateDoc(billRef, { paid: false, paidOn: null, updatedAt: serverTimestamp() });
+      await updateDoc(billRef, { paid: false, paidOn: null, ...(shouldRevertDue ? { dueDate: revertedDue } : {}), updatedAt: serverTimestamp() });
     } catch (error) {
       console.error('Erro ao desmarcar como pago:', error);
       showNotification(t.error_update, 'error');

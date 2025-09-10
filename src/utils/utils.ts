@@ -207,3 +207,19 @@ export function daysDifference(fromISO: string, toISO: string): number {
   const diffTime = to.getTime() - from.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
+
+// Retrocede para a ocorrência anterior com base na recorrência
+export function prevOccurrenceISO(iso: string, recurrence: string): string {
+  const d = parseDate(iso);
+  const r = recurrence || "NONE";
+  if (r === "MONTHLY") {
+    const m = d.getMonth() - 1;
+    const y = d.getFullYear() + (m < 0 ? -1 : 0);
+    const pm = m < 0 ? 11 : m;
+    return ymd(new Date(y, pm, clampDay(y, pm, d.getDate())));
+  }
+  if (r === "WEEKLY") return addDays(iso, -7);
+  if (r === "YEARLY") return ymd(new Date(d.getFullYear() - 1, d.getMonth(), d.getDate()));
+  if (r === "DAILY") return addDays(iso, -1);
+  return iso;
+}

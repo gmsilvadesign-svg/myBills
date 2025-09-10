@@ -24,9 +24,11 @@ interface HeaderProps {
   exportICS: () => void;
   setOpenSettings: (open: boolean) => void;
   addSampleData?: () => void;
+  overdueCount?: number;
+  onShowOverdue?: () => void;
 }
 
-export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData }: HeaderProps) {
+export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData, overdueCount = 0, onShowOverdue }: HeaderProps) {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openAdminPanel, setOpenAdminPanel] = useState(false);
   const [openMore, setOpenMore] = useState(false);
@@ -46,6 +48,19 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
           Konta
         </div>
       </div>
+
+      {/* Barra de aviso de contas em atraso (entre o título e o menu) */}
+      {overdueCount > 0 && (
+        <div className="flex px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 items-center justify-center gap-3">
+          <span>Você possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
+          <button
+            onClick={() => onShowOverdue && onShowOverdue()}
+            className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 dark:bg-amber-800/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-medium border border-amber-300 dark:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          >
+            Verificar
+          </button>
+        </div>
+      )}
 
       <nav className={cn(CSS_CLASSES.flex.wrap, CSS_CLASSES.flex.gap2, 'items-center justify-center md:justify-end')} aria-label={t.main_actions || 'Ações principais'}>
         {/* + Nova conta */}

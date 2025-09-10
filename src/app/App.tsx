@@ -54,7 +54,7 @@ import SignIn from "@/components/UI/SignIn";
 
 // Utils
 import { addSampleBills } from "@/utils/addSampleData";
-import { occurrencesForBillInMonth, parseDate } from "@/utils/utils";
+import { occurrencesForBillInMonth, parseDate, ymd } from "@/utils/utils";
 
 function App() {
   const { user, loading: authLoading } = useAuth();
@@ -84,6 +84,9 @@ function App() {
 
   const filteredBills = useFilteredBills(bills, filter, search);
   const totals = useTotals(bills);
+  // Overdue count for header banner
+  const todayISOHeader = ymd(new Date());
+  const overdueCount = bills.filter(b => !b.paid && (parseDate(b.dueDate) < parseDate(todayISOHeader))).length;
   
   // Hook de notificações
   const { expiringBills } = useBillNotifications(bills);
@@ -116,6 +119,8 @@ function App() {
             exportICS={exportICS}
             setOpenSettings={setOpenSettings}
             addSampleData={addSampleBills}
+            overdueCount={overdueCount}
+            onShowOverdue={() => { setView('list'); setFilter('overdue'); }}
           />
           <SignIn />
           <Footer t={t} />
@@ -129,15 +134,17 @@ function App() {
   return (
     <div className="min-h-screen justify-center p-8 flex overflow-x-auto">
       <div className="w-full" style={width ? { maxWidth: width, margin: '0 auto' } : undefined}>
-        <Header
-           t={t}
-           setEditing={setEditing}
-           setEditingIncome={setEditingIncome}
-           setEditingPurchase={setEditingPurchase}
-           exportICS={exportICS}
-           setOpenSettings={setOpenSettings}
-           addSampleData={addSampleBills}
-         />
+          <Header
+            t={t}
+            setEditing={setEditing}
+            setEditingIncome={setEditingIncome}
+            setEditingPurchase={setEditingPurchase}
+            exportICS={exportICS}
+            setOpenSettings={setOpenSettings}
+            addSampleData={addSampleBills}
+            overdueCount={overdueCount}
+            onShowOverdue={() => { setView('list'); setFilter('overdue'); }}
+          />
  
          {/* Totais fixos centralizados acima das opções */}
         <TotalsStrip 
@@ -173,19 +180,28 @@ function App() {
               <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
                 <option value="today">{t.filter_today}</option>
                 <option value="month">{t.filter_month || t.totals_month}</option>
+                <option value="overdue">{t.filter_overdue}</option>
                 <option value="all">{t.filter_all}</option>
               </Select>
             </div>
             {view === 'list' && (
               <BillsList
                 bills={(function(){
+                  // Month view: incluir
+                  // - contas com vencimento no mês atual (filteredBills)
+                  // - contas pagas neste mês (seção "Contas pagas")
+                  // - contas em atraso (de meses anteriores também), para que
+                  //   ao desmarcar um pagamento elas retornem à lista
                   if (filter !== 'month') return filteredBills;
                   const now = new Date();
                   const y = now.getFullYear();
                   const m = now.getMonth();
-                  const inSameMonth = (iso?: string | null) => { if (!iso) return false; const d = new Date(iso); return d.getFullYear()===y && d.getMonth()===m; };
-                  const extras = bills.filter(b => inSameMonth(b.paidOn));
-                  const all = [...filteredBills, ...extras];
+                  const inSameMonth = (iso?: string | null) => { if (!iso) return false; const d = parseDate(iso); return d.getFullYear()===y && d.getMonth()===m; };
+                  const todayISO = ymd(new Date());
+                  const isOverdue = (b: Types.Bill) => !b.paid && parseDate(b.dueDate) < parseDate(todayISO);
+                  const extrasPaid = bills.filter(b => inSameMonth(b.paidOn));
+                  const extrasOverdue = bills.filter(isOverdue);
+                  const all = [...filteredBills, ...extrasPaid, ...extrasOverdue];
                   const seen = new Set<string>();
                   return all.filter(b => { const id = (b as any).id as string | undefined; if (!id) return true; if (seen.has(id)) return false; seen.add(id); return true; });
                 })()}
