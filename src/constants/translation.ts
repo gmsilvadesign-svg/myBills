@@ -13,7 +13,7 @@ export const LANG_TO_LOCALE: Record<string, string> = {
 export const I18N = {
   pt: {
     appearance: "Aparência",
-    app_title: "A-PAGAR V004",
+    app_title: "Konta",
     calendar_title: (label: string) => `Calendário — ${label}`,
     cancel: "Cancelar",
     close: "Fechar",
@@ -85,7 +85,7 @@ export const I18N = {
   },
   en: {
     appearance: "Appearance",
-    app_title: "A-PAGAR V004",
+    app_title: "Konta",
     calendar_title: (label: string) => `Calendar — ${label}`,
     cancel: "Cancel",
     close: "Close",
@@ -157,7 +157,7 @@ export const I18N = {
   },
   es: {
     appearance: "Apariencia",
-    app_title: "A-PAGAR V004",
+    app_title: "Konta",
     calendar_title: (label: string) => `Calendario — ${label}`,
     cancel: "Cancelar",
     close: "Cerrar",

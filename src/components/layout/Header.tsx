@@ -42,10 +42,8 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
   return (
     <header className={cn(CSS_CLASSES.flex.responsive, 'md:items-center', CSS_CLASSES.flex.gap4, 'md:gap-6', CSS_CLASSES.spacing.mb6)}>
       <div className="flex-1">
-        <div className="text-xl sm:text-2xl font-bold">
-          <span className="text-green-400">A</span>
-          <span className="text-green-700">- PAGAR</span>
-          <span className="text-slate-400"> V004</span>
+        <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-none tracking-tight brand-konta bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-700 select-none">
+          Konta
         </div>
       </div>
 

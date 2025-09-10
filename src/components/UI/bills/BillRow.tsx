@@ -31,6 +31,7 @@ interface BillRowProps {
 const BillRow = memo(function BillRow({
   bill,
   markPaid,
+  unmarkPaid,
   setEditing,
   setConfirm,
   t,

@@ -24,6 +24,7 @@ import PurchasesView from "@/components/UI/purchases/PurchasesView";
 import PurchasesModal from "@/components/UI/modals/PurchasesModal";
 import PurchaseForm from "@/components/UI/purchases/PurchaseForm";
 import TotalsStrip from "@/components/UI/TotalsStrip";
+import ToolbarButton from "@/components/UI/ToolbarButton";
 import LineChart from "@/components/UI/charts/LineChart";
 import PieChart from "@/components/UI/charts/PieChart";
 import IncomesModal from "@/components/UI/modals/IncomesModal";
@@ -147,6 +148,13 @@ function App() {
           filter={filter}
         />
 
+        {/* Ações principais movidas para baixo do gráfico */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+          <ToolbarButton onClick={() => setEditing({})} ariaLabel={t.new_bill}>{t.new_bill}</ToolbarButton>
+          <ToolbarButton onClick={() => setEditingPurchase && setEditingPurchase({})} ariaLabel={t.new_purchase || '+ Compra'}>{t.new_purchase || '+ Compra'}</ToolbarButton>
+          <ToolbarButton onClick={() => setEditingIncome && setEditingIncome({})} ariaLabel={t.new_income || '+ Fonte de Renda'}>{t.new_income || '+ Fonte de Renda'}</ToolbarButton>
+        </div>
+
          <Filters
            view={view}
            setView={setView}
@@ -160,7 +168,7 @@ function App() {
         {/* Removido: Totais agora sempre visíveis acima das opções */}
 
         {(view === "list" || view === 'purchases' || view === 'incomes') && (
-          <div className="min-h-[60vh]">
+         <div className="min-h-[60vh]">
             <div className="mb-3 max-w-xs">
               <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
                 <option value="today">{t.filter_today}</option>

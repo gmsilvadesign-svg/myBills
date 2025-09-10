@@ -94,42 +94,86 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
   // Economia = renda do mês - (total de contas do mês + compras do mês)
   const savings = incomeMonth - (monthBillsTotal + purchasesTotal);
   const pct = incomeMonth > 0 ? (savings / incomeMonth) * 100 : 0;
-  const pctFmt = incomeMonth > 0
-    ? new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(pct / 100)
-    : '—';
   let pctColor = 'text-red-600';
   if (pct > 25) pctColor = 'text-lime-400 font-semibold';
   else if (pct > 10) pctColor = 'text-emerald-700 dark:text-emerald-200 font-medium';
   else if (pct > 5) pctColor = 'text-yellow-500 font-medium';
   else if (pct > 0) pctColor = 'text-orange-500 font-medium';
 
+  // Configuração dos pilares (valores e estilos)
+  const items = [
+    { key: 'income', label: 'Renda', value: incomeMonth, color: 'bg-emerald-500 dark:bg-emerald-400', textColor: 'text-emerald-700 dark:text-emerald-200' },
+    { key: 'savings', label: 'Economia', value: savings, color: (savings >= 0 ? 'bg-teal-500 dark:bg-teal-400' : 'bg-red-500 dark:bg-red-500'), textColor: (savings >= 0 ? 'text-teal-700 dark:text-teal-200' : 'text-red-600 dark:text-red-400'), pctColor },
+    { key: 'purchases', label: t.purchases || 'Compras', value: purchasesTotal, color: 'bg-blue-500 dark:bg-blue-400', textColor: 'text-blue-700 dark:text-blue-200' },
+    { key: 'open', label: t.totals_open, value: monthOpen, color: 'bg-amber-500 dark:bg-amber-400', textColor: 'text-amber-700 dark:text-amber-200' },
+    { key: 'overdue', label: t.filter_overdue, value: monthOverdue, color: 'bg-red-500 dark:bg-red-400', textColor: 'text-red-700 dark:text-red-200', onClick: onFilterOverdue },
+  ] as const;
+
+  const maxAbs = Math.max(1, ...items.map(i => Math.abs(Number(i.value || 0))));
+
+  const fmtPrime = (n: number) => `${Math.round(n)}'`;
+
+  const percentFor = (v: number) => {
+    if (incomeMonth > 0) return fmtPrime((v / incomeMonth) * 100);
+    // fallback: relativo ao maior absoluto
+    return fmtPrime((Math.abs(v) / maxAbs) * 100 * Math.sign(v || 0));
+  };
+
   return (
     <div className="w-full flex items-center justify-center mb-4">
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 w-full max-w-6xl">
-        <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200 text-center shadow-sm">
-          <div className="text-xs sm:text-sm font-medium">Renda</div>
-          <div className="text-base sm:text-lg font-semibold">{fmtMoney(incomeMonth, currency, locale)}</div>
+      <div className="w-full max-w-6xl">
+        {/* Área das barras com a linha-base ao centro da própria área */}
+        <div className="relative h-40 px-2 flex items-end justify-center gap-4">
+          <div className="absolute left-0 right-0 top-1/2 border-t border-slate-200 dark:border-slate-700 pointer-events-none" />
+          {items.map((it) => {
+            const abs = Math.abs(Number(it.value || 0));
+            const ratio = Math.min(1, abs / maxAbs);
+            const pos = (it.value || 0) >= 0 ? ratio : 0;
+            const neg = (it.value || 0) < 0 ? ratio : 0;
+            const barEl = (
+              <div className="w-14 sm:w-16 h-40 relative">
+                {/* metade superior (positivo) */}
+                <div className="absolute left-0 right-0 top-0 h-1/2">
+                  <div
+                    className={`absolute left-0 right-0 bottom-0 ${it.color} rounded-t-xl shadow-md`}
+                    style={{ height: `${pos * 100}%` }}
+                  />
+                </div>
+                {/* metade inferior (negativo) */}
+                <div className="absolute left-0 right-0 bottom-0 h-1/2">
+                  <div
+                    className={`absolute left-0 right-0 top-0 ${it.color} rounded-b-xl shadow-md`}
+                    style={{ height: `${neg * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+            if (it.onClick) {
+              return (
+                <button key={it.key} onClick={it.onClick} className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 rounded-xl">
+                  {barEl}
+                </button>
+              );
+            }
+            return <div key={it.key}>{barEl}</div>;
+          })}
         </div>
-        <div className="rounded-xl p-3 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-200 text-center shadow-sm">
-          <div className="text-xs sm:text-sm font-medium">Economia</div>
-          <div className="text-base sm:text-lg font-semibold">{fmtMoney(savings, currency, locale)}</div>
-          <div className={`text-[11px] sm:text-xs ${pctColor}`}>{pctFmt}</div>
+        {/* Rótulos imediatamente abaixo das barras */}
+        <div className="flex items-start justify-center gap-4 px-2 mt-1">
+          {items.map((it) => {
+            const valueColor = it.key === 'savings' ? it.textColor : 'text-slate-900 dark:text-slate-100';
+            const pctTxtColor = it.key === 'savings' && (it as any).pctColor ? (it as any).pctColor : 'text-slate-500';
+            const block = (
+              <div className="w-20 sm:w-24 text-center">
+                <div className={`text-xs sm:text-sm font-medium ${it.textColor || ''}`}>{it.label}</div>
+                <div className={`text-sm sm:text-base font-semibold ${valueColor}`}>{fmtMoney(Number(it.value || 0), currency, locale)}</div>
+                <div className={`text-[11px] sm:text-xs ${pctTxtColor}`}>{percentFor(Number(it.value || 0))}</div>
+              </div>
+            );
+            if (it.onClick) return <button key={it.key} onClick={it.onClick} className="focus:outline-none rounded-xl">{block}</button>;
+            return <div key={it.key}>{block}</div>;
+          })}
         </div>
-        <div className="rounded-xl p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 text-center shadow-sm">
-          <div className="text-xs sm:text-sm font-medium">{t.purchases || 'Compras'}</div>
-          <div className="text-base sm:text-lg font-semibold">{fmtMoney(purchasesTotal, currency, locale)}</div>
-        </div>
-        <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 text-center shadow-sm">
-          <div className="text-xs sm:text-sm font-medium">{t.totals_open}</div>
-          <div className="text-base sm:text-lg font-semibold">{fmtMoney(monthOpen, currency, locale)}</div>
-        </div>
-        <button
-          onClick={onFilterOverdue}
-          className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200 text-center shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
-        >
-          <div className="text-xs sm:text-sm font-medium">{t.filter_overdue}</div>
-          <div className="text-base sm:text-lg font-semibold">{fmtMoney(monthOverdue, currency, locale)}</div>
-        </button>
       </div>
     </div>
   );

@@ -19,3 +19,37 @@ body.dark {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+
+/* Marca do app */
+.brand-konta {
+  font-family: 'Sora', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* Esconde os botões de ação no Header (apenas deixa o hambúrguer) */
+header > nav button:not(:last-child) {
+  display: none;
+}
+
+/* Estiliza o botão de menu (hambúrguer) sem moldura e com barras grossas na cor do título */
+header > nav button:last-child {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  /* três barras como backgrounds */
+  background-image:
+    linear-gradient(to right, #34d399, #047857),
+    linear-gradient(to right, #34d399, #047857),
+    linear-gradient(to right, #34d399, #047857);
+  background-repeat: no-repeat;
+  background-size: 28px 3px, 28px 3px, 28px 3px; /* largura x espessura */
+  background-position:
+    center calc(50% - 8px),
+    center,
+    center calc(50% + 8px);
+}
+
+/* Esconde o glifo interno para não conflitar com as barras CSS */
+header > nav button:last-child > span[aria-hidden="true"] {
+  display: none;
+}

@@ -22,6 +22,7 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   // Estado do preenchimento automático
   const [isSeeding, setIsSeeding] = useState(false);
   const [isClearingAuto, setIsClearingAuto] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   // Inicia liberado (false). Se já houver dados automáticos, atualiza após checagem, sem travar a UI.
   const [autoEnabled, setAutoEnabled] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -54,6 +55,20 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
       showNotification('Erro ao verificar status do Firebase.', 'error');
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  const handleClearAllData = async () => {
+    if (!confirm('Limpar TODOS os dados do usuário atual (contas, rendas e compras)? Esta ação é irreversível. Deseja continuar?')) return;
+    setIsClearingAll(true);
+    try {
+      await resetFirebaseData();
+      showNotification('Dados do usuário limpos com sucesso.', 'success');
+    } catch (error) {
+      console.error('Erro ao limpar dados:', error);
+      showNotification('Erro ao limpar dados. Verifique o console para mais detalhes.', 'error');
+    } finally {
+      setIsClearingAll(false);
     }
   };
 
@@ -159,6 +174,22 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
         </div>
 
         <div className={cn(CSS_CLASSES.flex.col, 'gap-4')}>
+          <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
+            <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>🧹 Limpar dados</h4>
+            <p className={cn(CSS_CLASSES.text.muted, 'mb-3')}>
+              Remove todas as contas, rendas e compras do usuário atual. Útil para recomeçar do zero.
+            </p>
+            <button
+              onClick={handleClearAllData}
+              disabled={isClearingAll}
+              className={cn(
+                CSS_CLASSES.button.secondary,
+                isClearingAll && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {isClearingAll ? 'Limpando…' : 'Limpar dados'}
+            </button>
+          </div>
           <div className={cn(CSS_CLASSES.container.card, 'p-4')}>
             <h4 className={cn(CSS_CLASSES.text.subtitle, 'mb-2')}>⚙️ Dados automáticos (12 meses)</h4>
             <p className={cn(CSS_CLASSES.text.muted, 'mb-3')}>

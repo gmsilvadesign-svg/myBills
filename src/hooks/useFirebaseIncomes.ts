@@ -109,6 +109,12 @@ export default function useFirebaseIncomes() {
 
   const removeIncome = async (id: string) => {
     try {
+      // Suporte ao modo local (sem Firebase)
+      if (isLocalMode) {
+        local.remove('incomes', id);
+        setIncomes(local.list('incomes', user?.uid) as Types.Income[]);
+        return;
+      }
       const ref = doc(db, 'incomes', id);
       await deleteDoc(ref);
     } catch (error) {
