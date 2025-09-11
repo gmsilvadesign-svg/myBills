@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface Slice { label: string; value: number; color: string; }
+interface Slice { label: string; value: number; color: string; legendValue?: number; }
 
 interface PieChartProps {
   data: Slice[];
@@ -8,6 +8,15 @@ interface PieChartProps {
   paletteType?: 'warm' | 'cool';
   // Optional value formatter (e.g., currency)
   formatValue?: (n: number) => string;
+  // Legend control
+  showLegend?: boolean;
+  // Center content customization
+  centerText?: string;
+  centerSubText?: string;
+  centerTextColor?: string;
+  centerBold?: boolean;
+  // If true, draw a green "check" in the center instead of text
+  centerCheck?: boolean;
 }
 
 function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
@@ -42,7 +51,7 @@ function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
   return out;
 }
 
-export default function PieChart({ data, size = 180, paletteType, formatValue }: PieChartProps) {
+export default function PieChart({ data, size = 180, paletteType, formatValue, showLegend = true, centerText, centerSubText, centerTextColor = '#ffffff', centerBold = true, centerCheck = false }: PieChartProps) {
   const totalRaw = data.reduce((s, d) => s + (d.value || 0), 0);
   // Use `total` only for arc calculations (avoid divide-by-zero)
   const total = totalRaw > 0 ? totalRaw : 1;
@@ -79,14 +88,15 @@ export default function PieChart({ data, size = 180, paletteType, formatValue }:
     );
   });
 
-  // Center label: total value in "K" with one decimal (e.g., 7.5K)
-  const totalK = `${(totalRaw / 1000).toFixed(1)}K`;
+  // Center label text (fallback to total in K if not provided)
+  const fallbackK = `${(totalRaw / 1000).toFixed(1)}K`;
+  const mainText = centerText ?? fallbackK;
   // Ensure text stays inside the donut's inner circle
   const innerRadius = radius - strokeWidth; // inner empty hole radius
   const innerDiameter = innerRadius * 2;
   // Approximate character width factor relative to font size
   const charW = 0.6;
-  const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, totalK.length) * charW);
+  const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, mainText.length) * charW);
   const maxByHeight = innerDiameter * 0.4; // comfortable single-line height
   const fontSize = Math.max(10, Math.min(maxByWidth, maxByHeight));
 
@@ -94,23 +104,48 @@ export default function PieChart({ data, size = 180, paletteType, formatValue }:
     <div className="flex items-center gap-4">
       <svg width={size} height={size}>
         {circles}
-        <text
-          x={center}
-          y={center}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize={fontSize}
-          fontWeight={700}
-          fill="#ffffff"
-          pointerEvents="none"
-        >
-          {totalK}
-        </text>
+        {centerCheck ? (
+          <>
+            <circle cx={center} cy={center} r={innerRadius * 0.8} fill="#10b981" />
+            <text x={center} y={center} textAnchor="middle" dominantBaseline="middle" fontSize={fontSize} fontWeight={700} fill="#ffffff">✓</text>
+          </>
+        ) : (
+          <>
+            <text
+              x={center}
+              y={center - (centerSubText ? fontSize * 0.25 : 0)}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={fontSize}
+              fontWeight={centerBold ? 700 : 500}
+              fill={centerTextColor}
+              pointerEvents="none"
+            >
+              {mainText}
+            </text>
+            {centerSubText && (
+              <text
+                x={center}
+                y={center + fontSize * 0.55}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={Math.max(9, fontSize * 0.55)}
+                fontWeight={500}
+                fill={centerTextColor}
+                opacity={0.85}
+              >
+                {centerSubText}
+              </text>
+            )}
+          </>
+        )}
       </svg>
+      {showLegend && (
       <div className="text-xs space-y-1">
         {colored.map(d => {
           const pct = (d.value / total) * 100;
-          const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
+          const shownVal = d.legendValue !== undefined ? d.legendValue : d.value;
+          const valueStr = formatValue ? formatValue(shownVal) : shownVal.toLocaleString();
           const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
           return (
             <div key={d.label} className="flex items-center gap-2">
@@ -122,6 +157,7 @@ export default function PieChart({ data, size = 180, paletteType, formatValue }:
           );
         })}
       </div>
+      )}
     </div>
   );
 }
