@@ -2,12 +2,12 @@
 import { useCallback, useState } from 'react';
 
 // Components
-import ToolbarButton from '@/components/UI/ToolbarButton';
 import SideDrawer from '@/components/UI/SideDrawer';
 
 // Modals
 import NotificationsModal from '@/components/UI/modals/NotificationsModal';
 import AdminPanel from '@/components/UI/modals/AdminPanel';
+import Modal from '@/components/UI/modals/Modal';
 
 // Styles & Utils
 import { CSS_CLASSES, cn } from '@/styles/constants';
@@ -24,14 +24,13 @@ interface HeaderProps {
   exportICS: () => void;
   setOpenSettings: (open: boolean) => void;
   addSampleData?: () => void;
-  overdueCount?: number;
-  onShowOverdue?: () => void;
 }
 
-export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData, overdueCount = 0, onShowOverdue }: HeaderProps) {
+export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData }: HeaderProps) {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openAdminPanel, setOpenAdminPanel] = useState(false);
   const [openMore, setOpenMore] = useState(false);
+  const [openAdd, setOpenAdd] = useState(false);
   const { user, signInWithGoogle, signOutApp } = useAuth();
 
   const handleOpenNotifications = useCallback(() => setOpenNotifications(true), []);
@@ -42,49 +41,34 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
   const handleNewPurchase = useCallback(() => setEditingPurchase && setEditingPurchase({}), [setEditingPurchase]);
 
   return (
-    <header className={cn(CSS_CLASSES.flex.responsive, 'md:items-center', CSS_CLASSES.flex.gap4, 'md:gap-6', CSS_CLASSES.spacing.mb6)}>
+    <header className={cn(CSS_CLASSES.flex.responsive, 'relative', 'md:items-center', CSS_CLASSES.flex.gap4, 'md:gap-6', CSS_CLASSES.spacing.mb6)}>
       <div className="flex-1">
         <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-none tracking-tight brand-konta bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-700 select-none">
           Konta
         </div>
       </div>
 
-      {/* Barra de aviso de contas em atraso (entre o título e o menu) */}
-      {overdueCount > 0 && (
-        <div className="flex px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 items-center justify-center gap-3">
-          <span>Você possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
-          <button
-            onClick={() => onShowOverdue && onShowOverdue()}
-            className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 dark:bg-amber-800/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-medium border border-amber-300 dark:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-          >
-            Verificar
-          </button>
-        </div>
-      )}
+      {/* Removido: ações no header para evitar botão lateral indesejado */}
 
-      <nav className={cn(CSS_CLASSES.flex.wrap, CSS_CLASSES.flex.gap2, 'items-center justify-center md:justify-end')} aria-label={t.main_actions || 'Ações principais'}>
-        {/* + Nova conta */}
-        <ToolbarButton onClick={handleNewBill} ariaLabel={t.new_bill}>{t.new_bill}</ToolbarButton>
-
-        {/* + Compra */}
-        {setEditingPurchase && (
-          <ToolbarButton onClick={handleNewPurchase} ariaLabel={t.new_purchase || '+ Compra'}>{t.new_purchase || '+ Compra'}</ToolbarButton>
-        )}
-
-        {/* + Fonte de Renda */}
-        {setEditingIncome && (
-          <ToolbarButton onClick={handleNewIncome} ariaLabel={t.new_income || '+ Fonte de Renda'}>{t.new_income || '+ Fonte de Renda'}</ToolbarButton>
-        )}
-
+      {/* Grupo flutuante: botão "+" e hambúrguer */}
+      <div className="absolute right-0 top-0 md:static md:ml-auto flex items-center gap-2">
+        {/* Botão + */}
+        <button
+          onClick={() => setOpenAdd(true)}
+          aria-label="Adicionar"
+          className="w-10 h-10 rounded-2xl bg-emerald-500 dark:bg-emerald-400 text-white font-bold flex items-center justify-center shadow-sm hover:shadow-md hover:bg-emerald-600 dark:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+        >
+          +
+        </button>
         {/* Botão lateral (hamburger) */}
         <button
           onClick={() => setOpenMore(true)}
-          aria-label="Mais opções"
+          aria-label="Mais opcoes"
           className="px-3 py-3 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 dark:from-slate-800 dark:to-slate-700 dark:text-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
         >
           <span aria-hidden="true">≡</span>
         </button>
-      </nav>
+      </div>
 
       {/* Modal de notificações */}
       <NotificationsModal open={openNotifications} onClose={() => setOpenNotifications(false)} t={t} />
@@ -93,17 +77,53 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
       <AdminPanel isOpen={openAdminPanel} onClose={() => setOpenAdminPanel(false)} />
 
       {/* Menu lateral com as outras ações */}
-      <SideDrawer open={openMore} onClose={() => setOpenMore(false)} title="Mais opções">
+      <SideDrawer open={openMore} onClose={() => setOpenMore(false)} title="Mais opcoes">
+        {/* Ações criativas adicionadas ao menu lateral para manter acessíveis */}
+        <button onClick={() => { handleNewBill(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.new_bill}</button>
+        {setEditingPurchase && (
+          <button onClick={() => { handleNewPurchase(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.new_purchase || '+ Compra'}</button>
+        )}
+        {setEditingIncome && (
+          <button onClick={() => { handleNewIncome(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.new_income || '+ Fonte de Renda'}</button>
+        )}
         <button onClick={() => { exportICS(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.export_ics}</button>
         <button onClick={() => { handleOpenNotifications(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.notifications}</button>
         <button onClick={() => { handleOpenSettings(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.settings}</button>
-        <button onClick={() => { handleOpenAdminPanel(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>Painel de Administração</button>
+        <button onClick={() => { handleOpenAdminPanel(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>Painel de Administracao</button>
         {!user ? (
           <button onClick={() => { signInWithGoogle(); setOpenMore(false); }} className={CSS_CLASSES.button.primary}>Entrar</button>
         ) : (
           <button onClick={() => { signOutApp(); setOpenMore(false); }} className={CSS_CLASSES.button.primary}>Sair</button>
         )}
       </SideDrawer>
+
+      {/* Modal de ações de adição */}
+      <Modal isOpen={openAdd} onClose={() => setOpenAdd(false)} title="Adicionar">
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => { handleNewBill(); setOpenAdd(false); }}
+            className={CSS_CLASSES.button.secondary}
+          >
+            Adicionar Conta
+          </button>
+          {setEditingPurchase && (
+            <button
+              onClick={() => { handleNewPurchase(); setOpenAdd(false); }}
+              className={CSS_CLASSES.button.secondary}
+            >
+              Adicionar Compra
+            </button>
+          )}
+          {setEditingIncome && (
+            <button
+              onClick={() => { handleNewIncome(); setOpenAdd(false); }}
+              className={CSS_CLASSES.button.secondary}
+            >
+              Adicionar Renda
+            </button>
+          )}
+        </div>
+      </Modal>
     </header>
   );
 }

@@ -150,7 +150,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
                         style={{ bottom: 0, height: `${pos * 100 * (purchasesTotal / Math.max(1, expensesTotal))}%` }}
                       />
                       <div
-                        className="absolute left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-white"
+                        className="absolute left-1/2 -translate-x-1/2 text-white font-bold text-[11px] sm:text-[12px] md:text-[13px]"
                         style={{ bottom: `${pos * 100 * (purchasesTotal / Math.max(1, expensesTotal))}%` }}
                       >
                         {Math.round((purchasesTotal / Math.max(1, expensesTotal)) * 100)}%
@@ -159,7 +159,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
                   )}
                   {pos > 0 && (
                     <div
-                      className={`absolute left-1/2 -translate-x-1/2 text-[10px] sm:text-xs ${val < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}`}
+                      className={`absolute left-1/2 -translate-x-1/2 font-bold text-[11px] sm:text-[12px] md:text-[13px] ${val < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}`}
                       style={{ bottom: `${pos * 100}%` }}
                     >
                       {percentFor(val)}
@@ -174,7 +174,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
                   />
                   {neg > 0 && (
                     <div
-                      className="absolute left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-slate-600 dark:text-slate-300"
+                      className="absolute left-1/2 -translate-x-1/2 font-bold text-[11px] sm:text-[12px] md:text-[13px] text-slate-600 dark:text-slate-300"
                       style={{ top: `${neg * 100}%` }}
                     >
                       {percentFor(val)}

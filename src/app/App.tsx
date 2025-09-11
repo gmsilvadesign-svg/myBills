@@ -24,7 +24,6 @@ import PurchasesView from "@/components/UI/purchases/PurchasesView";
 import PurchasesModal from "@/components/UI/modals/PurchasesModal";
 import PurchaseForm from "@/components/UI/purchases/PurchaseForm";
 import TotalsStrip from "@/components/UI/TotalsStrip";
-import ToolbarButton from "@/components/UI/ToolbarButton";
 import LineChart from "@/components/UI/charts/LineChart";
 import PieChart from "@/components/UI/charts/PieChart";
 import IncomesModal from "@/components/UI/modals/IncomesModal";
@@ -110,7 +109,7 @@ function App() {
     // Mostra painel de login; hooks internos não assinam nada sem user
     return (
       <div className="min-h-screen justify-center p-8 flex overflow-x-auto">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl relative">
           <Header
             t={t}
             setEditing={setEditing}
@@ -119,9 +118,20 @@ function App() {
             exportICS={exportICS}
             setOpenSettings={setOpenSettings}
             addSampleData={addSampleBills}
-            overdueCount={overdueCount}
-            onShowOverdue={() => { setView('list'); setFilter('overdue'); }}
           />
+          {overdueCount > 0 && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
+              <div className="flex px-4 py-2 rounded-xl bg-amber-100/95 dark:bg-amber-900/70 backdrop-blur-sm text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 items-center gap-3 shadow-md">
+                <span>Você possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
+                <button
+                  onClick={() => { setView('list'); setFilter('overdue'); }}
+                  className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 dark:bg-amber-800/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-medium border border-amber-300 dark:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  Verificar
+                </button>
+              </div>
+            </div>
+          )}
           <SignIn />
           <Footer t={t} />
         </div>
@@ -133,7 +143,7 @@ function App() {
 
   return (
     <div className="min-h-screen justify-center p-8 flex overflow-x-auto">
-      <div className="w-full" style={width ? { maxWidth: width, margin: '0 auto' } : undefined}>
+      <div className="w-full relative" style={width ? { maxWidth: width, margin: '0 auto' } : undefined}>
           <Header
             t={t}
             setEditing={setEditing}
@@ -142,25 +152,34 @@ function App() {
             exportICS={exportICS}
             setOpenSettings={setOpenSettings}
             addSampleData={addSampleBills}
-            overdueCount={overdueCount}
-            onShowOverdue={() => { setView('list'); setFilter('overdue'); }}
           />
+
+          {overdueCount > 0 && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
+              <div className="flex px-4 py-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 items-center gap-3 shadow-sm">
+                <span>Você possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
+                <button
+                  onClick={() => { setView('list'); setFilter('overdue'); }}
+                  className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 dark:bg-amber-800/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-medium border border-amber-300 dark:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  Verificar
+                </button>
+              </div>
+            </div>
+          )}
  
          {/* Totais fixos centralizados acima das opções */}
-        <TotalsStrip 
-          bills={bills}
-          incomes={incomes}
-          purchases={purchases}
-          onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
-          filter={filter}
-        />
+         <div className="mt-6">
+           <TotalsStrip 
+             bills={bills}
+             incomes={incomes}
+             purchases={purchases}
+             onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
+             filter={filter}
+           />
+         </div>
 
-        {/* Ações principais movidas para baixo do gráfico */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-          <ToolbarButton onClick={() => setEditing({})} ariaLabel={t.new_bill}>{t.new_bill}</ToolbarButton>
-          <ToolbarButton onClick={() => setEditingPurchase && setEditingPurchase({})} ariaLabel={t.new_purchase || '+ Compra'}>{t.new_purchase || '+ Compra'}</ToolbarButton>
-          <ToolbarButton onClick={() => setEditingIncome && setEditingIncome({})} ariaLabel={t.new_income || '+ Fonte de Renda'}>{t.new_income || '+ Fonte de Renda'}</ToolbarButton>
-        </div>
+        {/* Removido: botões principais substituídos por "+" no header */}
 
          <Filters
            view={view}
