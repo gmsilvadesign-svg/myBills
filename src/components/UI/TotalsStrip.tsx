@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { fmtMoney, ymd, parseDate, daysInMonth } from '@/utils/utils';
+import { fmtMoney, parseDate, daysInMonth } from '@/utils/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import * as Types from '@/types';
 import { occurrencesForBillInMonth } from '@/utils/utils';
@@ -13,9 +13,8 @@ interface TotalsStripProps {
   filter?: Types.FilterType;
 }
 
-const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFilterOverdue, filter = 'month' }: TotalsStripProps) {
-  const { t, locale, currency } = useTranslation();
-  const todayISO = ymd(new Date());
+const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, filter = 'month' }: TotalsStripProps) {
+  const { locale, currency } = useTranslation();
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
@@ -24,20 +23,18 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
     const d = parseDate(iso);
     return d.getFullYear() === y && d.getMonth() === m;
   };
+  const inMonthOpt = (iso?: string | null) => !!iso && inMonth(iso);
 
-  // Renda do mês (planejada), independente de status
+  // Renda do mês (planejada)
   const incomeMonth = incomes.reduce((sum, i) => {
     const base = parseDate(i.dueDate);
     switch (i.recurrence) {
       case 'MONTHLY':
         return sum + Number(i.amount || 0);
       case 'WEEKLY': {
-        // Número de ocorrências daquele weekday no mês
         const weekday = base.getDay();
         let count = 0;
-        for (let d = 1; d <= daysInMonth(y, m); d++) {
-          if (new Date(y, m, d).getDay() === weekday) count++;
-        }
+        for (let d = 1; d <= daysInMonth(y, m); d++) if (new Date(y, m, d).getDay() === weekday) count++;
         return sum + count * Number(i.amount || 0);
       }
       case 'DAILY':
@@ -50,18 +47,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
     }
   }, 0);
 
-  // Abertas do mes: nao pagas com dueDate no mes vigente
-  const monthOpen = bills.filter(b => !b.paid && inMonth(b.dueDate))
-    .reduce((s, b) => s + Number(b.amount || 0), 0);
-  // Pagas do mes: pagas com dueDate no mes vigente
-  const monthPaid = bills.filter(b => b.paid && (inMonth(b.dueDate) || inMonthOpt(b.paidOn)))
-    .reduce((s, b) => s + Number(b.amount || 0), 0);
-
-  // Atrasadas do mês: não pagas com dueDate no mês vigente e anterior a hoje
-  const monthOverdue = bills.filter(b => !b.paid && inMonth(b.dueDate) && parseDate(b.dueDate) < parseDate(todayISO))
-    .reduce((s, b) => s + Number(b.amount || 0), 0);
-
-  // Total de contas do mês (planejado), independente de status e avanço de recorrência
+  // Total de contas do mês (planejado)
   const monthBillsTotal = bills.reduce((sum, b) => {
     const base = parseDate(b.dueDate);
     switch (b.recurrence) {
@@ -70,9 +56,7 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
       case 'WEEKLY': {
         const weekday = base.getDay();
         let count = 0;
-        for (let d = 1; d <= daysInMonth(y, m); d++) {
-          if (new Date(y, m, d).getDay() === weekday) count++;
-        }
+        for (let d = 1; d <= daysInMonth(y, m); d++) if (new Date(y, m, d).getDay() === weekday) count++;
         return sum + count * Number(b.amount || 0);
       }
       case 'DAILY':
@@ -85,37 +69,32 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
     }
   }, 0);
 
-  // Compras conforme o filtro ativo (para manter consistência com a aba Compras)
+  // Compras (mantendo consistência com o filtro atual)
   const isToday = (iso: string) => { const d = parseDate(iso); const t = new Date(); return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth() && d.getDate()===t.getDate(); };
   const purchasesTotal = purchases.filter(p => {
     if (filter === 'today') return isToday(p.date);
     if (filter === 'month') return inMonth(p.date);
     if (filter === 'all') return true;
-    // Demais filtros não se aplicam a compras: manter mês como padrão
     return inMonth(p.date);
   }).reduce((s, p) => s + Number(p.amount || 0), 0);
-  // Economia = renda do mes - (total de contas do mes + compras do mes)
+
+  // Economia mensal
   const savings = incomeMonth - (monthBillsTotal + purchasesTotal);
+
+  // Abertas/atrasadas (até o fim do mês) x Pagas
+  const endOfMonth = new Date(y, m + 1, 0, 23, 59, 59, 999);
+  const openOrOverdue = bills.filter(b => !b.paid && parseDate(b.dueDate) <= endOfMonth)
+    .reduce((s, b) => s + Number(b.amount || 0), 0);
+  // Somente contas marcadas como pagas neste mês (alinha com a lista "Contas pagas")
+  const paidInMonth = bills.filter(b => inMonthOpt(b.paidOn))
+    .reduce((s, b) => s + Number(b.amount || 0), 0);
 
   return (
     <div className="w-full flex items-center justify-center mb-4">
       <div className="w-full max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex items-center">
-            <PieChart
-              size={180}
-              data={[
-                { label: 'Abertas', value: monthOpen, color: '#f59e0b' },
-                { label: 'Pagas', value: monthPaid, color: '#10b981' },
-              ]}
-              paletteType="warm"
-              formatValue={(v) => fmtMoney(v, currency, locale)}
-              centerText={fmtMoney(monthOpen, currency, locale)}
-              centerBold
-              centerCheck={monthOpen <= 0}
-            />
-          </div>
-          <div className="flex items-center">
+          {/* 1 - Renda total (por categoria) */}
+          <div className="flex flex-col items-center">
             {(() => {
               const incomeByCat = new Map<string, number>();
               incomes.forEach(i => {
@@ -135,32 +114,50 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
                   formatValue={(v) => fmtMoney(v, currency, locale)}
                   centerText={fmtMoney(incomeMonth, currency, locale)}
                   centerBold
+                  showLegend={false}
                 />
               );
             })()}
+            <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">Renda</div>
           </div>
-          <div className="flex items-center">
+
+          {/* 2 - Economia: anel cinza com fatia branca */}
+          <div className="flex flex-col items-center">
             {(() => {
               const econ = Math.max(0, savings);
-              const pctSaved = incomeMonth > 0 ? Math.max(0, (econ / incomeMonth) * 100) : 0;
-              const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pctSaved) + '%';
+              const rest = Math.max(0, incomeMonth - econ);
               const data = [
-                { label: 'Contas', value: monthBillsTotal, color: '#ef4444' },
-                { label: 'Compras', value: purchasesTotal, color: '#3b82f6' },
-                { label: 'Economia', value: econ, color: '#10b981' },
+                { label: 'Restante', value: rest, color: '#1f2937' },
+                { label: 'Economia', value: econ, color: '#ffffff' },
               ];
               return (
                 <PieChart
                   size={180}
                   data={data}
-                  paletteType="warm"
-                  formatValue={(v) => fmtMoney(v, currency, locale)}
+                  showLegend={false}
                   centerText={fmtMoney(econ, currency, locale)}
-                  centerSubText={pctStr}
                   centerBold
                 />
               );
             })()}
+            <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">Economia</div>
+          </div>
+
+          {/* 3 - Contas em aberto/atrasadas x pagas */}
+          <div className="flex flex-col items-center">
+            <PieChart
+              size={180}
+              data={[
+                { label: 'Abertas/Atrasadas', value: openOrOverdue, color: '#ef4444' },
+                { label: 'Pagas', value: paidInMonth, color: '#10b981' },
+              ]}
+              formatValue={(v) => fmtMoney(v, currency, locale)}
+              centerText={fmtMoney(openOrOverdue, currency, locale)}
+              centerBold
+              centerCheck={openOrOverdue <= 0}
+              showLegend={false}
+            />
+            <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">Contas</div>
           </div>
         </div>
       </div>
@@ -169,7 +166,3 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
 });
 
 export default TotalsStrip;
-
-
-
-

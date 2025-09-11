@@ -10,6 +10,8 @@ interface PieChartProps {
   formatValue?: (n: number) => string;
   // Legend control
   showLegend?: boolean;
+  // Show contextual legend on hover
+  hoverLegend?: boolean;
   // Center content customization
   centerText?: string;
   centerSubText?: string;
@@ -51,7 +53,9 @@ function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
   return out;
 }
 
-export default function PieChart({ data, size = 180, paletteType, formatValue, showLegend = true, centerText, centerSubText, centerTextColor = '#ffffff', centerBold = true, centerCheck = false }: PieChartProps) {
+export default function PieChart({ data, size = 180, paletteType, formatValue, showLegend = true, hoverLegend = true, centerText, centerSubText, centerTextColor = '#ffffff', centerBold = true, centerCheck = false }: PieChartProps) {
+  const [hovered, setHovered] = React.useState(false);
+  const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
   const totalRaw = data.reduce((s, d) => s + (d.value || 0), 0);
   // Use `total` only for arc calculations (avoid divide-by-zero)
   const total = totalRaw > 0 ? totalRaw : 1;
@@ -61,7 +65,7 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
   const colored = data.map((d, i) => ({ ...d, color: (allEqualColor || !d.color || paletteType) ? colors[i] : d.color }));
   const radius = size / 2;
   const center = size / 2;
-  const strokeWidth = 24; // doubled thickness
+  const strokeWidth = 24; // donut thickness
   const ringRadius = radius - strokeWidth / 2;
   const circumference = 2 * Math.PI * ringRadius;
 
@@ -84,6 +88,9 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
         strokeDasharray={`${dash} ${gap}`}
         strokeDashoffset={-offset}
         transform={`rotate(-90 ${center} ${center})`}
+        onMouseEnter={() => setHoverIndex(i)}
+        onMouseLeave={() => setHoverIndex(prev => (prev === i ? null : prev))}
+        style={{ opacity: hoverIndex === null ? 1 : (hoverIndex === i ? 1 : 0.35), cursor: 'pointer' }}
       />
     );
   });
@@ -91,23 +98,32 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
   // Center label text (fallback to total in K if not provided)
   const fallbackK = `${(totalRaw / 1000).toFixed(1)}K`;
   const mainText = centerText ?? fallbackK;
-  // Ensure text stays inside the donut's inner circle
+  // Keep text inside inner hole
   const innerRadius = radius - strokeWidth; // inner empty hole radius
   const innerDiameter = innerRadius * 2;
-  // Approximate character width factor relative to font size
-  const charW = 0.6;
+  const charW = 0.6; // approx char width factor
   const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, mainText.length) * charW);
-  const maxByHeight = innerDiameter * 0.4; // comfortable single-line height
+  const maxByHeight = innerDiameter * 0.4;
   const fontSize = Math.max(10, Math.min(maxByWidth, maxByHeight));
 
   return (
-    <div className="flex items-center gap-4">
-      <svg width={size} height={size}>
+    <div className="flex items-center gap-4" onMouseLeave={() => { setHovered(false); setHoverIndex(null); }}>
+      <svg width={size} height={size} onMouseEnter={() => setHovered(true)}>
         {circles}
         {centerCheck ? (
           <>
+            {/* Green filled center with a white check mark */}
             <circle cx={center} cy={center} r={innerRadius * 0.8} fill="#10b981" />
-            <text x={center} y={center} textAnchor="middle" dominantBaseline="middle" fontSize={fontSize} fontWeight={700} fill="#ffffff">✓</text>
+            <path
+              d={`M ${center - innerRadius * 0.35} ${center}
+                  L ${center - innerRadius * 0.1} ${center + innerRadius * 0.28}
+                  L ${center + innerRadius * 0.4} ${center - innerRadius * 0.25}`}
+              fill="none"
+              stroke="#ffffff"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={Math.max(3, innerRadius * 0.12)}
+            />
           </>
         ) : (
           <>
@@ -141,21 +157,39 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
         )}
       </svg>
       {showLegend && (
-      <div className="text-xs space-y-1">
-        {colored.map(d => {
-          const pct = (d.value / total) * 100;
-          const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
-          const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
-          return (
-            <div key={d.label} className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
-              <span className="text-slate-600 dark:text-slate-300 truncate max-w-[180px]" title={d.label}>{d.label}</span>
-              <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{valueStr}</span>
-              <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{pctStr}</span>
-            </div>
-          );
-        })}
-      </div>
+        <div className="text-xs space-y-1">
+          {colored.map(d => {
+            const pct = (d.value / total) * 100;
+            const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
+            const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
+            return (
+              <div key={d.label} className="flex items-center gap-2">
+                <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
+                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[180px]" title={d.label}>{d.label}</span>
+                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{valueStr}</span>
+                <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{pctStr}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {!showLegend && hoverLegend && hovered && (
+        <div className="text-xs space-y-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-lg px-3 py-2 shadow border border-slate-200/60 dark:border-slate-700/60">
+          {colored.map((d, i) => {
+            const pct = (d.value / total) * 100;
+            const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
+            const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
+            const dim = hoverIndex !== null && hoverIndex !== i;
+            return (
+              <div key={d.label} className="flex items-center gap-2" style={{ opacity: dim ? 0.6 : 1 }}>
+                <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
+                <span className="text-slate-700 dark:text-slate-200 truncate max-w-[180px]" title={d.label}>{d.label}</span>
+                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap">{valueStr}</span>
+                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{pctStr}</span>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
