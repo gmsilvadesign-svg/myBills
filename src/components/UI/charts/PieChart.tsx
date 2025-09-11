@@ -44,6 +44,7 @@ function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
 
 export default function PieChart({ data, size = 180, paletteType, formatValue }: PieChartProps) {
   const totalRaw = data.reduce((s, d) => s + (d.value || 0), 0);
+  // Use `total` only for arc calculations (avoid divide-by-zero)
   const total = totalRaw > 0 ? totalRaw : 1;
   // Ensure distinct colors per item if not provided or if all equal
   const allEqualColor = data.length > 1 && data.every(d => d.color === data[0].color);
@@ -78,12 +79,32 @@ export default function PieChart({ data, size = 180, paletteType, formatValue }:
     );
   });
 
+  // Center label: total value in "K" with one decimal (e.g., 7.5K)
+  const totalK = `${(totalRaw / 1000).toFixed(1)}K`;
+  // Ensure text stays inside the donut's inner circle
+  const innerRadius = radius - strokeWidth; // inner empty hole radius
+  const innerDiameter = innerRadius * 2;
+  // Approximate character width factor relative to font size
+  const charW = 0.6;
+  const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, totalK.length) * charW);
+  const maxByHeight = innerDiameter * 0.4; // comfortable single-line height
+  const fontSize = Math.max(10, Math.min(maxByWidth, maxByHeight));
+
   return (
     <div className="flex items-center gap-4">
       <svg width={size} height={size}>
         {circles}
-        <text x={center} y={center} textAnchor="middle" dominantBaseline="middle" fontSize={12} fill="#64748b">
-          {total === 0 ? '0' : ''}
+        <text
+          x={center}
+          y={center}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={fontSize}
+          fontWeight={700}
+          fill="#ffffff"
+          pointerEvents="none"
+        >
+          {totalK}
         </text>
       </svg>
       <div className="text-xs space-y-1">
