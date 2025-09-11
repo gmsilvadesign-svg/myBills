@@ -122,7 +122,7 @@ function App() {
           {overdueCount > 0 && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
               <div className="flex px-4 py-2 rounded-xl bg-amber-100/95 dark:bg-amber-900/70 backdrop-blur-sm text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 items-center gap-3 shadow-md">
-                <span>Você possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
+                <span>Voce possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
                 <button
                   onClick={() => { setView('list'); setFilter('overdue'); }}
                   className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 dark:bg-amber-800/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-medium border border-amber-300 dark:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -157,7 +157,7 @@ function App() {
           {overdueCount > 0 && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
               <div className="flex px-4 py-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 items-center gap-3 shadow-sm">
-                <span>Você possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
+                <span>Voce possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso</span>
                 <button
                   onClick={() => { setView('list'); setFilter('overdue'); }}
                   className="px-3 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 dark:bg-amber-800/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-medium border border-amber-300 dark:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -466,23 +466,17 @@ function App() {
                   exp.push(monthBills + monthPurch);
                   inc.push(monthInc);
                 }
-                // Savings rate (percentual da economia mensal)
-                const pct = labels.map((_, i) => {
-                  const spend = exp[i];
-                  const income = inc[i];
-                  if (!income || income <= 0) return 0;
-                  const saving = income - spend;
-                  return Math.max(0, Math.min(1, saving / income));
-                });
                 const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Gráfico Financeiro</h4>
+                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Historico Financeiro</h4>
                     <LineChart 
                       labels={labels} 
                       series={[{ name: 'Gastos', color: '#ef4444', values: exp }, { name: 'Renda', color: '#10b981', values: inc }]}
                       formatY={formatCurrency}
-                      percentOverlay={pct}
+                      barOverlay={labels.map((_, i) => Math.max(0, inc[i] - exp[i]))}
+                      barOverlayColor="#ffffff"
+                      barOverlayLabel="Economia"
                     />
                   </div>
                 );
@@ -492,7 +486,7 @@ function App() {
                 const y = now.getFullYear();
                 const m = now.getMonth();
                 const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear()===y && d.getMonth()===m; };
-                // Gastos: agrupar apenas em "Despesas: Fixas", "Despesas: Variáveis" e "Compras"
+                // Gastos: agrupar apenas em "Despesas: Fixas", "Despesas: Variaveis" e "Compras"
                 // Considera todas as contas do mês (pagas e em aberto)
                 const monthBillsAll = bills.filter(b => inMonth(b.dueDate));
                 const isFixed = (cat?: string | null) => {
@@ -505,7 +499,7 @@ function App() {
                 const purchasesSum = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
                 const expData = [
                   { label: 'Despesas: Fixas', value: fixedSum, color: '#ef4444' },
-                  { label: 'Despesas: Variáveis', value: variableSum, color: '#f59e0b' },
+                  { label: 'Despesas: Variaveis', value: variableSum, color: '#f59e0b' },
                   { label: 'Compras', value: purchasesSum, color: '#be185d' },
                 ];
                 
@@ -556,3 +550,15 @@ export default function AppWithProviders() {
     </NotificationProvider>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
