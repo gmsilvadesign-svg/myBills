@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface Slice { label: string; value: number; color: string; legendValue?: number; }
+interface Slice { label: string; value: number; color: string; }
 
 interface PieChartProps {
   data: Slice[];
@@ -144,8 +144,7 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
       <div className="text-xs space-y-1">
         {colored.map(d => {
           const pct = (d.value / total) * 100;
-          const shownVal = d.legendValue !== undefined ? d.legendValue : d.value;
-          const valueStr = formatValue ? formatValue(shownVal) : shownVal.toLocaleString();
+          const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
           const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
           return (
             <div key={d.label} className="flex items-center gap-2">

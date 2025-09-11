@@ -102,22 +102,18 @@ const TotalsStrip = memo(function TotalsStrip({ bills, incomes, purchases, onFil
       <div className="w-full max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex items-center">
-            {(() => {
-              const remaining = Math.max(0, monthBillsTotal - monthPaid);
-              return (
-                <PieChart
-                  size={180}
-                  data={[
-                    { label: 'Contas', value: remaining, legendValue: monthBillsTotal, color: '#3b82f6' },
-                    { label: 'Pagas', value: monthPaid, color: '#10b981' },
-                  ]}
-                  formatValue={(v) => fmtMoney(v, currency, locale)}
-                  centerText={fmtMoney(monthOpen, currency, locale)}
-                  centerBold
-                  centerCheck={monthOpen <= 0}
-                />
-              );
-            })()}
+            <PieChart
+              size={180}
+              data={[
+                { label: 'Abertas', value: monthOpen, color: '#f59e0b' },
+                { label: 'Pagas', value: monthPaid, color: '#10b981' },
+              ]}
+              paletteType="warm"
+              formatValue={(v) => fmtMoney(v, currency, locale)}
+              centerText={fmtMoney(monthOpen, currency, locale)}
+              centerBold
+              centerCheck={monthOpen <= 0}
+            />
           </div>
           <div className="flex items-center">
             {(() => {
