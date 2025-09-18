@@ -1,4 +1,4 @@
-﻿// React
+// React
 import { useMemo, useState } from "react";
 
 // Styles
@@ -572,11 +572,12 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Historico Financeiro</h4>
                     <LineChart
                       labels={labels}
-                      series={[{ name: 'Gastos', color: '#ef4444', values: exp }, { name: 'Renda', color: '#10b981', values: inc }]}
+                      series={[
+                        { name: 'Gastos', color: '#ef4444', values: exp },
+                        { name: 'Renda', color: '#10b981', values: inc },
+                        { name: 'Economia', color: '#ffffff', values: labels.map((_, i) => Math.max(0, inc[i] - exp[i])) },
+                      ]}
                       formatY={formatCurrency}
-                      barOverlay={labels.map((_, i) => Math.max(0, inc[i] - exp[i]))}
-                      barOverlayColor="#ffffff"
-                      barOverlayLabel="Economia"
                     />
                   </div>
                 );
@@ -617,11 +618,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribui├º├úo de gastos (m├¬s)</h4>
+                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de gastos (mes)</h4>
                       <PieChart data={expData} paletteType="warm" formatValue={(v) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)} />
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribui├º├úo de renda (m├¬s)</h4>
+                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de renda (mes)</h4>
                       <PieChart data={incData} paletteType="cool" formatValue={(v) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)} />
                     </div>
                   </div>
@@ -640,3 +641,4 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 }
 
 export default LegacyDashboard;
+
