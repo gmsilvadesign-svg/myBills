@@ -12,6 +12,7 @@ export interface Bill {
   notes?: string | null;
   tags?: string[];
   userId?: string;
+  bookId?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -25,6 +26,7 @@ export interface Income {
   category: string;
   notes?: string | null;
   userId?: string;
+  bookId?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -37,6 +39,7 @@ export interface Purchase {
   category?: string | null;
   notes?: string | null;
   userId?: string;
+  bookId?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -45,6 +48,15 @@ export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   language: 'pt' | 'en' | 'es';
   currency: string;
+  hideValues?: boolean;
+}
+
+export interface Book {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: string;
+  order: number;
 }
 
 export type FilterType = 'all' | 'today' | 'month' | 'overdue' | 'next7' | 'next30';
@@ -75,4 +87,3 @@ export interface Notification {
   type: NotificationType;
   duration?: number;
 }
-

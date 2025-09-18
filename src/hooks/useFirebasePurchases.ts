@@ -1,8 +1,18 @@
-// React
-import { useEffect, useState } from 'react';
+﻿// React
+import { useCallback, useEffect, useState } from 'react';
 
 // Firebase
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db, isLocalMode } from '@/firebase';
 import * as local from '@/utils/localDb';
 
@@ -14,47 +24,65 @@ import { useAuth } from '@/contexts/AuthContext';
 // Types
 import * as Types from '@/types';
 
-export default function useFirebasePurchases() {
+export default function useFirebasePurchases(activeBookId?: string | null) {
   const [purchases, setPurchases] = useState<Types.Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const { showNotification } = useNotification();
   const { t } = useTranslation();
   const { user } = useAuth();
 
+  const syncLocal = useCallback(() => {
+    if (!user || !activeBookId) {
+      setPurchases([]);
+      return;
+    }
+    const rows = (local.list('purchases', user.uid) as Types.Purchase[]).filter((purchase) => purchase.bookId === activeBookId);
+    setPurchases(rows);
+  }, [activeBookId, user]);
+
   useEffect(() => {
-    if (!user) {
+    if (!user || !activeBookId) {
       setPurchases([]);
       setLoading(false);
       return;
     }
+
     if (isLocalMode) {
-      setPurchases(local.list('purchases', user.uid) as Types.Purchase[]);
+      syncLocal();
       setLoading(false);
       return;
     }
-    const ref = query(collection(db, 'purchases'), where('userId','==', user.uid));
+
+    const ref = query(
+      collection(db, 'purchases'),
+      where('userId', '==', user.uid),
+      where('bookId', '==', activeBookId),
+    );
     const unsubscribe = onSnapshot(
       ref,
       (snapshot) => {
-        const data: Types.Purchase[] = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Types.Purchase, 'id'>) }));
+        const data: Types.Purchase[] = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Types.Purchase, 'id'>) }));
         setPurchases(data);
         setLoading(false);
       },
       (error) => {
-        console.error('Erro no listener do Firestore (purchases):', error);
+        console.error('[useFirebasePurchases] snapshot error', error);
         setLoading(false);
         showNotification(t.error_load, 'error');
-      }
+      },
     );
+
     return () => unsubscribe();
-  }, [showNotification, t, user]);
+  }, [activeBookId, showNotification, syncLocal, t, user]);
 
   const addPurchase = async (purchase: Omit<Types.Purchase, 'id'>) => {
     try {
       if (!user) throw new Error('not-authenticated');
+      const resolvedBookId = purchase.bookId ?? activeBookId;
+      if (!resolvedBookId) throw new Error('book-not-selected');
       if (isLocalMode) {
-        local.add('purchases', { ...purchase, userId: user.uid });
-        setPurchases(local.list('purchases', user.uid) as Types.Purchase[]);
+        local.add('purchases', { ...purchase, userId: user.uid, bookId: resolvedBookId });
+        syncLocal();
         return;
       }
       const ref = collection(db, 'purchases');
@@ -65,6 +93,7 @@ export default function useFirebasePurchases() {
         category: purchase.category || null,
         notes: purchase.notes || null,
         userId: user.uid,
+        bookId: resolvedBookId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -79,15 +108,18 @@ export default function useFirebasePurchases() {
     try {
       if (!purchase.id) throw new Error('Purchase ID is required to update');
       if (isLocalMode) {
-        local.update('purchases', purchase.id, purchase as any); setPurchases(local.list('purchases', user?.uid) as Types.Purchase[]); return;
+        local.update('purchases', purchase.id, purchase as any);
+        syncLocal();
+        return;
       }
       const ref = doc(db, 'purchases', purchase.id);
       await updateDoc(ref, {
         title: purchase.title,
         amount: purchase.amount,
         date: purchase.date,
-        ...(purchase.category && { category: purchase.category }),
-        ...(purchase.notes && { notes: purchase.notes }),
+        ...(purchase.category ? { category: purchase.category } : { category: null }),
+        ...(purchase.notes ? { notes: purchase.notes } : { notes: null }),
+        ...(purchase.bookId ? { bookId: purchase.bookId } : {}),
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
@@ -107,7 +139,11 @@ export default function useFirebasePurchases() {
 
   const removePurchase = async (id: string) => {
     try {
-      if (isLocalMode) { local.remove('purchases', id); setPurchases(local.list('purchases', user?.uid) as Types.Purchase[]); return; }
+      if (isLocalMode) {
+        local.remove('purchases', id);
+        syncLocal();
+        return;
+      }
       const ref = doc(db, 'purchases', id);
       await deleteDoc(ref);
     } catch (error) {

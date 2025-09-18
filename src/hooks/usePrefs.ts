@@ -4,8 +4,16 @@ import * as Types from "@/types";
 export function usePrefs(): [Types.UserPreferences, Dispatch<SetStateAction<Types.UserPreferences>>] {
   const [prefs, setPrefs] = useState<Types.UserPreferences>(() => {
     const raw = localStorage.getItem("prefs");
-    if (raw) return JSON.parse(raw) as Types.UserPreferences;
-    return { theme: "system", language: "pt", currency: "BRL" } as Types.UserPreferences;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Types.UserPreferences;
+      return {
+        theme: parsed.theme ?? "system",
+        language: parsed.language ?? "pt",
+        currency: parsed.currency ?? "BRL",
+        hideValues: parsed.hideValues ?? false,
+      };
+    }
+    return { theme: "system", language: "pt", currency: "BRL", hideValues: false } as Types.UserPreferences;
   });
 
   // Salvar no localStorage

@@ -1,8 +1,18 @@
-// React
-import { useEffect, useState } from 'react';
+﻿// React
+import { useCallback, useEffect, useState } from 'react';
 
 // Firebase
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db, isLocalMode } from '@/firebase';
 import * as local from '@/utils/localDb';
 
@@ -14,47 +24,65 @@ import { useAuth } from '@/contexts/AuthContext';
 // Types
 import * as Types from '@/types';
 
-export default function useFirebaseIncomes() {
+export default function useFirebaseIncomes(activeBookId?: string | null) {
   const [incomes, setIncomes] = useState<Types.Income[]>([]);
   const [loading, setLoading] = useState(true);
   const { showNotification } = useNotification();
   const { t } = useTranslation();
   const { user } = useAuth();
 
+  const syncLocal = useCallback(() => {
+    if (!user || !activeBookId) {
+      setIncomes([]);
+      return;
+    }
+    const rows = (local.list('incomes', user.uid) as Types.Income[]).filter((income) => income.bookId === activeBookId);
+    setIncomes(rows);
+  }, [activeBookId, user]);
+
   useEffect(() => {
-    if (!user) {
+    if (!user || !activeBookId) {
       setIncomes([]);
       setLoading(false);
       return;
     }
+
     if (isLocalMode) {
-      setIncomes(local.list('incomes', user.uid) as Types.Income[]);
+      syncLocal();
       setLoading(false);
       return;
     }
-    const ref = query(collection(db, 'incomes'), where('userId','==', user.uid));
+
+    const ref = query(
+      collection(db, 'incomes'),
+      where('userId', '==', user.uid),
+      where('bookId', '==', activeBookId),
+    );
     const unsubscribe = onSnapshot(
       ref,
       (snapshot) => {
-        const data: Types.Income[] = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Types.Income, 'id'>) }));
+        const data: Types.Income[] = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Types.Income, 'id'>) }));
         setIncomes(data);
         setLoading(false);
       },
       (error) => {
-        console.error('Erro no listener do Firestore (incomes):', error);
+        console.error('[useFirebaseIncomes] snapshot error', error);
         setLoading(false);
         showNotification(t.error_load, 'error');
-      }
+      },
     );
+
     return () => unsubscribe();
-  }, [showNotification, t, user]);
+  }, [activeBookId, showNotification, syncLocal, t, user]);
 
   const addIncome = async (income: Omit<Types.Income, 'id'>) => {
     try {
       if (!user) throw new Error('not-authenticated');
+      const resolvedBookId = income.bookId ?? activeBookId;
+      if (!resolvedBookId) throw new Error('book-not-selected');
       if (isLocalMode) {
-        local.add('incomes', { ...income, userId: user.uid });
-        setIncomes(local.list('incomes', user.uid) as Types.Income[]);
+        local.add('incomes', { ...income, userId: user.uid, bookId: resolvedBookId });
+        syncLocal();
         return;
       }
       const ref = collection(db, 'incomes');
@@ -66,6 +94,7 @@ export default function useFirebaseIncomes() {
         category: income.category,
         notes: income.notes || null,
         userId: user.uid,
+        bookId: resolvedBookId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -80,7 +109,9 @@ export default function useFirebaseIncomes() {
     try {
       if (!income.id) throw new Error('Income ID is required to update');
       if (isLocalMode) {
-        local.update('incomes', income.id, income as any); setIncomes(local.list('incomes', user?.uid) as Types.Income[]); return;
+        local.update('incomes', income.id, income as any);
+        syncLocal();
+        return;
       }
       const ref = doc(db, 'incomes', income.id);
       await updateDoc(ref, {
@@ -89,7 +120,8 @@ export default function useFirebaseIncomes() {
         dueDate: income.dueDate,
         recurrence: income.recurrence,
         category: income.category,
-        ...(income.notes && { notes: income.notes }),
+        ...(income.notes ? { notes: income.notes } : { notes: null }),
+        ...(income.bookId ? { bookId: income.bookId } : {}),
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
@@ -109,10 +141,9 @@ export default function useFirebaseIncomes() {
 
   const removeIncome = async (id: string) => {
     try {
-      // Suporte ao modo local (sem Firebase)
       if (isLocalMode) {
         local.remove('incomes', id);
-        setIncomes(local.list('incomes', user?.uid) as Types.Income[]);
+        syncLocal();
         return;
       }
       const ref = doc(db, 'incomes', id);
