@@ -44,11 +44,19 @@ export interface Purchase {
   updatedAt?: any;
 }
 
+export interface UserGoals {
+  incomeTarget?: number | null;
+  savingsTarget?: number | null;
+  expensesLimit?: number | null;
+  purchasesLimit?: number | null;
+}
+
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   language: 'pt' | 'en' | 'es';
   currency: string;
   hideValues?: boolean;
+  goals?: UserGoals;
 }
 
 export interface Book {

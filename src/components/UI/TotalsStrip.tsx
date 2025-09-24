@@ -1,28 +1,59 @@
-ï»¿import { memo } from 'react';
-import { fmtMoney, parseDate, daysInMonth } from '@/utils/utils';
+import { memo, useMemo } from 'react';
+import { fmtMoney, parseDate, daysInMonth, occurrencesForBillInMonth } from '@/utils/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import * as Types from '@/types';
-import { occurrencesForBillInMonth } from '@/utils/utils';
 import PieChart from '@/components/UI/charts/PieChart';
+import RadialProgress from '@/components/UI/charts/RadialProgress';
 import { cn } from '@/styles/constants';
 
 interface TotalsStripProps {
   bills: Types.Bill[];
   incomes: Types.Income[];
   purchases: Types.Purchase[];
+  goals?: Types.UserGoals;
   onFilterOverdue?: () => void;
   filter?: Types.FilterType;
   valuesHidden?: boolean;
 }
 
+const ratioColorTarget = (ratio: number) => {
+  if (ratio >= 1.1) return '#0ea5e9';
+  if (ratio >= 1) return '#22c55e';
+  if (ratio >= 0.75) return '#65a30d';
+  if (ratio >= 0.5) return '#f59e0b';
+  return '#ef4444';
+};
+
+const ratioColorCeiling = (ratio: number) => {
+  if (ratio >= 1.1) return '#dc2626';
+  if (ratio >= 1) return '#f97316';
+  if (ratio >= 0.75) return '#facc15';
+  if (ratio >= 0.5) return '#65a30d';
+  return '#22c55e';
+};
+
+const ratioFrom = (value: number, limit?: number | null) => {
+  if (!limit || !Number.isFinite(limit) || limit <= 0) return null;
+  return value / limit;
+};
+
+const fallbackSlice = (label: string) => [{ label, value: 1, color: '#94a3b8' }];
+
+const formatPercent = (ratio: number | null, formatter: Intl.NumberFormat) => {
+  if (ratio === null || Number.isNaN(ratio)) return '--';
+  return formatter.format(Math.max(0, ratio));
+};
+
 const TotalsStrip = memo(function TotalsStrip({
   bills,
   incomes,
   purchases,
+  goals,
   filter = 'month',
   valuesHidden = false,
 }: TotalsStripProps) {
   const { locale, currency } = useTranslation();
+  const percentFormatter = useMemo(() => new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }), [locale]);
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
@@ -33,7 +64,7 @@ const TotalsStrip = memo(function TotalsStrip({
   };
   const inMonthOpt = (iso?: string | null) => !!iso && inMonth(iso);
 
-  // Renda do mes (planejada)
+  // Renda do mês (planejada)
   const incomeMonth = incomes.reduce((sum, i) => {
     const base = parseDate(i.dueDate);
     switch (i.recurrence) {
@@ -55,7 +86,7 @@ const TotalsStrip = memo(function TotalsStrip({
     }
   }, 0);
 
-  // Total de contas do mes (planejado)
+  // Total de contas do mês (planejado)
   const monthBillsTotal = bills.reduce((sum, b) => {
     const base = parseDate(b.dueDate);
     switch (b.recurrence) {
@@ -77,7 +108,7 @@ const TotalsStrip = memo(function TotalsStrip({
     }
   }, 0);
 
-  // Compras (mantendo consistencia com o filtro atual)
+  // Compras (mantendo consistência com o filtro atual)
   const isToday = (iso: string) => {
     const d = parseDate(iso);
     const t = new Date();
@@ -94,90 +125,109 @@ const TotalsStrip = memo(function TotalsStrip({
 
   // Economia mensal
   const savings = incomeMonth - (monthBillsTotal + purchasesTotal);
+  const monthlySpend = monthBillsTotal + purchasesTotal;
 
-  // Abertas/atrasadas (ate o fim do mes) x Pagas
+  // Abertas/atrasadas x Pagas (até o fim do mês)
   const endOfMonth = new Date(y, m + 1, 0, 23, 59, 59, 999);
   const openOrOverdue = bills
     .filter((b) => !b.paid && parseDate(b.dueDate) <= endOfMonth)
     .reduce((s, b) => s + Number(b.amount || 0), 0);
   const paidInMonth = bills.filter((b) => inMonthOpt(b.paidOn)).reduce((s, b) => s + Number(b.amount || 0), 0);
 
-  const totalExpenses = monthBillsTotal + purchasesTotal;
-  const overspend = savings < 0 ? Math.abs(savings) : 0;
-  const expensesWithinBudget = Math.max(0, totalExpenses - overspend);
-
   const formattedCurrency = (value: number) => fmtMoney(value, currency, locale);
   const maskValue = (value: string) => (valuesHidden ? '****' : value);
   const maskCurrency = (value: number) => maskValue(formattedCurrency(value));
 
+  const incomeTarget = goals?.incomeTarget ?? null;
+  const savingsTarget = goals?.savingsTarget ?? null;
+  const expensesLimit = goals?.expensesLimit ?? null;
+
+  const incomeRatio = ratioFrom(incomeMonth, incomeTarget);
+  const savingsRatio = ratioFrom(Math.max(0, savings), savingsTarget);
+  const expensesRatio = ratioFrom(monthlySpend, expensesLimit);
+
+  const hoverIncomeText = !valuesHidden ? formatPercent(incomeRatio, percentFormatter) : undefined;
+  const hoverSavingsText = !valuesHidden ? formatPercent(savingsRatio, percentFormatter) : undefined;
+  const hoverExpensesText = !valuesHidden ? formatPercent(expensesRatio, percentFormatter) : undefined;
+
+  const incomeHoverColor = incomeRatio !== null ? ratioColorTarget(incomeRatio) : '#22c55e';
+  const savingsHoverColor = savingsRatio !== null ? ratioColorTarget(savingsRatio) : savings >= 0 ? '#16a34a' : '#dc2626';
+  const expensesHoverColor = expensesRatio !== null ? ratioColorCeiling(expensesRatio) : '#f97316';
+
+  const incomeByCategory = new Map<string, number>();
+  incomes.forEach((i) => {
+    let occCount = 0;
+    try {
+      occCount = occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length;
+    } catch {
+      occCount = inMonth(i.dueDate) ? 1 : 0;
+    }
+    if (occCount > 0) {
+      const label = i.category || 'Outros';
+      incomeByCategory.set(label, (incomeByCategory.get(label) || 0) + occCount * Number(i.amount || 0));
+    }
+  });
+  const incomeSlices = incomeByCategory.size ? Array.from(incomeByCategory, ([label, value]) => ({ label, value, color: '' })) : fallbackSlice('Sem renda');
+
+
   return (
-    <div className="w-full flex items-center justify-center mb-4">
-      <div className={cn('w-full max-w-6xl transition-all', valuesHidden && 'blur-sm pointer-events-none select-none')}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* 1 - Renda total (por categoria) */}
-          <div className="flex flex-col items-center">
-            {(() => {
-              const incomeByCat = new Map<string, number>();
-              incomes.forEach((i) => {
-                let has = false;
-                try {
-                  has = occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length > 0;
-                } catch {
-                  has = inMonth(i.dueDate);
-                }
-                if (has) {
-                  const label = i.category || 'Outros';
-                  incomeByCat.set(label, (incomeByCat.get(label) || 0) + Number(i.amount || 0));
-                }
-              });
-              const incData = Array.from(incomeByCat, ([label, value]) => ({ label, value, color: '#10b981' }));
-              return (
-                <PieChart
-                  size={180}
-                  data={incData.length ? incData : [{ label: 'Sem renda', value: 1, color: '#64748b' }]}
-                  paletteType="cool"
-                  formatValue={(v) => maskCurrency(v)}
-                  centerText={maskCurrency(incomeMonth)}
-                  centerBold
-                  showLegend={false}
-                />
-              );
-            })()}
-            <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">Renda</div>
-          </div>
-
-          {/* 2 - Economia */}
-          <div className="flex flex-col items-center">
-            {(() => {
-              const econPositive = Math.max(0, savings);
-              const economyData = savings >= 0
-                ? [
-                    { label: 'Gastos', value: totalExpenses, color: '#1f2937' },
-                    { label: 'Economia', value: econPositive, color: '#22c55e' },
-                  ]
-                : [
-                    { label: 'Dentro da renda', value: expensesWithinBudget, color: '#1f2937' },
-                    { label: 'Deficit', value: overspend, color: '#dc2626' },
-                  ];
-              const centerColor = valuesHidden ? '#ffffff' : savings < 0 ? '#dc2626' : '#16a34a';
-              return (
-                <PieChart
-                  size={180}
-                  data={economyData}
-                  showLegend={false}
-                  centerText={maskCurrency(savings)}
-                  centerTextColor={centerColor}
-                  centerBold
-                />
-              );
-            })()}
-            <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">Economia</div>
-          </div>
-
-          {/* 3 - Contas em aberto/atrasadas x pagas */}
-          <div className="flex flex-col items-center">
+    <div className="w-full flex justify-center mb-6">
+      <div className={cn('w-full max-w-6xl space-y-8 transition-all', valuesHidden && 'blur-sm pointer-events-none select-none')}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex flex-col items-center gap-5">
             <PieChart
-              size={180}
+              size={204}
+              data={incomeSlices}
+              paletteType="cool"
+              formatValue={(v) => maskCurrency(v)}
+              centerText={maskCurrency(incomeMonth)}
+              centerBold
+              showLegend={false}
+              hoverCenterText={!valuesHidden && hoverIncomeText !== '--' ? hoverIncomeText : undefined}
+              hoverCenterTextColor={incomeHoverColor}
+              hoverFontScale={1.18}
+            />
+            <RadialProgress
+              value={incomeMonth}
+              target={incomeTarget}
+              label="Meta de renda"
+              valueFormatter={maskCurrency}
+              targetFormatter={maskCurrency}
+              percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
+              hideValue={valuesHidden}
+              mode="target"
+            />
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Renda</div>
+          </div>
+
+          <div className="flex flex-col items-center gap-5">
+            <PieChart
+              size={204}
+              data={savingPieData(savings, monthlySpend)}
+              showLegend={false}
+              centerText={maskCurrency(savings)}
+              centerTextColor={valuesHidden ? '#ffffff' : savings < 0 ? '#dc2626' : '#16a34a'}
+              centerBold
+              hoverCenterText={!valuesHidden && hoverSavingsText !== '--' ? hoverSavingsText : undefined}
+              hoverCenterTextColor={savingsHoverColor}
+              hoverFontScale={1.18}
+            />
+            <RadialProgress
+              value={Math.max(0, savings)}
+              target={savingsTarget}
+              label="Meta de economia"
+              valueFormatter={maskCurrency}
+              targetFormatter={maskCurrency}
+              percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
+              hideValue={valuesHidden}
+              mode="target"
+            />
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Economia</div>
+          </div>
+
+          <div className="flex flex-col items-center gap-5">
+            <PieChart
+              size={204}
               data={[
                 { label: 'Abertas/Atrasadas', value: openOrOverdue, color: '#ea580c' },
                 { label: 'Pagas', value: paidInMonth, color: '#fb923c' },
@@ -185,10 +235,23 @@ const TotalsStrip = memo(function TotalsStrip({
               formatValue={(v) => maskCurrency(v)}
               centerText={maskCurrency(openOrOverdue)}
               centerBold
-              centerCheck={openOrOverdue <= 0}
+              centerCheck={!valuesHidden && openOrOverdue <= 0}
               showLegend={false}
+              hoverCenterText={!valuesHidden && hoverExpensesText !== '--' ? hoverExpensesText : undefined}
+              hoverCenterTextColor={expensesHoverColor}
+              hoverFontScale={1.18}
             />
-            <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">Contas</div>
+            <RadialProgress
+              value={monthlySpend}
+              target={expensesLimit}
+              label="Teto de gastos"
+              valueFormatter={maskCurrency}
+              targetFormatter={maskCurrency}
+              percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
+              hideValue={valuesHidden}
+              mode="ceiling"
+            />
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Contas</div>
           </div>
         </div>
       </div>
@@ -198,4 +261,18 @@ const TotalsStrip = memo(function TotalsStrip({
 
 export default TotalsStrip;
 
-
+function savingPieData(savings: number, expenses: number) {
+  const econPositive = Math.max(0, savings);
+  if (savings >= 0) {
+    return [
+      { label: 'Gastos', value: expenses, color: '#1f2937' },
+      { label: 'Economia', value: econPositive, color: '#22c55e' },
+    ];
+  }
+  const overspend = Math.abs(savings);
+  const withinBudget = Math.max(0, expenses - overspend);
+  return [
+    { label: 'Dentro da renda', value: withinBudget, color: '#1f2937' },
+    { label: 'Déficit', value: overspend, color: '#dc2626' },
+  ];
+}

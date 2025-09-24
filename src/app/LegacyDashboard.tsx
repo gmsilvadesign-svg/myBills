@@ -35,6 +35,7 @@ import { CSS_CLASSES, cn } from "@/styles/constants";
 // Modals
 import DeleteConfirm from "@/components/UI/modals/DeleteConfirm";
 import SettingsModal from "@/components/UI/modals/Settings";
+import Modal from "@/components/UI/modals/Modal";
 
 // Hooks
 import { usePrefs } from "@/hooks/usePrefs";
@@ -85,6 +86,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const { purchases, loading: loadingPurchases, upsertPurchase, removePurchase } = useFirebasePurchases(activeBookId);
   const [openPurchasesModal, setOpenPurchasesModal] = useState(false);
   const [openIncomesModal, setOpenIncomesModal] = useState(false);
+  const [openGoals, setOpenGoals] = useState(false);
   const [chartRange, setChartRange] = useState<'6m' | '12m'>('12m');
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
@@ -108,6 +110,23 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   };
   const activeBook = useMemo(() => books.find((book) => book.id === activeBookId) ?? null, [books, activeBookId]);
   const hideValues = Boolean(prefs.hideValues);
+
+  const goalRows = useMemo(() => {
+    const rows: Array<{ label: string; value: string; tone: 'target' | 'limit' }> = [];
+    const goals = prefs.goals;
+    if (!goals) return rows;
+    const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency });
+    const addRow = (label: string, amount?: number | null, tone: 'target' | 'limit' = 'target') => {
+      if (typeof amount === 'number' && Number.isFinite(amount)) {
+        rows.push({ label, value: formatter.format(amount), tone });
+      }
+    };
+    addRow('Meta de renda', goals.incomeTarget, 'target');
+    addRow('Meta de economia', goals.savingsTarget, 'target');
+    addRow('Teto de gastos em contas', goals.expensesLimit, 'limit');
+    addRow('Teto de compras', goals.purchasesLimit, 'limit');
+    return rows;
+  }, [prefs.goals, locale, currency]);
 
   const handleToggleHideValues = () => {
     setPrefs((prev) => ({ ...prev, hideValues: !prev.hideValues }));
@@ -185,6 +204,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             setEditingIncome={setEditingIncome}
             setEditingPurchase={setEditingPurchase}
             exportICS={exportICS}
+            onOpenGoals={() => setOpenGoals(true)}
             setOpenSettings={setOpenSettings}
             addSampleData={addSampleBills}
           />
@@ -261,10 +281,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           </div>
         )}
 
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 md:p-6 shadow-sm">
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
           <TotalsStrip
             bills={bills}
             incomes={incomes}
+            goals={prefs.goals}
             purchases={purchases}
             onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
             filter={filter}
@@ -471,6 +492,39 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           locale={locale}
           currency={currency}
         />
+        <Modal isOpen={openGoals} onClose={() => setOpenGoals(false)} title="Metas">
+          <div className="space-y-4">
+            {goalRows.length ? (
+              <div className="space-y-3">
+                {goalRows.map(({ label, value, tone }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 text-sm">
+                    <span className="font-medium text-slate-600 dark:text-slate-200">{label}</span>
+                    <span
+                      className={tone === 'target' ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Nenhuma meta definida ainda. Use as configuracoes para cadastrar metas de renda, economia ou tetos de gastos.
+              </p>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button onClick={() => setOpenGoals(false)} className={CSS_CLASSES.button.secondary}>
+                Fechar
+              </button>
+              <button
+                onClick={() => { setOpenGoals(false); setOpenSettings(true); }}
+                className={CSS_CLASSES.button.primary}
+              >
+                Configurar metas
+              </button>
+            </div>
+          </div>
+        </Modal>
          {view === 'general' && (
            <div className="general-summary mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
              <h3 className="text-lg font-semibold mb-2">Balan├ºo geral do m├¬s</h3>
@@ -516,13 +570,72 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                  </div>
                );
             })()}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-slate-600 dark:text-slate-300">Per├¡odo:</span>
                 <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
                 <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>12m</button>
                 {/* Bot├úo 1 ano removido */}
               </div>
+              {(() => {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth();
+                const totalDays = new Date(y, m + 1, 0).getDate();
+                const weeks = Math.max(1, Math.ceil(totalDays / 7));
+                const weekPrefix = prefs.language === 'en' ? 'Week' : 'Semana';
+                const weekLabels = Array.from({ length: weeks }, (_, idx) => `${weekPrefix} ${idx + 1}`);
+                const weekIncome = Array.from({ length: weeks }, () => 0);
+                const weekBills = Array.from({ length: weeks }, () => 0);
+                const weekPurchases = Array.from({ length: weeks }, () => 0);
+                const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear() === y && d.getMonth() === m; };
+                const indexFor = (date: Date) => Math.min(weeks - 1, Math.floor((date.getDate() - 1) / 7));
+                incomes.forEach((income) => {
+                  const occ = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
+                  const amount = Number(income.amount || 0);
+                  occ.forEach((iso) => {
+                    const day = parseDate(iso);
+                    weekIncome[indexFor(day)] += amount;
+                  });
+                });
+                bills.forEach((bill) => {
+                  const occ = occurrencesForBillInMonth(bill, y, m);
+                  const amount = Number(bill.amount || 0);
+                  occ.forEach((iso) => {
+                    const day = parseDate(iso);
+                    weekBills[indexFor(day)] += amount;
+                  });
+                });
+                purchases.forEach((purchase) => {
+                  if (!inMonth(purchase.date)) return;
+                  const day = parseDate(purchase.date);
+                  weekPurchases[indexFor(day)] += Number(purchase.amount || 0);
+                });
+                const weekExpenses = weekBills.map((value, idx) => value + weekPurchases[idx]);
+                const cumulativeSaldo: number[] = [];
+                let running = 0;
+                for (let idx = 0; idx < weeks; idx += 1) {
+                  running += weekIncome[idx] - weekExpenses[idx];
+                  cumulativeSaldo.push(running);
+                }
+                const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
+                return (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Projecao renda x gastos (semanas)</h4>
+                    <LineChart
+                      labels={weekLabels}
+                      height={240}
+                      series={[
+                        { name: 'Renda', color: '#10b981', values: weekIncome },
+                        { name: 'Contas', color: '#f97316', values: weekBills },
+                        { name: 'Compras', color: '#06b6d4', values: weekPurchases },
+                        { name: 'Saldo acumulado', color: '#2563eb', values: cumulativeSaldo },
+                      ]}
+                      formatY={formatCurrency}
+                    />
+                  </div>
+                );
+              })()}
               {(() => {
                 const now = new Date();
                 const months = (chartRange === '6m' ? 6 : 12);
@@ -535,34 +648,17 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                   const y = d.getFullYear();
                   const m = d.getMonth();
                   const inMonth = (iso: string) => { const dd = parseDate(iso); return dd.getFullYear()===y && dd.getMonth()===m; };
-                  const monthBills = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s,b)=> s + Number(b.amount||0), 0);
-                  const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
-                  // Renda planejada do m├¬s (mesma l├│gica dos cards)
-                  let monthInc = incomes.reduce((sum, i) => {
-                    const base = parseDate(i.dueDate);
-                    const rec = (i as any).recurrence || 'NONE';
-                    if (rec === 'MONTHLY') return sum + Number(i.amount || 0);
-                    if (rec === 'WEEKLY') {
-                      const weekday = base.getDay();
-                      let count = 0;
-                      const totalDays = new Date(y, m + 1, 0).getDate();
-                      for (let d2 = 1; d2 <= totalDays; d2++) if (new Date(y, m, d2).getDay() === weekday) count++;
-                      return sum + count * Number(i.amount || 0);
-                    }
-                    if (rec === 'DAILY') {
-                      const totalDays = new Date(y, m + 1, 0).getDate();
-                      return sum + totalDays * Number(i.amount || 0);
-                    }
-                    if (rec === 'YEARLY') return base.getMonth() === m ? sum + Number(i.amount || 0) : sum;
-                    // NONE
-                    return inMonth(i.dueDate) ? sum + Number(i.amount || 0) : sum;
+                                    const monthBills = bills.reduce((sum, bill) => {
+                    const occurrences = occurrencesForBillInMonth(bill, y, m);
+                    if (!occurrences.length) return sum;
+                    return sum + occurrences.length * Number(bill.amount || 0);
                   }, 0);
-                  // adiciona atrasadas no m├¬s atual
-                  let overdueAdd = 0;
-                  if (i === 0) {
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    overdueAdd = bills.filter(b => !b.paid && new Date(b.dueDate) < today).reduce((s,b)=> s + Number(b.amount||0), 0);
-                  }
+                  const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
+                  const monthInc = incomes.reduce((sum, income) => {
+                    const occurrences = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
+                    if (!occurrences.length) return sum;
+                    return sum + occurrences.length * Number(income.amount || 0);
+                  }, 0);
                   exp.push(monthBills + monthPurch);
                   inc.push(monthInc);
                 }
@@ -572,10 +668,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Historico Financeiro</h4>
                     <LineChart
                       labels={labels}
+                      height={260}
                       series={[
                         { name: 'Gastos', color: '#ef4444', values: exp },
                         { name: 'Renda', color: '#10b981', values: inc },
-                        { name: 'Economia', color: '#ffffff', values: labels.map((_, i) => Math.max(0, inc[i] - exp[i])) },
+                        { name: 'Economia', color: '#38bdf8', values: labels.map((_, i) => Math.max(0, inc[i] - exp[i])) },
                       ]}
                       formatY={formatCurrency}
                     />
@@ -586,44 +683,46 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 const now = new Date();
                 const y = now.getFullYear();
                 const m = now.getMonth();
-                const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear()===y && d.getMonth()===m; };
-                // Gastos: agrupar apenas em "Despesas: Fixas", "Despesas: Variaveis" e "Compras"
-                // Considera todas as contas do m├¬s (pagas e em aberto)
-                const monthBillsAll = bills.filter(b => inMonth(b.dueDate));
-                const isFixed = (cat?: string | null) => {
-                  const s = (cat || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-                  return s.includes('fixa');
-                };
-                const fixedSum = monthBillsAll.filter(b => isFixed(b.category)).reduce((s,b)=> s + Number(b.amount||0), 0);
-                const totalBills = monthBillsAll.reduce((s,b)=> s + Number(b.amount||0), 0);
-                const variableSum = Math.max(0, totalBills - fixedSum);
-                const purchasesSum = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
-                const expData = [
-                  { label: 'Despesas: Fixas', value: fixedSum, color: '#ef4444' },
-                  { label: 'Despesas: Variaveis', value: variableSum, color: '#f59e0b' },
-                  { label: 'Compras', value: purchasesSum, color: '#be185d' },
-                ];
-
-                // Renda: exibir por categoria, sem prefixo "Renda:"
-                const incomeByCat = new Map<string, number>();
-                incomes.forEach(i => {
-                  let has = false;
-                  try { has = require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0; } catch { has = inMonth(i.dueDate); }
-                  if (has) {
-                    const label = i.category || 'Outros';
-                    incomeByCat.set(label, (incomeByCat.get(label)||0) + Number(i.amount||0));
-                  }
+                const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear() === y && d.getMonth() === m; };
+                const expenseMap = new Map<string, number>();
+                bills.forEach((bill) => {
+                  const occ = occurrencesForBillInMonth(bill, y, m);
+                  if (!occ.length) return;
+                  const total = occ.length * Number(bill.amount || 0);
+                  const label = bill.category || 'Contas diversas';
+                  expenseMap.set(label, (expenseMap.get(label) || 0) + total);
                 });
-                const incData = Array.from(incomeByCat, ([label, value]) => ({ label, value, color: '#10b981' }));
+                purchases.forEach((purchase) => {
+                  if (!inMonth(purchase.date)) return;
+                  const label = purchase.category || 'Outros';
+                  const key = `Compra: ${label}`;
+                  expenseMap.set(key, (expenseMap.get(key) || 0) + Number(purchase.amount || 0));
+                });
+                const expenseSlices = expenseMap.size
+                  ? Array.from(expenseMap, ([label, value]) => ({ label, value, color: '' }))
+                  : [{ label: 'Sem gastos', value: 1, color: '#94a3b8' }];
+
+                const incomeMap = new Map<string, number>();
+                incomes.forEach((income) => {
+                  const occ = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
+                  if (!occ.length) return;
+                  const label = income.category || 'Outros';
+                  incomeMap.set(label, (incomeMap.get(label) || 0) + occ.length * Number(income.amount || 0));
+                });
+                const incomeSlices = incomeMap.size
+                  ? Array.from(incomeMap, ([label, value]) => ({ label, value, color: '' }))
+                  : [{ label: 'Sem renda', value: 1, color: '#94a3b8' }];
+
+                const formatter = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de gastos (mes)</h4>
-                      <PieChart data={expData} paletteType="warm" formatValue={(v) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)} />
+                      <PieChart data={expenseSlices} paletteType="warm" formatValue={formatter} />
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de renda (mes)</h4>
-                      <PieChart data={incData} paletteType="cool" formatValue={(v) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v)} />
+                      <PieChart data={incomeSlices} paletteType="cool" formatValue={formatter} />
                     </div>
                   </div>
                 );
@@ -641,4 +740,3 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 }
 
 export default LegacyDashboard;
-

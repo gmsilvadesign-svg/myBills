@@ -19,6 +19,12 @@ interface PieChartProps {
   centerBold?: boolean;
   // If true, draw a green "check" in the center instead of text
   centerCheck?: boolean;
+  // Hover behaviour overrides
+  hoverCenterText?: string;
+  hoverCenterSubText?: string | null;
+  hoverCenterTextColor?: string;
+  hoverFontScale?: number;
+  onHoverChange?: (hovering: boolean) => void;
 }
 
 function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
@@ -53,7 +59,26 @@ function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
   return out;
 }
 
-export default function PieChart({ data, size = 180, paletteType, formatValue, showLegend = true, hoverLegend = true, centerText, centerSubText, centerTextColor = '#ffffff', centerBold = true, centerCheck = false }: PieChartProps) {
+const DEFAULT_HOVER_FONT_SCALE = 1.18;
+
+export default function PieChart({
+  data,
+  size = 180,
+  paletteType,
+  formatValue,
+  showLegend = true,
+  hoverLegend = true,
+  centerText,
+  centerSubText,
+  centerTextColor = '#ffffff',
+  centerBold = true,
+  centerCheck = false,
+  hoverCenterText,
+  hoverCenterSubText,
+  hoverCenterTextColor,
+  hoverFontScale,
+  onHoverChange,
+}: PieChartProps) {
   const [hovered, setHovered] = React.useState(false);
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
   const totalRaw = data.reduce((s, d) => s + (d.value || 0), 0);
@@ -68,6 +93,21 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
   const strokeWidth = 24; // donut thickness
   const ringRadius = radius - strokeWidth / 2;
   const circumference = 2 * Math.PI * ringRadius;
+
+  const handleEnter = () => {
+    if (!hovered) {
+      setHovered(true);
+      onHoverChange?.(true);
+    }
+  };
+
+  const handleLeave = () => {
+    if (hovered) {
+      onHoverChange?.(false);
+    }
+    setHovered(false);
+    setHoverIndex(null);
+  };
 
   let accum = 0;
   const circles = colored.map((d, i) => {
@@ -97,18 +137,27 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
 
   // Center label text (fallback to total in K if not provided)
   const fallbackK = `${(totalRaw / 1000).toFixed(1)}K`;
-  const mainText = centerText ?? fallbackK;
+  const baseMainText = centerText ?? fallbackK;
   // Keep text inside inner hole
   const innerRadius = radius - strokeWidth; // inner empty hole radius
   const innerDiameter = innerRadius * 2;
   const charW = 0.6; // approx char width factor
-  const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, mainText.length) * charW);
+  const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, baseMainText.length) * charW);
   const maxByHeight = innerDiameter * 0.4;
-  const fontSize = Math.max(10, Math.min(maxByWidth, maxByHeight));
+  const baseFontSize = Math.max(10, Math.min(maxByWidth, maxByHeight));
+  const hoverActive = hovered && typeof hoverCenterText === 'string';
+  const fontScale = hoverActive ? (hoverFontScale ?? DEFAULT_HOVER_FONT_SCALE) : 1;
+  const fontSize = Math.min(baseFontSize * fontScale, baseFontSize * 1.5);
+  const mainText = hoverActive ? (hoverCenterText as string) : baseMainText;
+  const subText = hoverActive
+    ? (hoverCenterSubText === undefined ? centerSubText : hoverCenterSubText || undefined)
+    : centerSubText;
+  const textColor = hoverActive && hoverCenterTextColor ? hoverCenterTextColor : centerTextColor;
+  const showSubText = typeof subText === 'string' && subText.trim().length > 0;
 
   return (
-    <div className="flex items-center gap-4" onMouseLeave={() => { setHovered(false); setHoverIndex(null); }}>
-      <svg width={size} height={size} onMouseEnter={() => setHovered(true)}>
+    <div className="flex items-center gap-4" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
+      <svg width={size} height={size}>
         {circles}
         {centerCheck ? (
           <>
@@ -129,17 +178,17 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
           <>
             <text
               x={center}
-              y={center - (centerSubText ? fontSize * 0.25 : 0)}
+              y={center - (showSubText ? fontSize * 0.25 : 0)}
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={fontSize}
               fontWeight={centerBold ? 700 : 500}
-              fill={centerTextColor}
+              fill={textColor}
               pointerEvents="none"
             >
               {mainText}
             </text>
-            {centerSubText && (
+            {showSubText && (
               <text
                 x={center}
                 y={center + fontSize * 0.55}
@@ -147,10 +196,10 @@ export default function PieChart({ data, size = 180, paletteType, formatValue, s
                 dominantBaseline="middle"
                 fontSize={Math.max(9, fontSize * 0.55)}
                 fontWeight={500}
-                fill={centerTextColor}
+                fill={textColor}
                 opacity={0.85}
               >
-                {centerSubText}
+                {subText}
               </text>
             )}
           </>
