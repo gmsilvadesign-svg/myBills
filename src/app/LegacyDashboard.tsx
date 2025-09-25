@@ -20,7 +20,6 @@ import BillsCalendar from "@/components/UI/bills/BillsCalendar";
 import BillForm from "@/components/UI/bills/BillForm";
 // import TotalsPills from "@/components/UI/TotalsPills";
 import IncomeForm from "@/components/UI/incomes/IncomeForm";
-import PurchasesView from "@/components/UI/purchases/PurchasesView";
 import PurchasesModal from "@/components/UI/modals/PurchasesModal";
 import PurchaseForm from "@/components/UI/purchases/PurchaseForm";
 import TotalsStrip from "@/components/UI/TotalsStrip";
@@ -40,11 +39,9 @@ import Modal from "@/components/UI/modals/Modal";
 // Hooks
 import { usePrefs } from "@/hooks/usePrefs";
 import useFilteredBills from "@/hooks/useFilteredBills";
-import useTotals from "@/hooks/useTotals";
 import useFirebaseBills from "@/hooks/useFirebaseBills";
 import useFirebaseIncomes from "@/hooks/useFirebaseIncomes";
 import useFirebasePurchases from "@/hooks/useFirebasePurchases";
-import { useBillNotifications } from "@/hooks/useBillNotifications";
 
 // Contexts
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,7 +67,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const t = useI18n(prefs.language);
   const { bills, loading, upsertBill, removeBill, markPaid, unmarkPaid } =
     useFirebaseBills(activeBookId);
-  const { incomes, loading: loadingIncomes, upsertIncome, removeIncome } = useFirebaseIncomes(activeBookId);
+  const { incomes, upsertIncome, removeIncome } = useFirebaseIncomes(activeBookId);
   const [view, setView] = useState<Types.ViewType>("list");
   const [filter, setFilter] = useState<Types.FilterType>("month");
   const [search, setSearch] = useState("");
@@ -83,7 +80,8 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const [editingPurchase, setEditingPurchase] = useState<Partial<Types.Purchase> | null>(null);
   const [monthDate, setMonthDate] = useState(new Date());
   const [openSettings, setOpenSettings] = useState(false);
-  const { purchases, loading: loadingPurchases, upsertPurchase, removePurchase } = useFirebasePurchases(activeBookId);
+  const { purchases, upsertPurchase, removePurchase } = useFirebasePurchases(activeBookId);
+  const { width } = usePreview();
   const [openPurchasesModal, setOpenPurchasesModal] = useState(false);
   const [openIncomesModal, setOpenIncomesModal] = useState(false);
   const [openGoals, setOpenGoals] = useState(false);
@@ -92,13 +90,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const [isDeletingBook, setIsDeletingBook] = useState(false);
 
   const filteredBills = useFilteredBills(bills, filter, search);
-  const totals = useTotals(bills);
   // Overdue count for header banner
   const todayISOHeader = ymd(new Date());
   const overdueCount = bills.filter(b => !b.paid && (parseDate(b.dueDate) < parseDate(todayISOHeader))).length;
 
   // Hook de notifica├º├Áes
-  const { expiringBills } = useBillNotifications(bills);
   const exportICS = () => {
     import("@/utils/utils").then(({ buildICSForMonth, download }) => {
       const ics = buildICSForMonth(bills, monthDate, locale, currency);
@@ -127,6 +123,20 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     addRow('Teto de compras', goals.purchasesLimit, 'limit');
     return rows;
   }, [prefs.goals, locale, currency]);
+
+  const countOccurrencesForSchedule = (dueDate: string, recurrence: Types.Bill['recurrence'], year: number, month: number) => {
+    const stub: Types.Bill = {
+      id: 'schedule',
+      title: '',
+      amount: 0,
+      dueDate,
+      recurrence,
+      paid: false,
+      paidOn: null,
+    };
+    return occurrencesForBillInMonth(stub, year, month).length;
+  };
+
 
   const handleToggleHideValues = () => {
     setPrefs((prev) => ({ ...prev, hideValues: !prev.hideValues }));
@@ -192,7 +202,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     );
   }
 
-  const { width } = usePreview();
   const containerStyle = width ? { maxWidth: width, margin: '0 auto' } : { maxWidth: '1100px' };
 
   return (
@@ -352,7 +361,18 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 currency={currency}
                 purchasesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); return purchases.filter(p => { const d = new Date(p.date); return d.getFullYear() === y && d.getMonth() === m; }).reduce((s, p) => s + Number(p.amount || 0), 0); })()}
                 onOpenPurchases={() => setOpenPurchasesModal(true)}
-                incomesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); try { return incomes.filter(i => (require('@/utils/utils').occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m).length>0)).reduce((s,x)=> s+Number(x.amount||0),0);} catch { return incomes.filter(i => { const d = new Date(i.dueDate); return d.getFullYear()===y && d.getMonth()===m; }).reduce((s,x)=> s+Number(x.amount||0),0);} })()}
+                incomesTotalMonth={(() => {
+                  const now = new Date();
+                  const y = now.getFullYear();
+                  const m = now.getMonth();
+                  return incomes.reduce((sum, income) => {
+                    const occurrences = countOccurrencesForSchedule(income.dueDate, income.recurrence, y, m);
+                    if (occurrences > 0) {
+                      return sum + occurrences * Number(income.amount || 0);
+                    }
+                    return sum;
+                  }, 0);
+                })()}
                 onOpenIncomes={() => setOpenIncomesModal(true)}
               />
             )}

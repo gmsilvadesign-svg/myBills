@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "lint:strict": "eslint . --max-warnings=0",
+    "format:check": "npx prettier --check \"src/**/*.{ts,tsx,css}\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.12",
