@@ -211,7 +211,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="w-full mx-auto px-4 py-8 space-y-8" style={containerStyle}>
+      <div className="w-full mx-auto px-4 py-8 space-y-8 zoom-500:px-2 zoom-500:py-4 zoom-500:space-y-4" style={containerStyle}>
         <Header
             t={t}
             setEditing={setEditing}
@@ -226,56 +226,67 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm flex flex-col gap-4">
           <div className="flex flex-col gap-1 w-full">
             <span className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Book ativo</span>
-            <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full xl:justify-between">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
-                <select
-                  value={activeBookId}
-                  onChange={(event) => onSelectBook(event.target.value)}
-                  className="px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-w-0 flex-shrink"
-                >
-                  {books.map((book) => (
-                    <option key={book.id} value={book.id}>
-                      {book.name.length > 12 ? `${book.name.substring(0, 12)}...` : book.name}
-                    </option>
-                  ))}
-                </select>
-                {activeBook && (
-                  <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                    Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={handleCreateBookClick}
-                  className={cn(CSS_CLASSES.button.primary, 'flex items-center gap-2 justify-center w-40 min-w-[120px] flex-shrink-0')}
-                  disabled={isCreatingBook}
-                >
-                  {isCreatingBook ? 'Criando...' : '+ Novo controle'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteBookClick}
-                  className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-[150px] min-w-[120px] flex-shrink-0')}
-                  disabled={isDeletingBook}
-                >
-                  {isDeletingBook ? 'Excluindo...' : 'Excluir book'}
-                </button>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 xl:ml-auto">
-                <button
-                  type="button"
-                  onClick={handleToggleHideValues}
-                  className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-[150px] min-w-[120px] flex-shrink-0')}
-                >
-                  {hideValues ? 'Mostrar valores' : 'Ocultar valores'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleToggleHideCircles}
-                  className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-[150px] min-w-[120px] flex-shrink-0')}
-                >
-                  {hideCircles ? 'Mostrar total' : 'Ocultar total'}
-                </button>
+            <div className="flex flex-col gap-4 w-full">
+              {/* Layout responsivo para diferentes zooms */}
+              <div className="flex flex-col gap-3">
+                {/* Primeira linha: Select e data de criação */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap">
+                  <select
+                    value={activeBookId}
+                    onChange={(event) => onSelectBook(event.target.value)}
+                    className="px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 sm:flex-none sm:w-[320px] min-w-0"
+                  >
+                    {books.map((book) => (
+                      <option key={book.id} value={book.id}>
+                        {book.name}
+                      </option>
+                    ))}
+                  </select>
+                  {activeBook && (
+                    <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                      Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Segunda linha: Botões principais à esquerda e botões de visualização à direita */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap zoom-300:flex-row zoom-300:items-start zoom-300:justify-between zoom-300:gap-2 zoom-400:flex-row zoom-400:items-start zoom-400:justify-between zoom-400:gap-2 zoom-500:flex-row zoom-500:items-start zoom-500:justify-between zoom-500:gap-2">
+                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap zoom-300:flex-row zoom-300:gap-2 zoom-400:flex-col zoom-400:gap-2 zoom-500:flex-col zoom-500:gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCreateBookClick}
+                      className={cn(CSS_CLASSES.button.primary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-400:order-1 zoom-500:mb-2 zoom-500:w-fixed zoom-500:order-1')}
+                      disabled={isCreatingBook}
+                    >
+                      {isCreatingBook ? 'Criando...' : '+ Novo controle'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteBookClick}
+                      className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-400:order-3 zoom-500:mb-2 zoom-500:w-fixed zoom-500:order-3')}
+                      disabled={isDeletingBook}
+                    >
+                      {isDeletingBook ? 'Excluindo...' : 'Excluir book'}
+                    </button>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap zoom-300:flex-row zoom-300:gap-2 zoom-400:flex-col zoom-400:gap-2 zoom-500:flex-col zoom-500:gap-2">
+                    <button
+                      type="button"
+                      onClick={handleToggleHideValues}
+                      className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-400:order-2 zoom-500:mb-2 zoom-500:w-fixed zoom-500:order-2')}
+                    >
+                      {hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleToggleHideCircles}
+                      className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-500:mb-2 zoom-500:w-fixed')}
+                    >
+                      {hideCircles ? 'Mostrar total' : 'Ocultar total'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -645,8 +656,8 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Projecao renda x gastos (semanas)</h4>
-                    <div className="ml-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200 text-center">Projecao renda x gastos (semanas)</h4>
+                    <div className="flex justify-center">
                       <LineChart
                         labels={weekLabels}
                         height={240}
@@ -692,8 +703,8 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Historico Financeiro</h4>
-                    <div className="ml-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200 text-center">Historico Financeiro</h4>
+                    <div className="flex justify-center">
                       <LineChart
                         labels={labels}
                         height={260}
@@ -747,11 +758,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de gastos (mes)</h4>
-                      <PieChart data={expenseSlices} paletteType="warm" formatValue={formatter} />
+                      <PieChart data={expenseSlices} paletteType="warm" formatValue={formatter} showLegend={true} />
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de renda (mes)</h4>
-                      <PieChart data={incomeSlices} paletteType="cool" formatValue={formatter} />
+                      <PieChart data={incomeSlices} paletteType="cool" formatValue={formatter} showLegend={true} />
                     </div>
                   </div>
                 );

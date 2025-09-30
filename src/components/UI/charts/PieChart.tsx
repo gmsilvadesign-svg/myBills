@@ -194,7 +194,7 @@ export default function PieChart({
   const showSubText = typeof subText === 'string' && subText.trim().length > 0;
 
   return (
-    <div className="flex items-center gap-4" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
+    <div className="flex flex-col items-center gap-4" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <svg width={size} height={size}>
         {circles}
         {centerCheck ? (
@@ -246,17 +246,17 @@ export default function PieChart({
         )}
       </svg>
       {showLegend && (
-        <div className="text-xs space-y-1">
+        <div className="text-[8px] space-y-0.5 zoom-responsive-legend flex flex-col items-center">
           {colored.map(d => {
             const pct = (d.value / total) * 100;
             const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
             const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
             const truncatedValue = truncateValue(valueStr);
             return (
-              <div key={d.label} className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
+              <div key={d.label} className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded" style={{ background: d.color }} />
                 <span className="text-slate-600 dark:text-slate-300 truncate max-w-[120px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis" title={valueStr}>{truncatedValue}</span>
+                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap" title={valueStr}>{valueStr}</span>
                 <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{pctStr}</span>
               </div>
             );
@@ -264,7 +264,7 @@ export default function PieChart({
         </div>
       )}
       {!showLegend && hoverLegend && hovered && (
-        <div className="text-xs space-y-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-lg px-3 py-2 shadow border border-slate-200/60 dark:border-slate-700/60">
+        <div className="text-[8px] space-y-0.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-lg px-2 py-1 shadow border border-slate-200/60 dark:border-slate-700/60 zoom-responsive-legend">
           {colored.map((d, i) => {
             const pct = (d.value / total) * 100;
             const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
@@ -272,10 +272,10 @@ export default function PieChart({
             const truncatedValue = truncateValue(valueStr);
             const dim = hoverIndex !== null && hoverIndex !== i;
             return (
-              <div key={d.label} className="flex items-center gap-2" style={{ opacity: dim ? 0.6 : 1 }}>
-                <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
+              <div key={d.label} className="flex items-center gap-1" style={{ opacity: dim ? 0.6 : 1 }}>
+                <span className="inline-block w-2 h-2 rounded" style={{ background: d.color }} />
                 <span className="text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis" title={valueStr}>{truncatedValue}</span>
+                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap" title={valueStr}>{valueStr}</span>
                 <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{pctStr}</span>
               </div>
             );

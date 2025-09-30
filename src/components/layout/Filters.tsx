@@ -18,7 +18,7 @@ const Filters = memo(function Filters({ view, setView, filter, setFilter, search
   // JSX do componente
   return (
     // Container principal dos filtros, flexível, responsivo e com espaçamento entre elementos
-    <div className="flex flex-col sm:flex-row flex-wrap items items-stretch sm:items-center gap-3 sm:gap-2 mb-4">
+    <div className="flex flex-col sm:flex-row flex-wrap items items-stretch sm:items-center gap-3 sm:gap-2 mb-4 zoom-500:gap-0.5 zoom-500:mb-1">
 
       {/* Container para os botões de toggle - responsivo */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">

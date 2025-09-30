@@ -22,7 +22,7 @@ export default function ToggleButton<T extends string>({ items, selected, onChan
             onClick={() => onChange(k)}
             aria-pressed={selected === k}
             aria-label={`${label}${selected === k ? ' (selecionado)' : ''}`}
-            className={`flex-1 sm:flex-none sm:min-w-[80px] px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 whitespace-nowrap text-center ${
+            className={`flex-1 sm:flex-none sm:min-w-[80px] px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 whitespace-nowrap text-center zoom-500:text-xs zoom-500:px-2 zoom-500:py-1 ${
               selected === k
                 ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50"

@@ -251,7 +251,7 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
             </g>
 
             {labels.map((label, i) => (
-              <text key={`label-${i}`} x={x(i)} y={innerH + 22} textAnchor="middle" fontSize={11} fill="#64748b">
+              <text key={`label-${i}`} x={x(i)} y={innerH + 22} textAnchor="middle" fontSize={11} fill="#64748b" className="zoom-500:hidden">
                 {label}
               </text>
             ))}
@@ -281,7 +281,7 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
           </div>
         )}
       </div>
-      <div className="flex gap-3 mt-3 flex-wrap justify-center">
+      <div className="flex gap-1 mt-2 flex-wrap justify-center">
         {series.map((s) => {
           const active = enabled[s.name] !== false;
           return (
@@ -298,14 +298,14 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
                   return next;
                 })
               }
-              className={`flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full border transition-colors duration-200 ${
+              className={`flex items-center gap-1 text-xs font-medium px-1 py-0.5 rounded-full border transition-colors duration-200 text-[8px] zoom-responsive-legend ${
                 active
                   ? 'bg-slate-100 dark:bg-slate-800/60 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200'
                   : 'bg-transparent border-slate-300/60 dark:border-slate-600/60 text-slate-400 dark:text-slate-500'
               }`}
             >
               <span
-                className="inline-block w-3 h-3 rounded-full"
+                className="inline-block w-1.5 h-1.5 rounded-full"
                 style={{
                   background: active ? s.color : 'transparent',
                   border: `2px solid ${s.color}`,

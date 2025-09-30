@@ -99,16 +99,16 @@ const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale,
 
             <div className="grid grid-cols-3 gap-1 mb-1 text-[10px]">
               {openSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 text-center overflow-hidden text-ellipsis" title={`Abertas: ${fmtMoney(openSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(openSum, currency, locale, 8)}</div>
+                <div className="px-1 py-0.5 rounded-md text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 text-center overflow-hidden text-ellipsis" title={`Abertas: ${fmtMoney(openSum, currency, locale)}`}>••••</div>
               )}
               {overdueSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-900/30 text-center overflow-hidden text-ellipsis" title={`Atrasadas: ${fmtMoney(overdueSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(overdueSum, currency, locale, 8)}</div>
+                <div className="px-1 py-0.5 rounded-md text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-900/30 text-center overflow-hidden text-ellipsis" title={`Atrasadas: ${fmtMoney(overdueSum, currency, locale)}`}>••••</div>
               )}
               {paidSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-green-700 dark:text-green-200 bg-green-50 dark:bg-green-900/30 text-center overflow-hidden text-ellipsis" title={`Pagas: ${fmtMoney(paidSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(paidSum, currency, locale, 8)}</div>
+                <div className="px-1 py-0.5 rounded-md text-green-700 dark:text-green-200 bg-green-50 dark:bg-green-900/30 text-center overflow-hidden text-ellipsis" title={`Pagas: ${fmtMoney(paidSum, currency, locale)}`}>••••</div>
               )}
               {purchasesSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/30 text-center overflow-hidden text-ellipsis" title={`Compra: ${fmtMoney(purchasesSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(purchasesSum, currency, locale, 8)}</div>
+                <div className="px-1 py-0.5 rounded-md text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/30 text-center overflow-hidden text-ellipsis" title={`Compra: ${fmtMoney(purchasesSum, currency, locale)}`}>••••</div>
               )}
             </div>
 

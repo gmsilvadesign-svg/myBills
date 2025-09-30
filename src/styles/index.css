@@ -50,6 +50,174 @@ body.dark {
   }
 }
 
+/* Classes para zoom de 300% */
+@media (min-resolution: 3dppx) {
+  .zoom-300\:flex-col {
+    flex-direction: column !important;
+  }
+  
+  .zoom-300\:flex-row {
+    flex-direction: row !important;
+  }
+  
+  .zoom-300\:items-start {
+    align-items: flex-start !important;
+  }
+  
+  .zoom-300\:justify-start {
+    justify-content: flex-start !important;
+  }
+  
+  .zoom-300\:justify-end {
+    justify-content: flex-end !important;
+  }
+  
+  .zoom-300\:justify-between {
+    justify-content: space-between !important;
+  }
+  
+  .zoom-300\:w-full {
+    width: 100% !important;
+  }
+  
+  .zoom-300\:gap-2 {
+    gap: 0.5rem !important;
+  }
+  
+  .zoom-300\:mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* Classes para zoom de 400% */
+@media (min-resolution: 4dppx) {
+  .zoom-400\:flex-col {
+    flex-direction: column !important;
+  }
+  
+  .zoom-400\:flex-row {
+    flex-direction: row !important;
+  }
+  
+  .zoom-400\:items-start {
+    align-items: flex-start !important;
+  }
+  
+  .zoom-400\:justify-start {
+    justify-content: flex-start !important;
+  }
+  
+  .zoom-400\:justify-end {
+    justify-content: flex-end !important;
+  }
+  
+  .zoom-400\:justify-between {
+    justify-content: space-between !important;
+  }
+  
+  .zoom-400\:w-full {
+    width: 100% !important;
+  }
+  
+  .zoom-400\:w-fixed {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+  }
+  
+  .zoom-400\:gap-2 {
+    gap: 0.5rem !important;
+  }
+  
+  .zoom-400\:mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* Classes para zoom de 500% - usando detecção por resolução como 400% */
+@media (min-resolution: 5dppx) {
+  .zoom-500\:flex-col {
+    flex-direction: column !important;
+  }
+  
+  .zoom-500\:flex-row {
+    flex-direction: row !important;
+  }
+  
+  .zoom-500\:items-start {
+    align-items: flex-start !important;
+  }
+  
+  .zoom-500\:justify-start {
+    justify-content: flex-start !important;
+  }
+  
+  .zoom-500\:justify-end {
+    justify-content: flex-end !important;
+  }
+  
+  .zoom-500\:justify-between {
+    justify-content: space-between !important;
+  }
+  
+  .zoom-500\:w-full {
+    width: 100% !important;
+  }
+  
+  .zoom-500\:w-fixed {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+  
+  .zoom-500\:text-xs {
+    font-size: 0.5rem !important;
+    line-height: 0.75rem !important;
+  }
+
+  .zoom-500\:text-right {
+    text-align: right !important;
+  }
+
+  .zoom-500\:px-1 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+
+  .zoom-500\:py-1 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+
+  .zoom-500\:hidden {
+    display: none !important;
+  }
+  
+  .zoom-500\:gap-1 {
+    gap: 0.25rem !important;
+  }
+  
+  .zoom-500\:mb-1 {
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .zoom-500\:h-12 {
+    height: 3rem !important;
+  }
+  
+  .zoom-500\:py-2 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+}
+
+/* Redução automática da fonte das legendas com zoom de 400% ou mais */
+@media (min-resolution: 4dppx) {
+  .zoom-responsive-legend {
+    font-size: 6px !important;
+  }
+}
+
 /* Esconde os botões de ação no Header (apenas deixa o hambúrguer) */
 header > nav button:not(:last-child) {
   display: none;

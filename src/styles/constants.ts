@@ -2,10 +2,10 @@
 export const CSS_CLASSES = {
   // Containers e layouts
   container: {
-    main: 'min-h-screen justify-center p-8 flex overflow-x-auto',
+    main: 'min-h-screen justify-center p-8 flex overflow-x-auto zoom-500:p-4',
     modal: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50',
-    card: 'bg-white dark:bg-[#AABBCC]/20 rounded-2xl shadow-lg border border-slate-200 dark:border-[#AABBCC]/40 p-4 overflow-hidden backdrop-blur-sm',
-    section: 'mb-6'
+    card: 'bg-white dark:bg-[#AABBCC]/20 rounded-2xl shadow-lg border border-slate-200 dark:border-[#AABBCC]/40 p-4 zoom-500:p-2 overflow-hidden backdrop-blur-sm',
+    section: 'mb-6 zoom-500:mb-3'
   },
 
   // Flexbox layouts
