@@ -135,23 +135,61 @@ export default function PieChart({
     );
   });
 
-  // Center label text (fallback to total in K if not provided)
+  // Função para truncar valores monetários longos
+  const truncateValue = (valueStr: string, maxLength: number = 15) => {
+    if (valueStr.length <= maxLength) return valueStr;
+    
+    // Se for um valor monetário, tenta manter a parte importante
+    if (valueStr.includes('R$') || valueStr.includes('$')) {
+      // Remove espaços e separa símbolo da moeda do valor
+      const cleanStr = valueStr.replace(/\s+/g, '');
+      if (cleanStr.length <= maxLength) return cleanStr;
+      
+      // Se ainda for muito longo, trunca mantendo o símbolo
+      const currencyMatch = cleanStr.match(/^([R$€£¥]+)/);
+      if (currencyMatch) {
+        const symbol = currencyMatch[1];
+        const remaining = maxLength - symbol.length - 3; // -3 para "..."
+        if (remaining > 0) {
+          const numberPart = cleanStr.substring(symbol.length);
+          return symbol + numberPart.substring(0, remaining) + '...';
+        }
+      }
+    }
+    
+    return valueStr.substring(0, maxLength - 3) + '...';
+  };
+
+  // Função para truncar texto baseado na largura disponível
+  const truncateText = (text: string, maxWidth: number, fontSize: number) => {
+    const charWidth = fontSize * 0.6; // Estimativa da largura do caractere
+    const maxChars = Math.floor(maxWidth / charWidth);
+    if (text.length <= maxChars) return text;
+    return text.substring(0, Math.max(1, maxChars - 3)) + '...';
+  };
   const fallbackK = `${(totalRaw / 1000).toFixed(1)}K`;
   const baseMainText = centerText ?? fallbackK;
+  
   // Keep text inside inner hole
   const innerRadius = radius - strokeWidth; // inner empty hole radius
   const innerDiameter = innerRadius * 2;
-  const charW = 0.6; // approx char width factor
-  const maxByWidth = (innerDiameter * 0.9) / (Math.max(1, baseMainText.length) * charW);
-  const maxByHeight = innerDiameter * 0.4;
-  const baseFontSize = Math.max(10, Math.min(maxByWidth, maxByHeight));
+  
+  // Melhor cálculo do tamanho da fonte para evitar overflow
+  const availableWidth = innerRadius * 1.4; // Área disponível para o texto (mais conservador)
+  const charW = 0.6; // fator de largura do caractere mais conservador
+  const maxByWidth = availableWidth / (Math.max(1, baseMainText.length) * charW);
+  const maxByHeight = innerRadius * 0.5; // Altura máxima mais conservadora
+  const baseFontSize = Math.max(8, Math.min(maxByWidth, maxByHeight, 14)); // Limita entre 8px e 14px
   const hoverActive = hovered && typeof hoverCenterText === 'string';
   const fontScale = hoverActive ? (hoverFontScale ?? DEFAULT_HOVER_FONT_SCALE) : 1;
-  const fontSize = Math.min(baseFontSize * fontScale, baseFontSize * 1.5);
-  const mainText = hoverActive ? (hoverCenterText as string) : baseMainText;
-  const subText = hoverActive
+  const fontSize = Math.min(baseFontSize * fontScale, baseFontSize * 1.3);
+  const rawMainText = hoverActive ? (hoverCenterText as string) : baseMainText;
+  const mainText = truncateText(rawMainText, availableWidth, fontSize);
+  const originalMainText = rawMainText;
+  const rawSubText = hoverActive
     ? (hoverCenterSubText === undefined ? centerSubText : hoverCenterSubText || undefined)
     : centerSubText;
+  const subText = rawSubText ? truncateText(rawSubText, availableWidth, fontSize * 0.55) : undefined;
   const textColor = hoverActive && hoverCenterTextColor ? hoverCenterTextColor : centerTextColor;
   const showSubText = typeof subText === 'string' && subText.trim().length > 0;
 
@@ -185,6 +223,7 @@ export default function PieChart({
               fontWeight={centerBold ? 700 : 500}
               fill={textColor}
               pointerEvents="none"
+              title={originalMainText}
             >
               {mainText}
             </text>
@@ -198,6 +237,7 @@ export default function PieChart({
                 fontWeight={500}
                 fill={textColor}
                 opacity={0.85}
+                title={rawSubText}
               >
                 {subText}
               </text>
@@ -211,11 +251,12 @@ export default function PieChart({
             const pct = (d.value / total) * 100;
             const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
             const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
+            const truncatedValue = truncateValue(valueStr);
             return (
               <div key={d.label} className="flex items-center gap-2">
                 <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
-                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[180px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{valueStr}</span>
+                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[120px]" title={d.label}>{d.label}</span>
+                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis" title={valueStr}>{truncatedValue}</span>
                 <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{pctStr}</span>
               </div>
             );
@@ -228,12 +269,13 @@ export default function PieChart({
             const pct = (d.value / total) * 100;
             const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
             const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
+            const truncatedValue = truncateValue(valueStr);
             const dim = hoverIndex !== null && hoverIndex !== i;
             return (
               <div key={d.label} className="flex items-center gap-2" style={{ opacity: dim ? 0.6 : 1 }}>
                 <span className="inline-block w-3 h-3 rounded" style={{ background: d.color }} />
-                <span className="text-slate-700 dark:text-slate-200 truncate max-w-[180px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap">{valueStr}</span>
+                <span className="text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={d.label}>{d.label}</span>
+                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis" title={valueStr}>{truncatedValue}</span>
                 <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{pctStr}</span>
               </div>
             );

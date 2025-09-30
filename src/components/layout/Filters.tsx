@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import ToggleButton from '@/components/UI/ToggleButton';
+import Select from '@/components/UI/Select';
 import * as Types from '@/types';
 
 interface FiltersProps {
@@ -28,6 +29,18 @@ const Filters = memo(function Filters({ view, setView, filter, setFilter, search
           onChange={setView} 
         />
       </div>
+
+      {/* Dropdown de filtros específicos - apenas visível quando necessário */}
+      {(view === "list" || view === 'purchases' || view === 'incomes') && (
+        <div className="max-w-xs">
+          <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
+            <option value="today">{t.filter_today}</option>
+            <option value="month">{t.filter_month || t.totals_month}</option>
+            <option value="overdue">{t.filter_overdue}</option>
+            <option value="all">{t.filter_all}</option>
+          </Select>
+        </div>
+      )}
 
       {/* Campo de pesquisa removido conforme solicitado */}
 

@@ -21,17 +21,14 @@ interface BillFormProps {
 }
 
 export default function BillForm({ initial, onSave, onCancel, t, locale, currency }: BillFormProps) {
-  const defaultCategories = ['Fixas', 'Variáveis'];
-  const isInitialCategoryCustom = initial?.category && !defaultCategories.includes(initial.category);
   const [title, setTitle] = useState(initial?.title || "");
   const [amount, setAmount] = useState(initial?.amount ?? "");
   const [dueDate, setDueDate] = useState(initial?.dueDate || ymd(new Date()));
   const [recurrence, setRecurrence] = useState<'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'>(initial?.recurrence || "NONE");
-  const [category, setCategory] = useState(initial?.category || "");
-  const [customCategory, setCustomCategory] = useState(isInitialCategoryCustom ? initial?.category || '' : '');
-  const [showCustomCategory, setShowCustomCategory] = useState(isInitialCategoryCustom || false);
-  const [tags, setTags] = useState(initial?.tags?.join(", ") || "");
+  const [tags, setTags] = useState(initial?.category || initial?.tags?.join(", ") || "");
   const [notes, setNotes] = useState(initial?.notes || "");
+  const [paid, setPaid] = useState(initial?.paid || false);
+  const [paidOn, setPaidOn] = useState(initial?.paidOn || "");
 
   const modalRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +38,14 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
   }, []);
 
   const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount(e.target.value);
+    const value = e.target.value;
+    // Remove caracteres não numéricos exceto ponto decimal
+    const numericValue = value.replace(/[^0-9.]/g, '');
+    // Limita a 12 dígitos (incluindo decimais)
+    const digitsOnly = numericValue.replace(/\./g, '');
+    if (digitsOnly.length <= 12) {
+      setAmount(numericValue);
+    }
   }, []);
 
   const handleDueDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,30 +56,26 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
     setRecurrence(e.target.value as 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY');
   }, []);
 
-  const handleCategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === 'custom') {
-      setShowCustomCategory(true);
-      setCategory('');
-    } else {
-      setShowCustomCategory(false);
-      setCategory(value);
-      setCustomCategory('');
-    }
-  }, []);
-
-  const handleCustomCategoryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCustomCategory(value);
-    setCategory(value);
-  }, []);
-
   const handleTagsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setTags(e.target.value);
   }, []);
 
   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotes(e.target.value);
+  }, []);
+
+  const handlePaidChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const isPaid = e.target.value === 'true';
+    setPaid(isPaid);
+    if (!isPaid) {
+      setPaidOn(''); // Limpa a data de pagamento se não estiver pago
+    } else if (!paidOn) {
+      setPaidOn(ymd(new Date())); // Define data atual se não houver data definida
+    }
+  }, [paidOn]);
+
+  const handlePaidOnChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPaidOn(e.target.value);
   }, []);
 
   const handleTagSuggestionClick = useCallback((suggestedTag: string) => {
@@ -112,11 +112,11 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
       amount: Number(amount || 0),
       dueDate,
       recurrence,
-      category: category.trim() || null,
+      category: tags.trim() || null, // Usar tags como categoria
       tags: tags.split(",").map((s) => s.trim()).filter(Boolean),
       notes: notes.trim() || undefined,
-      paid: initial?.paid || false,
-      paidOn: initial?.paidOn || null,
+      paid,
+      paidOn: paid && paidOn ? paidOn : null,
     };
     
     // Chama função de salvar passada via props
@@ -124,7 +124,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
 
     // Fecha o modal
     onCancel();
-  }, [title, amount, dueDate, recurrence, category, tags, notes, initial?.paid, initial?.paidOn, onSave, onCancel]);
+  }, [title, amount, dueDate, recurrence, tags, notes, paid, paidOn, onSave, onCancel]);
 
   // Gerencia foco e tecla ESC
   useEffect(() => {
@@ -183,12 +183,12 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
                 label="Título" 
                 value={title} 
                 onChange={handleTitleChange}
-                maxLength={50}
+                maxLength={20}
                 required
                 aria-describedby={!title.trim() ? "title-error" : undefined}
               />
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">
-                {title.length}/50 caracteres
+                {title.length}/20 caracteres
               </div>
             </div>
 
@@ -214,64 +214,65 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
             </Select>
           </div>
 
-          {/* Terceira linha: Categoria */}
+          {/* Terceira linha: Status e Data de Pagamento */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Select label="Categoria" value={showCustomCategory ? 'custom' : category} onChange={handleCategoryChange}>
-              <option value="">Selecione uma categoria</option>
-              <option value="Fixas">📌 Fixas</option>
-              <option value="Variáveis">📦 Variáveis</option>
-              <option value="custom">✏️ Categoria personalizada...</option>
+            <Select label="Status" value={paid.toString()} onChange={handlePaidChange}>
+              <option value="false">Pendente</option>
+              <option value="true">Pago</option>
             </Select>
 
-            {/* Input para categoria personalizada */}
-            {showCustomCategory && (
+            {paid && (
               <Input 
-                label="Nome da categoria personalizada" 
-                value={customCategory} 
-                onChange={handleCustomCategoryChange}
-                maxLength={50}
-                placeholder="Digite o nome da categoria"
+                label="Data do pagamento" 
+                type="date" 
+                value={paidOn} 
+                onChange={handlePaidOnChange}
+                required
               />
             )}
           </div>
 
-          {/* Seção de Tags otimizada para modal maior */}
+          {/* Seção de Categoria (anteriormente Tags) otimizada para modal maior */}
           <div className="space-y-1">
             <label className="block text-sm  text-slate-700 dark:text-slate-300">
-              Tag
+              Categoria
             </label>
             
             {/* Tags sugeridas com layout otimizado */}
             <div className="space-y-2">
               <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                {['🏠 Moradia', '⚡ Energia', '🚗 Transporte', '🍽️ Alimentação', '🎓 Educação', '🩺 Saúde', '💳 Financeiro', '🎉 Lazer', '👕 Pessoal', '💼 Trabalho', '📦 Compras', '📑 Impostos', '🚨 Urgente', '📅 Mensal', '💰 Investimento', '🎯 Meta'].map((suggestedTag) => {
-                  const isSelected = tags === suggestedTag;
+                {['Moradia', 'Energia', 'Transporte', 'Alimentação', 'Educação', 'Saúde', 'Financeiro', 'Lazer', 'Pessoal', 'Trabalho', 'Compras', 'Impostos', 'Urgente', 'Mensal', 'Investimento', 'Meta'].map((suggestedCategory) => {
+                  const isSelected = tags === suggestedCategory;
                   return (
                     <button
-                      key={suggestedTag}
+                      key={suggestedCategory}
                       type="button"
-                      onClick={() => handleTagSuggestionClick(suggestedTag)}
+                      onClick={() => handleTagSuggestionClick(suggestedCategory)}
                       className={`px-2 py-2 text-sm rounded-lg border transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 text-center font-medium ${
                         isSelected 
                           ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300 shadow-md'
                           : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 hover:shadow-sm'
                       }`}
                     >
-                      {suggestedTag}
+                      {suggestedCategory}
                     </button>
                   );
                 })}
               </div>
             </div>
             
-            {/* Input para tag personalizada */}
+            {/* Input para categoria personalizada */}
             <div className="max-w-full">
               <Input 
                 label="" 
                 value={tags} 
                 onChange={handleTagsChange} 
-                placeholder="Digite uma tag personalizada..."
+                placeholder="Digite uma categoria personalizada..."
+                maxLength={12}
               />
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">
+                {tags.length}/12 caracteres
+              </div>
             </div>
           </div>
 

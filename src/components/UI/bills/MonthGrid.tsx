@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import * as Types from '@/types'
-import { fmtMoney, ymd, parseDate, isBefore, daysInMonth, occurrencesForBillInMonth } from '@/utils/utils'
+import { fmtMoney, fmtMoneyTruncated, ymd, parseDate, isBefore, daysInMonth, occurrencesForBillInMonth } from '@/utils/utils'
 import { categoryClass } from '@/constants/categoryColors'
 
 interface MonthGridProps {
@@ -10,11 +10,12 @@ interface MonthGridProps {
   locale: string;
   currency: string;
   onDayClick?: (iso: string) => void;
+  hideValues?: boolean;
 }
 
 type BillWithOverdue = Types.Bill & { overdue?: boolean };
 
-const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale, currency, onDayClick }: MonthGridProps) {
+const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale, currency, onDayClick, hideValues = false }: MonthGridProps) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const today = ymd(new Date());
@@ -24,22 +25,32 @@ const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale,
   const totalsByDay = new Map<number, number>();
   const openByDay = new Map<number, number>();
   const overdueByDay = new Map<number, number>();
+  const paidByDay = new Map<number, number>();
 
   bills.forEach((b) => {
-    if (b.paid) return;
     const occurrences = occurrencesForBillInMonth(b, year, month);
     occurrences.forEach((iso) => {
       const d = parseDate(iso);
       const dayOfMonth = d.getDate();
-      const billForDay: BillWithOverdue = { ...b, dueDate: iso, overdue: isBefore(iso, today) };
+      const isOverdue = !b.paid && isBefore(iso, today);
+      const billForDay: BillWithOverdue = { ...b, dueDate: iso, overdue: isOverdue };
       const arr = itemsByDay.get(dayOfMonth) || [];
       arr.push(billForDay);
       itemsByDay.set(dayOfMonth, arr);
 
       const amount = Number(b.amount) || 0;
       totalsByDay.set(dayOfMonth, (totalsByDay.get(dayOfMonth) || 0) + amount);
-      if (billForDay.overdue) overdueByDay.set(dayOfMonth, (overdueByDay.get(dayOfMonth) || 0) + amount);
-      else openByDay.set(dayOfMonth, (openByDay.get(dayOfMonth) || 0) + amount);
+      
+      if (b.paid) {
+        // Se está paga, adiciona ao total de pagas
+        paidByDay.set(dayOfMonth, (paidByDay.get(dayOfMonth) || 0) + amount);
+      } else if (isOverdue) {
+        // Se não está paga e está atrasada
+        overdueByDay.set(dayOfMonth, (overdueByDay.get(dayOfMonth) || 0) + amount);
+      } else {
+        // Se não está paga e não está atrasada (pendente)
+        openByDay.set(dayOfMonth, (openByDay.get(dayOfMonth) || 0) + amount);
+      }
     });
   });
 
@@ -72,6 +83,7 @@ const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale,
         const hasItems = itemsByDay.has(d.getDate());
         const openSum = openByDay.get(d.getDate()) || 0;
         const overdueSum = overdueByDay.get(d.getDate()) || 0;
+        const paidSum = paidByDay.get(d.getDate()) || 0;
         const purchasesSum = purchasesSumByDay.get(d.getDate()) || 0;
 
         return (
@@ -87,25 +99,28 @@ const MonthGrid = memo(function MonthGrid({ date, bills, purchases = [], locale,
 
             <div className="grid grid-cols-3 gap-1 mb-1 text-[10px]">
               {openSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 text-center truncate" title={`Abertas: ${fmtMoney(openSum, currency, locale)}`}>{fmtMoney(openSum, currency, locale)}</div>
+                <div className="px-1 py-0.5 rounded-md text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 text-center overflow-hidden text-ellipsis" title={`Abertas: ${fmtMoney(openSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(openSum, currency, locale, 8)}</div>
               )}
               {overdueSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-900/30 text-center truncate" title={`Atrasadas: ${fmtMoney(overdueSum, currency, locale)}`}>{fmtMoney(overdueSum, currency, locale)}</div>
+                <div className="px-1 py-0.5 rounded-md text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-900/30 text-center overflow-hidden text-ellipsis" title={`Atrasadas: ${fmtMoney(overdueSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(overdueSum, currency, locale, 8)}</div>
+              )}
+              {paidSum > 0 && (
+                <div className="px-1 py-0.5 rounded-md text-green-700 dark:text-green-200 bg-green-50 dark:bg-green-900/30 text-center overflow-hidden text-ellipsis" title={`Pagas: ${fmtMoney(paidSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(paidSum, currency, locale, 8)}</div>
               )}
               {purchasesSum > 0 && (
-                <div className="px-1 py-0.5 rounded-md text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/30 text-center truncate" title={`Compra: ${fmtMoney(purchasesSum, currency, locale)}`}>{fmtMoney(purchasesSum, currency, locale)}</div>
+                <div className="px-1 py-0.5 rounded-md text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/30 text-center overflow-hidden text-ellipsis" title={`Compra: ${fmtMoney(purchasesSum, currency, locale)}`}>{hideValues ? '••••' : fmtMoneyTruncated(purchasesSum, currency, locale, 8)}</div>
               )}
             </div>
 
             <div className="flex-1 space-y-1">
-              {(itemsByDay.get(d.getDate()) || []).slice(0, 4).map((it) => (
+              {(itemsByDay.get(d.getDate()) || []).slice(0, 1).map((it) => (
                 <div key={it.id} className={`rounded-md px-2 py-1 text-[11px] whitespace-nowrap overflow-hidden ${categoryClass(it.category || undefined)}`} title={it.title}>
                   <span className="truncate block">{it.title}</span>
                 </div>
               ))}
               {(() => {
                 const dayItems = itemsByDay.get(d.getDate());
-                return dayItems && dayItems.length > 4 && (<div className="text-[11px] text-slate-500">+{dayItems.length - 4} mais…</div>);
+                return dayItems && dayItems.length > 1 && (<div className="text-[11px] text-slate-500">+{dayItems.length - 1} mais…</div>);
               })()}
             </div>
           </div>

@@ -26,6 +26,30 @@ body.dark {
   letter-spacing: 0.5px;
 }
 
+/* Classes para zoom de 250% - oculta elementos quando o zoom está em 250% ou mais */
+@media (min-resolution: 2.5dppx) {
+  .zoom-250\:hidden {
+    display: none !important;
+  }
+  
+  .zoom-250\:flex-1 {
+    flex: 1 1 0% !important;
+  }
+  
+  .zoom-250\:max-w-none {
+    max-width: none !important;
+  }
+  
+  .zoom-250\:text-center {
+    text-align: center !important;
+  }
+  
+  .zoom-250\:text-2xl {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+}
+
 /* Esconde os botões de ação no Header (apenas deixa o hambúrguer) */
 header > nav button:not(:last-child) {
   display: none;

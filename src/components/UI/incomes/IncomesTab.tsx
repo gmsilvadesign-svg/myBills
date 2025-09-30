@@ -10,9 +10,10 @@ interface IncomesTabProps {
   locale: string;
   currency: string;
   filter?: Types.FilterType;
+  hideValues?: boolean;
 }
 
-export default function IncomesTab({ incomes, onEdit, onRemove, t, locale, currency, filter = 'month' }: IncomesTabProps) {
+export default function IncomesTab({ incomes, onEdit, onRemove, t, locale, currency, filter = 'month', hideValues = false }: IncomesTabProps) {
   const today = new Date();
   const y = today.getFullYear();
   const m = today.getMonth();
@@ -37,7 +38,7 @@ export default function IncomesTab({ incomes, onEdit, onRemove, t, locale, curre
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">{t.monthly_incomes || 'Rendas do mês'}</h3>
-          <div className="text-sm font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
+          <div className="text-sm font-semibold">{hideValues ? "••••••" : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
         </div>
         {filtered.length === 0 && (
           <div className="text-slate-500 text-center py-8">{t.no_incomes || 'Nenhuma renda registrada neste mês.'}</div>
@@ -51,7 +52,7 @@ export default function IncomesTab({ incomes, onEdit, onRemove, t, locale, curre
                   <div className="text-xs text-slate-500">{i.dueDate}{i.category ? ` • ${i.category}` : ''}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="text-sm font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(i.amount)}</div>
+                  <div className="text-sm font-semibold">{hideValues ? "••••••" : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(i.amount)}</div>
                   <button onClick={() => onEdit(i)} className="text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white text-sm">{t.edit || 'Editar'}</button>
                   {i.id && (
                     <button onClick={() => onRemove(i.id!)} className="text-red-600 hover:text-red-700 text-sm">{t.delete || 'Excluir'}</button>

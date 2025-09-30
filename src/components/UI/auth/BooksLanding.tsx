@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CSS_CLASSES, cn } from '@/styles/constants';
 import type * as Types from '@/types';
 
@@ -80,6 +80,7 @@ export default function BooksLanding({ userName, books, loading = false, onSelec
               value={draftName}
               onChange={(event) => setDraftName(event.target.value)}
               placeholder="Ex.: Controle familiar"
+              maxLength={20}
               className={cn(CSS_CLASSES.input.base, CSS_CLASSES.input.default)}
             />
             <div className="mt-4 flex flex-wrap gap-3">

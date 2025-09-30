@@ -18,6 +18,7 @@ interface BillsListProps {
   onOpenPurchases?: () => void;
   incomesTotalMonth?: number;
   onOpenIncomes?: () => void;
+  hideValues?: boolean;
 }
 
 const BillsList = memo(function BillsList({
@@ -30,6 +31,7 @@ const BillsList = memo(function BillsList({
   t,
   locale,
   currency,
+  hideValues = false,
 }: BillsListProps) {
   const now = new Date()
   const y = now.getFullYear()
@@ -62,6 +64,7 @@ const BillsList = memo(function BillsList({
               t={t}
               locale={locale}
               currency={currency}
+              hideValues={hideValues}
             />
           ))}
 
@@ -83,6 +86,7 @@ const BillsList = memo(function BillsList({
                   t={t}
                   locale={locale}
                   currency={currency}
+                  hideValues={hideValues}
                 />
               ))}
             </div>

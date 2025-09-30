@@ -23,8 +23,9 @@ const Pill = memo(function Pill({ children, tone = "slate" }: PillProps) {
   };
 
   // JSX do rótulo: aplica padding, borda arredondada e tom conforme a prop
+  // Largura fixa para 12 caracteres para garantir que todos os pills tenham o mesmo tamanho
   return (
-    <span className={`px-2 py-1 rounded-full text-xs min-w-[80px] text-center inline-block ${tones[tone]}`}>
+    <span className={`px-3 py-1 rounded-full text-xs text-center inline-block w-24 truncate ${tones[tone]}`}>
       {children}
     </span>
   );

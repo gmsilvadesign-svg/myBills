@@ -21,10 +21,11 @@ interface BillsCalendarProps {
   locale: string;
   currency: string;
   t: Record<string, string>; // Traduções
+  hideValues?: boolean;
 }
 
 // Componente BillsCalendar: exibe as contas em formato de calendário mensal
-export default function BillsCalendar({ bills, purchases = [], monthDate, setMonthDate, locale, currency, t }: BillsCalendarProps) {
+export default function BillsCalendar({ bills, purchases = [], monthDate, setMonthDate, locale, currency, t, hideValues = false }: BillsCalendarProps) {
 
   // Funções de navegação otimizadas com useCallback
   const goToPreviousMonth = useCallback(() => {
@@ -81,6 +82,7 @@ export default function BillsCalendar({ bills, purchases = [], monthDate, setMon
         locale={locale}
         currency={currency}
         onDayClick={(iso) => setSelectedDay(iso)}
+        hideValues={hideValues}
       />
 
       {/* Modal com itens do dia */}
@@ -93,6 +95,7 @@ export default function BillsCalendar({ bills, purchases = [], monthDate, setMon
         locale={locale}
         currency={currency}
         t={t}
+        hideValues={hideValues}
       />
 
     </Section>

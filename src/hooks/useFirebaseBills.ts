@@ -1,4 +1,4 @@
-﻿// React
+// React
 import { useCallback, useEffect, useState } from 'react';
 
 // Firebase
@@ -168,7 +168,8 @@ export default function useFirebaseBills(activeBookId?: string | null) {
     try {
       if (!bill.id) throw new Error('Bill ID is required to mark as paid');
       const isRecurring = !!bill.recurrence && bill.recurrence !== 'NONE';
-      const shouldAdvance = isRecurring || advance;
+      // Só avança automaticamente se for explicitamente solicitado via parâmetro advance
+      const shouldAdvance = advance && isRecurring;
       if (isLocalMode) {
         const patch: Partial<Types.Bill> = shouldAdvance
           ? { paid: false, paidOn: ymd(new Date()), dueDate: nextOccurrenceISO(bill.dueDate, bill.recurrence) }

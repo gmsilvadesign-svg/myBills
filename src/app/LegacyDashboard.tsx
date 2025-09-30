@@ -88,6 +88,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const [chartRange, setChartRange] = useState<'6m' | '12m'>('12m');
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
+  const [hideCircles, setHideCircles] = useState(false);
 
   const filteredBills = useFilteredBills(bills, filter, search);
   // Overdue count for header banner
@@ -140,6 +141,10 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   const handleToggleHideValues = () => {
     setPrefs((prev) => ({ ...prev, hideValues: !prev.hideValues }));
+  };
+
+  const handleToggleHideCircles = () => {
+    setHideCircles(!hideCircles);
   };
 
   const handleCycleTheme = () => {
@@ -218,61 +223,61 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             addSampleData={addSampleBills}
           />
 
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-1">
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm flex flex-col gap-4">
+          <div className="flex flex-col gap-1 w-full">
             <span className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Book ativo</span>
-            <div className="flex items-center gap-3">
-              <select
-                value={activeBookId}
-                onChange={(event) => onSelectBook(event.target.value)}
-                className="px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                {books.map((book) => (
-                  <option key={book.id} value={book.id}>
-                    {book.name}
-                  </option>
-                ))}
-              </select>
-              {activeBook && (
-                <span className="text-xs text-slate-400 dark:text-slate-500">
-                  Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
-                </span>
-              )}
+            <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full xl:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+                <select
+                  value={activeBookId}
+                  onChange={(event) => onSelectBook(event.target.value)}
+                  className="px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-w-0 flex-shrink"
+                >
+                  {books.map((book) => (
+                    <option key={book.id} value={book.id}>
+                      {book.name.length > 12 ? `${book.name.substring(0, 12)}...` : book.name}
+                    </option>
+                  ))}
+                </select>
+                {activeBook && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                    Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCreateBookClick}
+                  className={cn(CSS_CLASSES.button.primary, 'flex items-center gap-2 justify-center w-40 min-w-[120px] flex-shrink-0')}
+                  disabled={isCreatingBook}
+                >
+                  {isCreatingBook ? 'Criando...' : '+ Novo controle'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteBookClick}
+                  className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-[150px] min-w-[120px] flex-shrink-0')}
+                  disabled={isDeletingBook}
+                >
+                  {isDeletingBook ? 'Excluindo...' : 'Excluir book'}
+                </button>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 xl:ml-auto">
+                <button
+                  type="button"
+                  onClick={handleToggleHideValues}
+                  className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-[150px] min-w-[120px] flex-shrink-0')}
+                >
+                  {hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleHideCircles}
+                  className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-[150px] min-w-[120px] flex-shrink-0')}
+                >
+                  {hideCircles ? 'Mostrar total' : 'Ocultar total'}
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleCreateBookClick}
-              className={cn(CSS_CLASSES.button.primary, 'flex items-center gap-2')}
-              disabled={isCreatingBook}
-            >
-              {isCreatingBook ? 'Criando...' : '+ Novo controle'}
-            </button>
-            <button
-              type="button"
-              onClick={handleDeleteBookClick}
-              className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2')}
-              disabled={isDeletingBook}
-            >
-              {isDeletingBook ? 'Excluindo...' : 'Excluir book'}
-            </button>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleToggleHideValues}
-              className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2')}
-            >
-              {hideValues ? 'Mostrar valores' : 'Ocultar valores'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCycleTheme}
-              className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2')}
-            >
-              Tema: {themeLabel}
-            </button>
           </div>
         </section>
 
@@ -290,22 +295,25 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           </div>
         )}
 
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
-          <TotalsStrip
-            bills={bills}
-            incomes={incomes}
-            goals={prefs.goals}
-            purchases={purchases}
-            onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
-            filter={filter}
-            valuesHidden={hideValues}
-          />
-          {hideValues && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
-              Valores ocultos. Toque em "Mostrar valores" para revelar.
-            </p>
-          )}
-        </section>
+        {!hideCircles && (
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
+            <TotalsStrip
+              bills={bills}
+              incomes={incomes}
+              goals={prefs.goals}
+              purchases={purchases}
+              onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
+              filter={filter}
+              valuesHidden={hideValues}
+              hideCircles={hideCircles}
+            />
+            {hideValues && (
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+                Valores ocultos. Toque em "Mostrar valores" para revelar.
+              </p>
+            )}
+          </section>
+        )}
 
         <Filters
            view={view}
@@ -322,14 +330,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
         <div className="space-y-6">
           {(view === "list" || view === 'purchases' || view === 'incomes') && (
          <div className="min-h-[60vh]">
-            <div className="mb-3 max-w-xs">
-              <Select label="Filtro" value={filter} onChange={e => setFilter(e.target.value as Types.FilterType)}>
-                <option value="today">{t.filter_today}</option>
-                <option value="month">{t.filter_month || t.totals_month}</option>
-                <option value="overdue">{t.filter_overdue}</option>
-                <option value="all">{t.filter_all}</option>
-              </Select>
-            </div>
             {view === 'list' && (
               <BillsList
                 bills={(function(){
@@ -374,6 +374,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                   }, 0);
                 })()}
                 onOpenIncomes={() => setOpenIncomesModal(true)}
+                hideValues={prefs.hideValues}
               />
             )}
             {view === 'purchases' && (
@@ -385,6 +386,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 locale={locale}
                 currency={currency}
                 filter={filter}
+                hideValues={prefs.hideValues}
               />
             )}
             {view === 'incomes' && (
@@ -396,6 +398,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 locale={locale}
                 currency={currency}
                 filter={filter}
+                hideValues={prefs.hideValues}
               />
             )}
           </div>
@@ -410,6 +413,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
              t={t}
              locale={locale}
              currency={currency}
+             hideValues={hideValues}
            />
          )}
 
@@ -573,26 +577,26 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                  <div className="hidden grid grid-cols-1 sm:grid-cols-4 gap-3">
                    <div className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200">
                      <div className="text-xs">Despesas do m├¬s</div>
-                     <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
+                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
                    </div>
                    <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200">
                      <div className="text-xs">Rendas do m├¬s</div>
-                     <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}</div>
+                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}</div>
                    </div>
                    <div className="rounded-xl p-3 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                      <div className="text-xs">Balan├ºo</div>
-                    <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}</div>
+                    <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}</div>
                   </div>
                   <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200">
                     <div className="text-xs">Compras do m├¬s</div>
-                    <div className="text-lg font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}</div>
+                    <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}</div>
                   </div>
                  </div>
                );
             })()}
             <div className="space-y-6">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600 dark:text-slate-300">Per├¡odo:</span>
+                <span className="text-slate-600 dark:text-slate-300">Período:</span>
                 <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
                 <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>12m</button>
                 {/* Bot├úo 1 ano removido */}
@@ -642,17 +646,19 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Projecao renda x gastos (semanas)</h4>
-                    <LineChart
-                      labels={weekLabels}
-                      height={240}
-                      series={[
-                        { name: 'Renda', color: '#10b981', values: weekIncome },
-                        { name: 'Contas', color: '#f97316', values: weekBills },
-                        { name: 'Compras', color: '#06b6d4', values: weekPurchases },
-                        { name: 'Saldo acumulado', color: '#2563eb', values: cumulativeSaldo },
-                      ]}
-                      formatY={formatCurrency}
-                    />
+                    <div className="ml-4">
+                      <LineChart
+                        labels={weekLabels}
+                        height={240}
+                        series={[
+                          { name: 'Renda', color: '#10b981', values: weekIncome },
+                          { name: 'Contas', color: '#f97316', values: weekBills },
+                          { name: 'Compras', color: '#06b6d4', values: weekPurchases },
+                          { name: 'Saldo acumulado', color: '#2563eb', values: cumulativeSaldo },
+                        ]}
+                        formatY={formatCurrency}
+                      />
+                    </div>
                   </div>
                 );
               })()}
@@ -671,14 +677,15 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                                     const monthBills = bills.reduce((sum, bill) => {
                     const occurrences = occurrencesForBillInMonth(bill, y, m);
                     if (!occurrences.length) return sum;
-                    return sum + occurrences.length * Number(bill.amount || 0);
+                    const billAmount = Number(bill.amount || 0);
+                    const monthlyTotal = occurrences.length * billAmount;
+                    return sum + monthlyTotal;
                   }, 0);
                   const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
                   const monthInc = incomes.reduce((sum, income) => {
-                    const occurrences = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
-                    if (!occurrences.length) return sum;
-                    return sum + occurrences.length * Number(income.amount || 0);
-                  }, 0);
+                  const occurrences = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
+                  return sum + occurrences.length * Number(income.amount || 0);
+                }, 0);
                   exp.push(monthBills + monthPurch);
                   inc.push(monthInc);
                 }
@@ -686,16 +693,18 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 return (
                   <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Historico Financeiro</h4>
-                    <LineChart
-                      labels={labels}
-                      height={260}
-                      series={[
-                        { name: 'Gastos', color: '#ef4444', values: exp },
-                        { name: 'Renda', color: '#10b981', values: inc },
-                        { name: 'Economia', color: '#38bdf8', values: labels.map((_, i) => Math.max(0, inc[i] - exp[i])) },
-                      ]}
-                      formatY={formatCurrency}
-                    />
+                    <div className="ml-4">
+                      <LineChart
+                        labels={labels}
+                        height={260}
+                        series={[
+                          { name: 'Gastos', color: '#ef4444', values: exp },
+                          { name: 'Renda', color: '#10b981', values: inc },
+                          { name: 'Economia', color: '#38bdf8', values: labels.map((_, i) => Math.max(0, inc[i] - exp[i])) },
+                        ]}
+                        formatY={formatCurrency}
+                      />
+                    </div>
                   </div>
                 );
               })()}

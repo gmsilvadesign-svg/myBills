@@ -85,8 +85,23 @@ export default function RadialProgress({
 
   const subText = targetText ? `${valueText} / ${targetText}` : valueText;
 
-  const fontSize = Math.max(12, svgSize * 0.18);
-  const subFontSize = Math.max(10, fontSize * 0.55);
+  // Função para truncar texto baseado na largura disponível
+  const truncateText = (text: string, maxWidth: number, fontSize: number) => {
+    const charWidth = fontSize * 0.6; // Estimativa da largura do caractere
+    const maxChars = Math.floor(maxWidth / charWidth);
+    if (text.length <= maxChars) return text;
+    return text.substring(0, Math.max(1, maxChars - 3)) + '...';
+  };
+
+  // Melhor cálculo do tamanho da fonte baseado no raio interno disponível
+  const availableWidth = innerRadius * 1.4; // Área disponível para o texto (mais conservador)
+  const maxFontSize = Math.min(svgSize * 0.14, availableWidth / 4); // Limita baseado no espaço
+  const fontSize = Math.max(10, Math.min(maxFontSize, 16)); // Entre 10px e 16px
+  const subFontSize = Math.max(8, fontSize * 0.5);
+
+  // Truncar textos se necessário
+  const truncatedPercentText = truncateText(percentText, availableWidth, fontSize);
+  const truncatedSubText = subText ? truncateText(subText, availableWidth, subFontSize) : null;
 
   return (
     <div className="flex flex-col items-center gap-2 text-center">
@@ -114,16 +129,17 @@ export default function RadialProgress({
         )}
         <text
           x={radius}
-          y={radius - (subText ? fontSize * 0.22 : 0)}
+          y={radius - (truncatedSubText ? fontSize * 0.22 : 0)}
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize={fontSize}
           fontWeight={700}
           fill={color}
+          title={percentText}
         >
-          {percentText}
+          {truncatedPercentText}
         </text>
-        {subText && (
+        {truncatedSubText && (
           <text
             x={radius}
             y={radius + fontSize * 0.6}
@@ -133,8 +149,9 @@ export default function RadialProgress({
             fontWeight={500}
             fill="#475569"
             opacity={0.8}
+            title={subText}
           >
-            {subText}
+            {truncatedSubText}
           </text>
         )}
       </svg>

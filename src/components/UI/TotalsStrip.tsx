@@ -14,6 +14,7 @@ interface TotalsStripProps {
   onFilterOverdue?: () => void;
   filter?: Types.FilterType;
   valuesHidden?: boolean;
+  hideCircles?: boolean;
 }
 
 const ratioColorTarget = (ratio: number) => {
@@ -51,6 +52,7 @@ const TotalsStrip = memo(function TotalsStrip({
   goals,
   filter = 'month',
   valuesHidden = false,
+  hideCircles = false,
 }: TotalsStripProps) {
   const { locale, currency } = useTranslation();
   const percentFormatter = useMemo(() => new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }), [locale]);
@@ -64,7 +66,7 @@ const TotalsStrip = memo(function TotalsStrip({
   };
   const inMonthOpt = (iso?: string | null) => !!iso && inMonth(iso);
 
-  // Renda do mês (planejada)
+  // Renda do mï¿½s (planejada)
   const incomeMonth = incomes.reduce((sum, i) => {
     const base = parseDate(i.dueDate);
     switch (i.recurrence) {
@@ -86,7 +88,7 @@ const TotalsStrip = memo(function TotalsStrip({
     }
   }, 0);
 
-  // Total de contas do mês (planejado)
+  // Total de contas do mï¿½s (planejado)
   const monthBillsTotal = bills.reduce((sum, b) => {
     const base = parseDate(b.dueDate);
     switch (b.recurrence) {
@@ -108,7 +110,7 @@ const TotalsStrip = memo(function TotalsStrip({
     }
   }, 0);
 
-  // Compras (mantendo consistência com o filtro atual)
+  // Compras (mantendo consistï¿½ncia com o filtro atual)
   const isToday = (iso: string) => {
     const d = parseDate(iso);
     const t = new Date();
@@ -127,7 +129,7 @@ const TotalsStrip = memo(function TotalsStrip({
   const savings = incomeMonth - (monthBillsTotal + purchasesTotal);
   const monthlySpend = monthBillsTotal + purchasesTotal;
 
-  // Abertas/atrasadas x Pagas (até o fim do mês)
+  // Abertas/atrasadas x Pagas (atï¿½ o fim do mï¿½s)
   const endOfMonth = new Date(y, m + 1, 0, 23, 59, 59, 999);
   const openOrOverdue = bills
     .filter((b) => !b.paid && parseDate(b.dueDate) <= endOfMonth)
@@ -173,87 +175,89 @@ const TotalsStrip = memo(function TotalsStrip({
   return (
     <div className="w-full flex justify-center mb-6">
       <div className={cn('w-full max-w-6xl space-y-8 transition-all', valuesHidden && 'blur-sm pointer-events-none select-none')}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="flex flex-col items-center gap-5">
-            <PieChart
-              size={204}
-              data={incomeSlices}
-              paletteType="cool"
-              formatValue={(v) => maskCurrency(v)}
-              centerText={maskCurrency(incomeMonth)}
-              centerBold
-              showLegend={false}
-              hoverCenterText={!valuesHidden && hoverIncomeText !== '--' ? hoverIncomeText : undefined}
-              hoverCenterTextColor={incomeHoverColor}
-              hoverFontScale={1.18}
-            />
-            <RadialProgress
-              value={incomeMonth}
-              target={incomeTarget}
-              label="Meta de renda"
-              valueFormatter={maskCurrency}
-              targetFormatter={maskCurrency}
-              percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
-              hideValue={valuesHidden}
-              mode="target"
-            />
-            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Renda</div>
-          </div>
+        {!hideCircles && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex flex-col items-center gap-5">
+              <PieChart
+                size={204}
+                data={incomeSlices}
+                paletteType="cool"
+                formatValue={(v) => maskCurrency(v)}
+                centerText={maskCurrency(incomeMonth)}
+                centerBold
+                showLegend={false}
+                hoverCenterText={!valuesHidden && hoverIncomeText !== '--' ? hoverIncomeText : undefined}
+                hoverCenterTextColor={incomeHoverColor}
+                hoverFontScale={1.18}
+              />
+              <RadialProgress
+                value={incomeMonth}
+                target={incomeTarget}
+                label="Meta de renda"
+                valueFormatter={maskCurrency}
+                targetFormatter={maskCurrency}
+                percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
+                hideValue={valuesHidden}
+                mode="target"
+              />
+              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Renda</div>
+            </div>
 
-          <div className="flex flex-col items-center gap-5">
-            <PieChart
-              size={204}
-              data={savingPieData(savings, monthlySpend)}
-              showLegend={false}
-              centerText={maskCurrency(savings)}
-              centerTextColor={valuesHidden ? '#ffffff' : savings < 0 ? '#dc2626' : '#16a34a'}
-              centerBold
-              hoverCenterText={!valuesHidden && hoverSavingsText !== '--' ? hoverSavingsText : undefined}
-              hoverCenterTextColor={savingsHoverColor}
-              hoverFontScale={1.18}
-            />
-            <RadialProgress
-              value={Math.max(0, savings)}
-              target={savingsTarget}
-              label="Meta de economia"
-              valueFormatter={maskCurrency}
-              targetFormatter={maskCurrency}
-              percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
-              hideValue={valuesHidden}
-              mode="target"
-            />
-            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Economia</div>
-          </div>
+            <div className="flex flex-col items-center gap-5">
+              <PieChart
+                size={204}
+                data={savingPieData(savings, monthlySpend)}
+                showLegend={false}
+                centerText={maskCurrency(savings)}
+                centerTextColor={valuesHidden ? '#ffffff' : savings < 0 ? '#dc2626' : '#16a34a'}
+                centerBold
+                hoverCenterText={!valuesHidden && hoverSavingsText !== '--' ? hoverSavingsText : undefined}
+                hoverCenterTextColor={savingsHoverColor}
+                hoverFontScale={1.18}
+              />
+              <RadialProgress
+                value={Math.max(0, savings)}
+                target={savingsTarget}
+                label="Meta de economia"
+                valueFormatter={maskCurrency}
+                targetFormatter={maskCurrency}
+                percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
+                hideValue={valuesHidden}
+                mode="target"
+              />
+              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Economia</div>
+            </div>
 
-          <div className="flex flex-col items-center gap-5">
-            <PieChart
-              size={204}
-              data={[
-                { label: 'Abertas/Atrasadas', value: openOrOverdue, color: '#ea580c' },
-                { label: 'Pagas', value: paidInMonth, color: '#fb923c' },
-              ]}
-              formatValue={(v) => maskCurrency(v)}
-              centerText={maskCurrency(openOrOverdue)}
-              centerBold
-              centerCheck={!valuesHidden && openOrOverdue <= 0}
-              showLegend={false}
-              hoverCenterText={!valuesHidden && hoverExpensesText !== '--' ? hoverExpensesText : undefined}
-              hoverCenterTextColor={expensesHoverColor}
-              hoverFontScale={1.18}
-            />
-            <RadialProgress
-              value={monthlySpend}
-              target={expensesLimit}
-              label="Teto de gastos"
-              valueFormatter={maskCurrency}
-              targetFormatter={maskCurrency}
-              percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
-              hideValue={valuesHidden}
-              mode="ceiling"
-            />
-            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Contas</div>
+            <div className="flex flex-col items-center gap-5">
+              <PieChart
+                size={204}
+                data={[
+                  { label: 'Abertas/Atrasadas', value: openOrOverdue, color: '#ea580c' },
+                  { label: 'Pagas', value: paidInMonth, color: '#fb923c' },
+                ]}
+                formatValue={(v) => maskCurrency(v)}
+                centerText={maskCurrency(openOrOverdue)}
+                centerBold
+                centerCheck={!valuesHidden && openOrOverdue <= 0}
+                showLegend={false}
+                hoverCenterText={!valuesHidden && hoverExpensesText !== '--' ? hoverExpensesText : undefined}
+                hoverCenterTextColor={expensesHoverColor}
+                hoverFontScale={1.18}
+              />
+              <RadialProgress
+                value={monthlySpend}
+                target={expensesLimit}
+                label="Teto de gastos"
+                valueFormatter={maskCurrency}
+                targetFormatter={maskCurrency}
+                percentFormatter={(ratio) => formatPercent(ratio, percentFormatter)}
+                hideValue={valuesHidden}
+                mode="ceiling"
+              />
+              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Contas</div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -273,6 +277,6 @@ function savingPieData(savings: number, expenses: number) {
   const withinBudget = Math.max(0, expenses - overspend);
   return [
     { label: 'Dentro da renda', value: withinBudget, color: '#1f2937' },
-    { label: 'Déficit', value: overspend, color: '#dc2626' },
+    { label: 'DÃ©ficit', value: overspend, color: '#dc2626' },
   ];
 }

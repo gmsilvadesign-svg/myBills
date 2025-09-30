@@ -1,4 +1,5 @@
 import Section from '@/components/layout/Section';
+import { fmtMoney, fmtMoneyTruncated } from '@/utils/utils';
 import * as Types from '@/types';
 
 interface PurchasesTabProps {
@@ -9,9 +10,10 @@ interface PurchasesTabProps {
   locale: string;
   currency: string;
   filter?: Types.FilterType;
+  hideValues?: boolean;
 }
 
-export default function PurchasesTab({ purchases, onEdit, onRemove, t, locale, currency, filter = 'month' }: PurchasesTabProps) {
+export default function PurchasesTab({ purchases, onEdit, onRemove, t, locale, currency, filter = 'month', hideValues = false }: PurchasesTabProps) {
   const today = new Date();
   const y = today.getFullYear();
   const m = today.getMonth();
@@ -28,7 +30,7 @@ export default function PurchasesTab({ purchases, onEdit, onRemove, t, locale, c
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">{t.monthly_purchases || 'Compras do mês'}</h3>
-          <div className="text-sm font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
+          <div className="text-sm font-semibold">{hideValues ? "••••••" : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
         </div>
         {filtered.length === 0 && (
           <div className="text-slate-500 text-center py-8">{t.no_purchases || 'Nenhuma compra registrada neste mês.'}</div>
@@ -42,7 +44,7 @@ export default function PurchasesTab({ purchases, onEdit, onRemove, t, locale, c
                   <div className="text-xs text-slate-500">{p.date}{p.category ? ` • ${p.category}` : ''}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="text-sm font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(p.amount)}</div>
+                  <div className="text-sm font-semibold">{hideValues ? "••••••" : fmtMoney(p.amount, currency, locale)}</div>
                   <button onClick={() => onEdit(p)} className="text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white text-sm">{t.edit || 'Editar'}</button>
                   {p.id && (
                     <button onClick={() => onRemove(p.id!)} className="text-red-600 hover:text-red-700 text-sm">{t.delete || 'Excluir'}</button>

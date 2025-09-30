@@ -29,6 +29,17 @@ export default function IncomeForm({ initial, onSave, onCancel, t }: IncomeFormP
 
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Remove caracteres não numéricos exceto ponto decimal
+    const numericValue = value.replace(/[^0-9.]/g, '');
+    // Limita a 12 dígitos (incluindo decimais)
+    const digitsOnly = numericValue.replace(/\./g, '');
+    if (digitsOnly.length <= 12) {
+      setAmount(numericValue);
+    }
+  }, []);
+
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -62,8 +73,10 @@ export default function IncomeForm({ initial, onSave, onCancel, t }: IncomeFormP
         <h2 className="text-xl font-semibold mb-6">{t.new_income || '+ Fonte de Renda'}</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Input label="Título" value={title} onChange={e => setTitle(e.target.value)} autoFocus ref={titleInputRef as any} />
-            <Input label="Valor" type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required />
+            <Input label="Título" value={title} onChange={e => setTitle(e.target.value)} autoFocus ref={titleInputRef as any} maxLength={20} />
+            <div className="relative">
+              <Input label="Valor" type="number" min="0" step="0.01" value={amount} onChange={handleAmountChange} required className="pr-2" />
+            </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Input label="Data" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />

@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import Pill from './Pill';
 
 // Utils
-import { fmtMoney } from '@/utils/utils';
+import { fmtMoney, fmtMoneyTruncated } from '@/utils/utils';
 
 // Types
 import * as Types from '@/types';
@@ -26,12 +26,16 @@ const TotalsPills = memo(function TotalsPills({ totals, onFilterOverdue }: Total
       <Pill tone="amber">
         <span className="hidden sm:inline">{t.totals_open}: </span>
         <span className="sm:hidden">Abertas: </span>
-        {fmtMoney(totals.allOpen, currency, locale)}
+        <span className="overflow-hidden text-ellipsis" title={fmtMoney(totals.allOpen, currency, locale)}>
+          {fmtMoneyTruncated(totals.allOpen, currency, locale, 12)}
+        </span>
       </Pill>
       <Pill tone="blue">
         <span className="hidden sm:inline">{t.totals_month}: </span>
         <span className="sm:hidden">Mês: </span>
-        {fmtMoney(totals.monthOpen, currency, locale)}
+        <span className="overflow-hidden text-ellipsis" title={fmtMoney(totals.monthOpen, currency, locale)}>
+          {fmtMoneyTruncated(totals.monthOpen, currency, locale, 12)}
+        </span>
       </Pill>
       {totals.overdue > 0 && (
         <button
@@ -40,7 +44,9 @@ const TotalsPills = memo(function TotalsPills({ totals, onFilterOverdue }: Total
         >
           <span className="hidden sm:inline">{t.overdue}: </span>
           <span className="sm:hidden">Atrasadas: </span>
-          {fmtMoney(totals.overdue, currency, locale)}
+          <span className="overflow-hidden text-ellipsis" title={fmtMoney(totals.overdue, currency, locale)}>
+            {fmtMoneyTruncated(totals.overdue, currency, locale, 12)}
+          </span>
         </button>
       )}
     </div>

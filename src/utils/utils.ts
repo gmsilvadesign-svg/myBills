@@ -11,6 +11,49 @@ export function fmtMoney(v: number, currency = "BRL", locale = "pt-BR"): string 
   }
 }
 
+// Formata um valor numérico como moeda com truncamento para valores muito longos
+// v = valor numérico
+// currency = código da moeda (padrão: "BRL")
+// locale = localidade para formatação (padrão: "pt-BR")
+export function fmtMoneyTruncated(v: number, currency = "BRL", locale = "pt-BR"): string {
+  const formatted = fmtMoney(v, currency, locale);
+  
+  // Conta apenas os dígitos (sem símbolos, espaços, pontos ou vírgulas)
+  const digitsOnly = formatted.replace(/[^\d]/g, '');
+  
+  // Se tiver mais de 20 dígitos, trunca a string formatada
+  if (digitsOnly.length > 20) {
+    // Encontra a posição dos centavos (,XX no final)
+    const decimalMatch = formatted.match(/,\d{2}$/);
+    if (decimalMatch) {
+      // Posição onde começam os centavos
+      const decimalStart = decimalMatch.index!;
+      const beforeDecimal = formatted.substring(0, decimalStart);
+      const afterDecimal = formatted.substring(decimalStart);
+      
+      // Extrai apenas os dígitos da parte antes dos centavos
+      const digitsBeforeDecimal = beforeDecimal.replace(/[^\d]/g, '');
+      
+      // Se a parte antes dos centavos tem mais de 18 dígitos (20 total - 2 dos centavos)
+      if (digitsBeforeDecimal.length > 18) {
+        // Pega os primeiros 9 dígitos
+        const firstNineDigits = digitsBeforeDecimal.substring(0, 9);
+        
+        // Reconstrói com o símbolo da moeda
+        const currencyMatch = formatted.match(/^([R$€£¥\s]+)/);
+        const symbol = currencyMatch ? currencyMatch[1] : 'R$ ';
+        
+        // Formata os 9 dígitos com pontos
+        const formattedNine = firstNineDigits.replace(/(\d{3})(?=\d)/g, '$1.');
+        
+        return symbol + formattedNine + "..." + afterDecimal;
+      }
+    }
+  }
+  
+  return formatted;
+}
+
 // Converte uma data para o formato ISO "YYYY-MM-DD".
 export function ymd(d: Date | string): string {
   const dd = new Date(d);
@@ -81,6 +124,8 @@ import * as Types from '@/types';
 export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthIndex: number): string[] {
   const occ: string[] = [];
   const base = parseDate(bill.dueDate);
+  const today = new Date();
+  const requestedMonth = new Date(year, monthIndex, 1);
 
   if (bill.recurrence === "NONE" || !bill.recurrence) {
     if (base.getFullYear() === year && base.getMonth() === monthIndex) occ.push(ymd(base));
@@ -89,13 +134,27 @@ export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthI
 
   if (bill.recurrence === "MONTHLY") {
     const day = base.getDate();
-    occ.push(ymd(new Date(year, monthIndex, clampDay(year, monthIndex, day))));
+    const occurrenceDate = new Date(year, monthIndex, clampDay(year, monthIndex, day));
+    
+    // Para contas mensais, gera ocorrências se:
+    // 1. A data base é anterior ou igual ao mês solicitado
+    // 2. A ocorrência é no mês atual ou futuro (incluindo o mês de criação)
+    const baseMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    if (base <= requestedMonth && requestedMonth >= baseMonth && requestedMonth >= currentMonth) {
+      occ.push(ymd(occurrenceDate));
+    }
     return occ;
   }
 
   if (bill.recurrence === "YEARLY") {
     if (base.getMonth() === monthIndex) {
-      occ.push(ymd(new Date(year, monthIndex, clampDay(year, monthIndex, base.getDate()))));
+      const occurrenceDate = new Date(year, monthIndex, clampDay(year, monthIndex, base.getDate()));
+      // Para contas anuais, só gera se a data base é anterior ou igual ao ano solicitado
+      if (base.getFullYear() <= year) {
+        occ.push(ymd(occurrenceDate));
+      }
     }
     return occ;
   }
@@ -105,7 +164,7 @@ export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthI
     const totalDays = daysInMonth(year, monthIndex);
     for (let d = 1; d <= totalDays; d++) {
       const dt = new Date(year, monthIndex, d);
-      if (dt.getDay() === dow) occ.push(ymd(dt));
+      if (dt.getDay() === dow && dt >= base) occ.push(ymd(dt));
     }
     return occ;
   }
@@ -113,7 +172,8 @@ export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthI
   if (bill.recurrence === "DAILY") {
     const totalDays = daysInMonth(year, monthIndex);
     for (let d = 1; d <= totalDays; d++) {
-      occ.push(ymd(new Date(year, monthIndex, d)));
+      const dt = new Date(year, monthIndex, d);
+      if (dt >= base) occ.push(ymd(dt));
     }
     return occ;
   }

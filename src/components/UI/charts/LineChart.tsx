@@ -87,7 +87,7 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
     });
   }, [series]);
 
-  const padding = { top: 36, right: 36, bottom: 44, left: 86 };
+  const padding = { top: 36, right: 36, bottom: 44, left: 120 };
   const innerW = Math.max(0, width - padding.left - padding.right);
   const innerH = Math.max(0, height - padding.top - padding.bottom);
 
@@ -191,11 +191,11 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
               <g key={`tick-${i}`}>
                 <line x1={-6} x2={0} y1={y(tv)} y2={y(tv)} stroke="#94a3b8" opacity={0.45} />
                 <text
-                  x={-10}
+                  x={-12}
                   y={y(tv)}
                   textAnchor="end"
                   dominantBaseline="central"
-                  fontSize={11}
+                  fontSize={10}
                   fill="#64748b"
                 >
                   {formatY ? formatY(tv) : Math.round(tv).toString()}
