@@ -22,9 +22,9 @@ const Filters = memo(function Filters({ view, setView, filter, setFilter, search
 
       {/* Container para os botões de toggle - responsivo */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
-        {/* Botão toggle para alternar entre visualização "lista" e "calendário" */}
+        {/* Toggle para alternar entre as abas disponíveis */}
         <ToggleButton 
-          items={[["general", t.general], ["list", t.view_list], ["calendar", t.view_calendar], ["purchases", t.purchases || 'Compras'], ["incomes", t.incomes || 'Rendas']]} 
+          items={[["general", t.general], ["list", t.view_list], ["purchases", t.purchases || 'Compras'], ["incomes", t.incomes || 'Rendas']]} 
           selected={view} 
           onChange={setView} 
         />
@@ -50,3 +50,4 @@ const Filters = memo(function Filters({ view, setView, filter, setFilter, search
 });
 
 export default Filters;
+

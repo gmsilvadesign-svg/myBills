@@ -16,7 +16,6 @@ import Footer from "@/components/layout/Footer";
 
 // UI Components
 import BillsList from "@/components/UI/bills/BillsList";
-import BillsCalendar from "@/components/UI/bills/BillsCalendar";
 import BillForm from "@/components/UI/bills/BillForm";
 // import TotalsPills from "@/components/UI/TotalsPills";
 import IncomeForm from "@/components/UI/incomes/IncomeForm";
@@ -78,7 +77,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   });
   const [editingIncome, setEditingIncome] = useState<Partial<Types.Income> | null>(null);
   const [editingPurchase, setEditingPurchase] = useState<Partial<Types.Purchase> | null>(null);
-  const [monthDate, setMonthDate] = useState(new Date());
+  const [monthDate] = useState(new Date());
   const [openSettings, setOpenSettings] = useState(false);
   const { purchases, upsertPurchase, removePurchase } = useFirebasePurchases(activeBookId);
   const { width } = usePreview();
@@ -137,7 +136,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     };
     return occurrencesForBillInMonth(stub, year, month).length;
   };
-
 
   const handleToggleHideValues = () => {
     setPrefs((prev) => ({ ...prev, hideValues: !prev.hideValues }));
@@ -414,20 +412,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             )}
           </div>
         )}
-
-         {view === "calendar" && (
-           <BillsCalendar
-             bills={bills}
-             purchases={purchases}
-             monthDate={monthDate}
-             setMonthDate={setMonthDate}
-             t={t}
-             locale={locale}
-             currency={currency}
-             hideValues={hideValues}
-           />
-         )}
-
 
 
          {editing && (

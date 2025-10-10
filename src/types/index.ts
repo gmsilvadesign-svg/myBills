@@ -68,7 +68,7 @@ export interface Book {
 }
 
 export type FilterType = 'all' | 'today' | 'month' | 'overdue' | 'next7' | 'next30';
-export type ViewType = 'general' | 'list' | 'calendar' | 'purchases' | 'incomes';
+export type ViewType = 'general' | 'list' | 'purchases' | 'incomes';
 
 export interface Totals {
   allOpen: number;
