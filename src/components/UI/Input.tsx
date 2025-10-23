@@ -1,43 +1,39 @@
 import { useId, forwardRef } from 'react';
 import * as Types from '@/types';
+import { CSS_CLASSES, cn } from '@/styles/constants';
 
-// Interface para as props do componente
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, Types.WithError {
   label: string;
 }
 
-// Input com label estilizado e acessibilidade aprimorada
-const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, ...props }, ref) => {
+const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, className, ...props }, ref) => {
   const id = useId();
   const errorId = useId();
 
-  // JSX do input com label
+  const baseClass = cn(
+    CSS_CLASSES.input.base,
+    error ? CSS_CLASSES.input.error : CSS_CLASSES.input.default,
+    className,
+  );
+
   return (
-    // Container do campo
     <div className="block mb-3 min-w-0">
-      {/* Label associado ao input */}
-      <label htmlFor={id} className="block text-sm text-slate-600 dark:text-slate-300 mb-1">
+      <label htmlFor={id} className={CSS_CLASSES.text.label}>
         {label}
         {props.required && <span className="text-red-500 ml-1" aria-label="campo obrigatório">*</span>}
       </label>
 
-      {/* Input propriamente dito, recebe props passadas e estilização */}
-      <input 
+      <input
         {...props}
         ref={ref}
         id={id}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? 'true' : 'false'}
-        className={`w-full px-3 py-2 rounded-2xl border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ${
-          error 
-            ? 'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400 dark:focus:ring-red-400 dark:focus:border-red-400' 
-            : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-[#AABBCC]/10 dark:border-[#AABBCC]/30 dark:text-slate-50 dark:focus:border-[#AABBCC] dark:focus:ring-[#AABBCC] backdrop-blur-sm'
-        }`}
+        className={baseClass}
       />
-      
-      {/* Mensagem de erro */}
+
       {error && (
-        <div id={errorId} className="text-sm text-red-600 dark:text-red-400 mt-1" role="alert">
+        <div id={errorId} className={CSS_CLASSES.text.error} role="alert">
           {error}
         </div>
       )}

@@ -1,4 +1,4 @@
-﻿import { CSS_CLASSES, cn } from '@/styles/constants';
+import { CSS_CLASSES, cn } from '@/styles/constants';
 
 interface SplashScreenProps {
   fadingOut?: boolean;

@@ -205,7 +205,7 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               />
               {(isSeeding || isClearingAuto) && (
                 <div className="flex items-center gap-3 grow">
-                  <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-40 sm:w-56 overflow-hidden">
+                  <div className="h-2 bg-slate-200 rounded w-40 sm:w-56 overflow-hidden">
                     <div
                       className="h-2 bg-blue-600 transition-all duration-200"
                       style={{ width: `${progress}%` }}
@@ -215,7 +215,7 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                 </div>
               )}
               {!isSeeding && !isClearingAuto && progressPhase === 'Concluído' && (
-                <span className="text-green-600 dark:text-green-400">Concluído</span>
+                <span className="text-green-600">Concluído</span>
               )}
             </div>
           </div>
@@ -284,3 +284,4 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 };
 
 export default AdminPanel;
+

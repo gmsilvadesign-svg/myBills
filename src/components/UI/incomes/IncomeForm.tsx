@@ -11,12 +11,13 @@ import Textarea from '@/components/UI/Textarea';
 
 // Types
 import * as Types from '@/types';
+import { TranslationDictionary } from '@/constants/translation';
 
 interface IncomeFormProps {
   initial?: Partial<Types.Income>;
   onSave: (income: Omit<Types.Income, 'id'>) => void;
   onCancel: () => void;
-  t: Record<string, string>;
+  t: TranslationDictionary;
 }
 
 export default function IncomeForm({ initial, onSave, onCancel, t }: IncomeFormProps) {
@@ -69,7 +70,7 @@ export default function IncomeForm({ initial, onSave, onCancel, t }: IncomeFormP
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-3xl shadow-2xl">
+      <div className="bg-white text-slate-900 rounded-2xl p-6 w-full max-w-3xl shadow-2xl">
         <h2 className="text-xl font-semibold mb-6">{t.new_income || '+ Fonte de Renda'}</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -100,7 +101,7 @@ export default function IncomeForm({ initial, onSave, onCancel, t }: IncomeFormP
             <Textarea label="Notas" value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
-            <button type="button" onClick={onCancel} className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+            <button type="button" onClick={onCancel} className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 text-slate-700">
               {t.cancel}
             </button>
             <button type="submit" className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white">
@@ -112,4 +113,6 @@ export default function IncomeForm({ initial, onSave, onCancel, t }: IncomeFormP
     </div>
   );
 }
+
+
 

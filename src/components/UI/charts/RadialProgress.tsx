@@ -1,5 +1,3 @@
-import React from "react";
-
 interface RadialProgressProps {
   value: number;
   target?: number | null;
@@ -135,8 +133,8 @@ export default function RadialProgress({
           fontSize={fontSize}
           fontWeight={700}
           fill={color}
-          title={percentText}
         >
+          <title>{percentText}</title>
           {truncatedPercentText}
         </text>
         {truncatedSubText && (
@@ -149,13 +147,15 @@ export default function RadialProgress({
             fontWeight={500}
             fill="#475569"
             opacity={0.8}
-            title={subText}
           >
+            <title>{subText}</title>
             {truncatedSubText}
           </text>
         )}
       </svg>
-      <div className="text-xs font-medium text-slate-600 dark:text-slate-300">{label}</div>
+      <div className="text-xs font-medium text-slate-600">{label}</div>
     </div>
   );
 }
+
+

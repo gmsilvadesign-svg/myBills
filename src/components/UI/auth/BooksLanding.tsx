@@ -53,12 +53,12 @@ export default function BooksLanding({ userName, books, loading = false, onSelec
   const isEmpty = !books.length && !loading;
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 px-6 py-10">
+    <div className="min-h-screen bg-slate-100 px-6 py-10">
       <div className="max-w-5xl mx-auto space-y-10">
         <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">{greeting}</h1>
-            <p className="text-slate-600 dark:text-slate-300">
+            <h1 className="text-3xl font-semibold text-slate-900">{greeting}</h1>
+            <p className="text-slate-600">
               Organize seus controles financeiros em books separados e acompanhe resultados com mais clareza.
             </p>
           </div>
@@ -72,8 +72,8 @@ export default function BooksLanding({ userName, books, loading = false, onSelec
         </header>
 
         {creating && (
-          <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6">
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Nome do novo book</h2>
+          <div className="rounded-3xl bg-white border border-slate-200 p-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">Nome do novo book</h2>
             <input
               autoFocus
               type="text"
@@ -108,13 +108,13 @@ export default function BooksLanding({ userName, books, loading = false, onSelec
         )}
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Seus books financeiros</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Seus books financeiros</h2>
           {loading && !books.length ? (
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 p-8 text-center text-slate-500 dark:text-slate-300">
+            <div className="rounded-3xl border border-slate-200 bg-white/60 p-8 text-center text-slate-600">
               Carregando books...
             </div>
           ) : isEmpty ? (
-            <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 p-8 text-center text-slate-500 dark:text-slate-300">
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-8 text-center text-slate-600">
               Nenhum book ainda. Clique em "Novo controle" para comecar.
             </div>
           ) : (
@@ -128,12 +128,12 @@ export default function BooksLanding({ userName, books, loading = false, onSelec
                 return (
                   <article
                     key={book.id}
-                    className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm hover:shadow-md transition-shadow"
+                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <header className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{book.name}</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Criado em {formattedDate}</p>
+                        <h3 className="text-lg font-semibold text-slate-900">{book.name}</h3>
+                        <p className="text-sm text-slate-600">Criado em {formattedDate}</p>
                       </div>
                       <button
                         type="button"
@@ -164,3 +164,4 @@ export default function BooksLanding({ userName, books, loading = false, onSelec
     </div>
   );
 }
+

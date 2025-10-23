@@ -3,6 +3,7 @@ import Section from '@/components/layout/Section'
 import BillRow from '@/components/UI/bills/BillRow'
 import * as Types from '@/types'
 import { parseDate } from '@/utils/utils'
+import { TranslationDictionary } from '@/constants/translation'
 
 interface BillsListProps {
   bills: Types.Bill[];
@@ -11,7 +12,7 @@ interface BillsListProps {
   unmarkPaid?: (bill: Types.Bill) => void;
   setEditing: (bill: Types.Bill) => void;
   setConfirm: (confirm: Types.ConfirmState) => void;
-  t: Record<string, string>;
+  t: TranslationDictionary;
   locale: string;
   currency: string;
   purchasesTotalMonth?: number;
@@ -46,9 +47,9 @@ const BillsList = memo(function BillsList({
   const paidBills = bills.filter(isPaidThisMonth)
   return (
     <Section>
-      <div className="divide-y divide-slate-200 dark:divide-[#AABBCC]/30 overflow-hidden">
+      <div className="divide-y divide-slate-200 overflow-hidden">
         {loading && (
-          <div className="text-slate-500 py-8 text-center flex items-center justify-center min-h-[400px]">
+          <div className="text-slate-600 py-8 text-center flex items-center justify-center min-h-[400px]">
             {t.loading_bills}
           </div>
         )}
@@ -70,10 +71,10 @@ const BillsList = memo(function BillsList({
 
         {!loading && paidBills.length > 0 && (
           <div className="pt-6">
-            <div className="text-sm font-semibold text-slate-600 dark:text-slate-300 pb-2">
+            <div className="text-sm font-semibold text-slate-600 pb-2">
               {t.paid_bills || 'Contas pagas'}
             </div>
-            <div className="divide-y divide-slate-200 dark:divide-[#AABBCC]/30">
+            <div className="divide-y divide-slate-200">
               {paidBills.map((b) => (
                 <BillRow
                   key={b.id}
@@ -94,7 +95,7 @@ const BillsList = memo(function BillsList({
         )}
 
         {!loading && openBills.length === 0 && paidBills.length === 0 && (
-          <div className="text-slate-500 py-8 text-center min-h-[400px] flex items-center justify-center">
+          <div className="text-slate-600 py-8 text-center min-h-[400px] flex items-center justify-center">
             {t.no_bills}
           </div>
         )}
@@ -104,3 +105,5 @@ const BillsList = memo(function BillsList({
 })
 
 export default BillsList
+
+

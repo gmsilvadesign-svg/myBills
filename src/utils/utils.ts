@@ -15,14 +15,14 @@ export function fmtMoney(v: number, currency = "BRL", locale = "pt-BR"): string 
 // v = valor numérico
 // currency = código da moeda (padrão: "BRL")
 // locale = localidade para formatação (padrão: "pt-BR")
-export function fmtMoneyTruncated(v: number, currency = "BRL", locale = "pt-BR"): string {
+export function fmtMoneyTruncated(v: number, currency = "BRL", locale = "pt-BR", maxDigits = 20): string {
   const formatted = fmtMoney(v, currency, locale);
   
   // Conta apenas os dígitos (sem símbolos, espaços, pontos ou vírgulas)
   const digitsOnly = formatted.replace(/[^\d]/g, '');
   
   // Se tiver mais de 20 dígitos, trunca a string formatada
-  if (digitsOnly.length > 20) {
+  if (digitsOnly.length > maxDigits) {
     // Encontra a posição dos centavos (,XX no final)
     const decimalMatch = formatted.match(/,\d{2}$/);
     if (decimalMatch) {
@@ -283,3 +283,4 @@ export function prevOccurrenceISO(iso: string, recurrence: string): string {
   if (r === "DAILY") return addDays(iso, -1);
   return iso;
 }
+

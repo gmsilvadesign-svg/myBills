@@ -7,7 +7,8 @@ vi.mock('@/hooks/useTotals', () => ({
   default: () => ({
     allOpen: 250.50,
     monthOpen: 450.75,
-    countOpen: 3
+    countOpen: 3,
+    overdue: 0
   })
 }))
 
@@ -15,7 +16,8 @@ describe('TotalsPills Component', () => {
   const mockTotals = {
     allOpen: 250.50,
     monthOpen: 450.75,
-    countOpen: 3
+    countOpen: 3,
+    overdue: 0
   }
 
   it('renders component without errors', () => {
@@ -34,7 +36,7 @@ describe('TotalsPills Component', () => {
   })
 
   it('handles empty bills array', () => {
-    const emptyTotals = { allOpen: 0, monthOpen: 0, countOpen: 0 }
+    const emptyTotals = { allOpen: 0, monthOpen: 0, countOpen: 0, overdue: 0 }
     render(<TotalsPills totals={emptyTotals} />)
     
     // Deve renderizar sem erros mesmo com totals vazios

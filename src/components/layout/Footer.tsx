@@ -1,21 +1,25 @@
-import { memo } from 'react';
-import { CSS_CLASSES } from '@/styles/constants';
+import { memo } from "react";
+import { CSS_CLASSES } from "@/styles/constants";
+import { TranslationDictionary } from "@/constants/translation";
 
 interface FooterProps {
-  t: Record<string, string>;
+  t: TranslationDictionary;
 }
 
 const Footer = memo(function Footer({ t }: FooterProps) {
+  const footerText =
+    typeof t.footer === "string" ? t.footer : "Feito para uso pessoal.";
+
   return (
-    <footer 
+    <footer
       className={`mt-10 text-xs ${CSS_CLASSES.text.muted}`}
       role="contentinfo"
-      aria-label={t.footer_info || "Informações do rodapé"}
+      aria-label={footerText}
     >
-      {/* Texto do rodapé, utilizando tradução (i18n) */}
-      <div>{t.footer}</div>
+      <div>{footerText}</div>
     </footer>
   );
 });
 
 export default Footer;
+

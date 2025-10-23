@@ -5,12 +5,13 @@ import Textarea from '@/components/UI/Textarea';
 import Select from '@/components/UI/Select';
 import { ymd } from '@/utils/utils';
 import * as Types from '@/types';
+import { TranslationDictionary } from '@/constants/translation';
 
 interface PurchasesViewProps {
   purchases: Types.Purchase[];
   onSave: (purchase: Omit<Types.Purchase, 'id'>) => void;
   onRemove: (id: string) => void;
-  t: Record<string, string>;
+  t: TranslationDictionary;
   locale: string;
   currency: string;
 }
@@ -44,7 +45,7 @@ export default function PurchasesView({ purchases, onSave, onRemove, t, locale, 
           onSave({ title: title.trim(), amount: Number(amount), date, category: category || null, notes: notes.trim() || null });
           setTitle(''); setAmount(''); setNotes('');
         }}
-        className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900 mb-4"
+        className="rounded-2xl border border-slate-200 p-4 bg-white mb-4"
       >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <Input label={t.title || 'Título'} value={title} onChange={e => setTitle(e.target.value)} />
@@ -66,21 +67,21 @@ export default function PurchasesView({ purchases, onSave, onRemove, t, locale, 
         </div>
       </form>
 
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 p-4 bg-white">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">{t.monthly_purchases || 'Compras do mês'}</h3>
           <div className="text-sm">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
         </div>
         {monthPurchases.length === 0 && (
-          <div className="text-slate-500 text-center py-8">{t.no_purchases || 'Nenhuma compra registrada neste mês.'}</div>
+          <div className="text-slate-600 text-center py-8">{t.no_purchases || 'Nenhuma compra registrada neste mês.'}</div>
         )}
         {monthPurchases.length > 0 && (
-          <ul className="divide-y divide-slate-200 dark:divide-slate-700">
+          <ul className="divide-y divide-slate-200">
             {monthPurchases.map(p => (
               <li key={p.id} className="py-2 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{p.title}</div>
-                  <div className="text-xs text-slate-500">{p.date}{p.category ? ` • ${p.category}` : ''}</div>
+                  <div className="text-xs text-slate-600">{p.date}{p.category ? ` • ${p.category}` : ''}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-sm font-semibold">{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(p.amount)}</div>

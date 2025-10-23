@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { TranslationDictionary } from '@/constants/translation';
 
 // Interface para as props do componente
 interface DeleteConfirmProps {
@@ -7,7 +8,7 @@ interface DeleteConfirmProps {
   onConfirm: () => void;
   title: string;
   body: string;
-  t: Record<string, string>; // Traduções
+  t: TranslationDictionary; // Traduções
 }
 
 // Modal de confirmação com título, corpo e botões - acessibilidade aprimorada
@@ -61,14 +62,14 @@ export default function DeleteConfirm({ open, onClose, onConfirm, title, body, t
       {/* Caixa do modal com fundo, cantos arredondados e sombra */}
       <div 
         ref={modalRef}
-        className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-xl"
+        className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Título do modal */}
         <div id="modal-title" className="text-lg font-semibold mb-2">{title}</div>
 
         {/* Corpo do modal */}
-        <div id="modal-description" className="text-slate-600 dark:text-slate-300 mb-6">{body}</div>
+        <div id="modal-description" className="text-slate-600 mb-6">{body}</div>
 
         {/* Botões de ação */}
         <div className="flex gap-3 justify-end">
@@ -76,7 +77,7 @@ export default function DeleteConfirm({ open, onClose, onConfirm, title, body, t
           <button 
             ref={cancelButtonRef}
             onClick={onClose} 
-            className="min-w-[80px] text-center px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-colors"
+            className="min-w-[80px] text-center px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-colors"
           >
             {t.cancel}
           </button>
@@ -93,3 +94,5 @@ export default function DeleteConfirm({ open, onClose, onConfirm, title, body, t
     </div>
   );
 }
+
+

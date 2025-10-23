@@ -3,6 +3,12 @@ import * as Types from "@/types";
 
 const PREFS_STORAGE_KEY = "prefs";
 
+const DEFAULT_PREFS: Types.UserPreferences = {
+  language: "pt",
+  currency: "BRL",
+  hideValues: false,
+};
+
 const toNumber = (value: unknown): number | undefined => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim() !== "") {
@@ -30,24 +36,23 @@ const sanitizeGoals = (goals?: Types.UserGoals | null): Types.UserGoals | undefi
 
 const loadInitialPrefs = (): Types.UserPreferences => {
   if (typeof window === "undefined") {
-    return { theme: "system", language: "pt", currency: "BRL", hideValues: false };
+    return { ...DEFAULT_PREFS };
   }
   const raw = window.localStorage.getItem(PREFS_STORAGE_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as Types.UserPreferences;
       return {
-        theme: parsed.theme ?? "system",
-        language: parsed.language ?? "pt",
-        currency: parsed.currency ?? "BRL",
-        hideValues: parsed.hideValues ?? false,
+        language: parsed.language ?? DEFAULT_PREFS.language,
+        currency: parsed.currency ?? DEFAULT_PREFS.currency,
+        hideValues: parsed.hideValues ?? DEFAULT_PREFS.hideValues,
         goals: sanitizeGoals(parsed.goals),
       };
     } catch {
       // fall through to defaults
     }
   }
-  return { theme: "system", language: "pt", currency: "BRL", hideValues: false } as Types.UserPreferences;
+  return { ...DEFAULT_PREFS };
 };
 
 export function usePrefs(): [Types.UserPreferences, Dispatch<SetStateAction<Types.UserPreferences>>] {
@@ -74,29 +79,6 @@ export function usePrefs(): [Types.UserPreferences, Dispatch<SetStateAction<Type
     }
     window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(payload));
   }, [prefsState]);
-
-  // Apply theme to the document body
-  useEffect(() => {
-    const body = document.body;
-    const applyTheme = () => {
-      if (prefsState.theme === "dark") {
-        body.classList.add("dark");
-      } else if (prefsState.theme === "light") {
-        body.classList.remove("dark");
-      } else {
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        body.classList.toggle("dark", prefersDark);
-      }
-    };
-    applyTheme();
-
-    if (prefsState.theme === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const listener = () => applyTheme();
-      mq.addEventListener("change", listener);
-      return () => mq.removeEventListener("change", listener);
-    }
-  }, [prefsState.theme]);
 
   return [prefsState, setPrefs];
 }

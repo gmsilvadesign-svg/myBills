@@ -1,4 +1,4 @@
-// React
+﻿// React
 import { useMemo, useState } from "react";
 
 // Styles
@@ -27,7 +27,6 @@ import PieChart from "@/components/UI/charts/PieChart";
 import IncomesModal from "@/components/UI/modals/IncomesModal";
 import PurchasesTab from "@/components/UI/purchases/PurchasesTab";
 import IncomesTab from "@/components/UI/incomes/IncomesTab";
-import Select from "@/components/UI/Select";
 import { CSS_CLASSES, cn } from "@/styles/constants";
 
 // Modals
@@ -94,7 +93,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const todayISOHeader = ymd(new Date());
   const overdueCount = bills.filter(b => !b.paid && (parseDate(b.dueDate) < parseDate(todayISOHeader))).length;
 
-  // Hook de notifica├º├Áes
+  // Hook de notificaÔö£-¦Ôö£+ües
   const exportICS = () => {
     import("@/utils/utils").then(({ buildICSForMonth, download }) => {
       const ics = buildICSForMonth(bills, monthDate, locale, currency);
@@ -145,22 +144,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     setHideCircles(!hideCircles);
   };
 
-  const handleCycleTheme = () => {
-    setPrefs((prev) => {
-      const order: Array<Types.UserPreferences['theme']> = ['light', 'dark', 'system'];
-      const currentIndex = order.indexOf(prev.theme);
-      const nextTheme = order[(currentIndex + 1) % order.length];
-      return { ...prev, theme: nextTheme };
-    });
-  };
-
-  const themeLabelMap: Record<Types.UserPreferences['theme'], string> = {
-    light: 'Claro',
-    dark: 'Escuro',
-    system: 'Sistema',
-  };
-  const themeLabel = themeLabelMap[prefs.theme] ?? 'Sistema';
-
   const handleCreateBookClick = async () => {
     try {
       setIsCreatingBook(true);
@@ -189,7 +172,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">CarregandoÔÇª</div>
+      <div className="min-h-screen flex items-center justify-center text-slate-600">Carregando+ö+ç-¬</div>
     );
   }
 
@@ -227,7 +210,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             <div className="flex flex-col gap-4 w-full">
               {/* Layout responsivo para diferentes zooms */}
               <div className="flex flex-col gap-3">
-                {/* Primeira linha: Select e data de criação */}
+                {/* Primeira linha: Select e data de cria+º+úo */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap">
                   <select
                     value={activeBookId}
@@ -247,7 +230,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                   )}
                 </div>
                 
-                {/* Segunda linha: Botões principais à esquerda e botões de visualização à direita */}
+                {/* Segunda linha: Bot+Áes principais +á esquerda e bot+Áes de visualiza+º+úo +á direita */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap zoom-300:flex-row zoom-300:items-start zoom-300:justify-between zoom-300:gap-2 zoom-400:flex-row zoom-400:items-start zoom-400:justify-between zoom-400:gap-2 zoom-500:flex-row zoom-500:items-start zoom-500:justify-between zoom-500:gap-2">
                   <div className="flex flex-col sm:flex-row gap-3 flex-wrap zoom-300:flex-row zoom-300:gap-2 zoom-400:flex-col zoom-400:gap-2 zoom-500:flex-col zoom-500:gap-2">
                     <button
@@ -334,7 +317,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
            t={t}
          />
 
-        {/* Removido: Totais agora sempre vis├¡veis acima das op├º├Áes */}
+        {/* Removido: Totais agora sempre visÔö£-íveis acima das opÔö£-¦Ôö£+ües */}
 
         <div className="space-y-6">
           {(view === "list" || view === 'purchases' || view === 'incomes') && (
@@ -343,10 +326,10 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
               <BillsList
                 bills={(function(){
                   // Month view: incluir
-                  // - contas com vencimento no m├¬s atual (filteredBills)
-                  // - contas pagas neste m├¬s (se├º├úo "Contas pagas")
-                  // - contas em atraso (de meses anteriores tamb├®m), para que
-                  //   ao desmarcar um pagamento elas retornem ├á lista
+                  // - contas com vencimento no mÔö£-¼s atual (filteredBills)
+                  // - contas pagas neste mÔö£-¼s (seÔö£-¦Ôö£+¦o "Contas pagas")
+                  // - contas em atraso (de meses anteriores tambÔö£-«m), para que
+                  //   ao desmarcar um pagamento elas retornem Ôö£+í lista
                   if (filter !== 'month') return filteredBills;
                   const now = new Date();
                   const y = now.getFullYear();
@@ -433,7 +416,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           />
         )}
 
-        {/* Removido: duplica├º├úo da aba de compras */}
+        {/* Removido: duplicaÔö£-¦Ôö£+¦o da aba de compras */}
 
          {editingIncome && (
            <IncomeForm
@@ -511,7 +494,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           locale={locale}
           currency={currency}
         />
-        <Modal isOpen={openGoals} onClose={() => setOpenGoals(false)} title="Metas">
+        <Modal isOpen={openGoals} onClose={() => setOpenGoals(false)} title="metas">
           <div className="space-y-4">
             {goalRows.length ? (
               <div className="space-y-3">
@@ -546,8 +529,8 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
         </Modal>
          {view === 'general' && (
            <div className="general-summary mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
-             <h3 className="text-lg font-semibold mb-2">Balan├ºo geral do m├¬s</h3>
-             {/* C├ílculo simples: soma despesas do m├¬s - soma rendas do m├¬s */}
+             <h3 className="text-lg font-semibold mb-2">BalanÔö£-¦o geral do mÔö£-¼s</h3>
+             {/* CÔö£+¡lculo simples: soma despesas do mÔö£-¼s - soma rendas do mÔö£-¼s */}
              {(() => {
                const now = new Date();
                const y = now.getFullYear();
@@ -557,7 +540,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                  return dd.getFullYear() === y && dd.getMonth() === m;
                };
                const monthExpenses = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s, b) => s + Number(b.amount || 0), 0);
-               // Considera recorr├¬ncia para rendas: inclui item se tiver ocorr├¬ncia no m├¬s
+               // Considera recorrÔö£-¼ncia para rendas: inclui item se tiver ocorrÔö£-¼ncia no mÔö£-¼s
                const monthIncomes = incomes.filter(i => {
                  try {
                    const occ = occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m);
@@ -571,19 +554,19 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                return (
                  <div className="hidden grid grid-cols-1 sm:grid-cols-4 gap-3">
                    <div className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200">
-                     <div className="text-xs">Despesas do m├¬s</div>
+                     <div className="text-xs">Despesas do mÔö£-¼s</div>
                      <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
                    </div>
                    <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200">
-                     <div className="text-xs">Rendas do m├¬s</div>
+                     <div className="text-xs">Rendas do mÔö£-¼s</div>
                      <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}</div>
                    </div>
                    <div className="rounded-xl p-3 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                     <div className="text-xs">Balan├ºo</div>
+                     <div className="text-xs">BalanÔö£-¦o</div>
                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}</div>
                   </div>
                   <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200">
-                    <div className="text-xs">Compras do m├¬s</div>
+                    <div className="text-xs">Compras do mÔö£-¼s</div>
                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}</div>
                   </div>
                  </div>
@@ -591,10 +574,10 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             })()}
             <div className="space-y-6">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600 dark:text-slate-300">Período:</span>
+                <span className="text-slate-600 dark:text-slate-300">Per+¡odo:</span>
                 <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
                 <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>12m</button>
-                {/* Bot├úo 1 ano removido */}
+                {/* BotÔö£+¦o 1 ano removido */}
               </div>
               {(() => {
                 const now = new Date();
@@ -764,3 +747,4 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 }
 
 export default LegacyDashboard;
+

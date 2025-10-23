@@ -1,7 +1,8 @@
 import { createContext } from 'react';
+import { TranslationDictionary } from '@/constants/translation';
 
 interface TranslationContextType {
-  t: Record<string, string>;
+  t: TranslationDictionary;
   locale: string;
   currency: string;
 }

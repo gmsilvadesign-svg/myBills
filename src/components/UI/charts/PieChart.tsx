@@ -172,8 +172,7 @@ export default function PieChart({
   
   // Keep text inside inner hole
   const innerRadius = radius - strokeWidth; // inner empty hole radius
-  const innerDiameter = innerRadius * 2;
-  
+    
   // Melhor cálculo do tamanho da fonte para evitar overflow
   const availableWidth = innerRadius * 1.4; // Área disponível para o texto (mais conservador)
   const charW = 0.6; // fator de largura do caractere mais conservador
@@ -223,8 +222,8 @@ export default function PieChart({
               fontWeight={centerBold ? 700 : 500}
               fill={textColor}
               pointerEvents="none"
-              title={originalMainText}
             >
+              <title>{originalMainText}</title>
               {mainText}
             </text>
             {showSubText && (
@@ -237,8 +236,8 @@ export default function PieChart({
                 fontWeight={500}
                 fill={textColor}
                 opacity={0.85}
-                title={rawSubText}
               >
+                <title>{rawSubText}</title>
                 {subText}
               </text>
             )}
@@ -251,32 +250,32 @@ export default function PieChart({
             const pct = (d.value / total) * 100;
             const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
             const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
-            const truncatedValue = truncateValue(valueStr);
+            const displayValue = truncateValue(valueStr);
             return (
               <div key={d.label} className="flex items-center gap-1">
                 <span className="inline-block w-2 h-2 rounded" style={{ background: d.color }} />
-                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[120px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap" title={valueStr}>{valueStr}</span>
-                <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{pctStr}</span>
+                <span className="text-slate-600 truncate max-w-[120px]" title={d.label}>{d.label}</span>
+                <span className="text-slate-600 whitespace-nowrap" title={valueStr}>{displayValue}</span>
+                <span className="text-slate-400 whitespace-nowrap">{pctStr}</span>
               </div>
             );
           })}
         </div>
       )}
       {!showLegend && hoverLegend && hovered && (
-        <div className="text-[8px] space-y-0.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-lg px-2 py-1 shadow border border-slate-200/60 dark:border-slate-700/60 zoom-responsive-legend">
+        <div className="text-[8px] space-y-0.5 bg-white/80 backdrop-blur rounded-lg px-2 py-1 shadow border border-slate-200/60 zoom-responsive-legend">
           {colored.map((d, i) => {
             const pct = (d.value / total) * 100;
             const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
             const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
-            const truncatedValue = truncateValue(valueStr);
             const dim = hoverIndex !== null && hoverIndex !== i;
+            const displayValue = truncateValue(valueStr);
             return (
               <div key={d.label} className="flex items-center gap-1" style={{ opacity: dim ? 0.6 : 1 }}>
                 <span className="inline-block w-2 h-2 rounded" style={{ background: d.color }} />
-                <span className="text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap" title={valueStr}>{valueStr}</span>
-                <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{pctStr}</span>
+                <span className="text-slate-700 truncate max-w-[120px]" title={d.label}>{d.label}</span>
+                <span className="text-slate-600 whitespace-nowrap" title={valueStr}>{displayValue}</span>
+                <span className="text-slate-600 whitespace-nowrap">{pctStr}</span>
               </div>
             );
           })}
@@ -285,3 +284,6 @@ export default function PieChart({
     </div>
   );
 }
+
+
+

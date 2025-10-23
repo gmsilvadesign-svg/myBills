@@ -11,6 +11,7 @@ import { monthLabel, ymd } from '@/utils/utils'
 
 // Importa tipos
 import * as Types from '@/types'
+import { TranslationDictionary } from '@/constants/translation'
 
 // Interface para as props do componente
 interface BillsCalendarProps {
@@ -20,7 +21,7 @@ interface BillsCalendarProps {
   setMonthDate: (date: Date) => void;
   locale: string;
   currency: string;
-  t: Record<string, string>; // Traduções
+  t: TranslationDictionary; // Traduções
   hideValues?: boolean;
 }
 
@@ -50,24 +51,24 @@ export default function BillsCalendar({ bills, purchases = [], monthDate, setMon
         {/* Botão para ir para o mês anterior */}
         <button 
           onClick={goToPreviousMonth} 
-          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+          className="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
           aria-label={t.previous_month || "Mês anterior"}
         >
-          <svg className="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
         {/* Exibe o nome do mês atual */}
-        <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-200" aria-live="polite">{monthLabel(monthDate, locale)}</h3>
+        <h3 className="font-semibold text-lg text-slate-800" aria-live="polite">{monthLabel(monthDate, locale)}</h3>
 
         {/* Botão para ir para o próximo mês */}
         <button 
           onClick={goToNextMonth} 
-          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
+          className="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center"
           aria-label={t.next_month || "Próximo mês"}
         >
-          <svg className="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -101,3 +102,5 @@ export default function BillsCalendar({ bills, purchases = [], monthDate, setMon
     </Section>
   )
 }
+
+

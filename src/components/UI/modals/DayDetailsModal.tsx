@@ -62,28 +62,28 @@ const DayDetailsModal = memo(function DayDetailsModal({ open, onClose, dateISO, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[75vh] flex flex-col m-4">
+      <div className="bg-white text-slate-900 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[75vh] flex flex-col m-4">
         <div className="flex items-center justify-between mb-4 flex-shrink-0 p-6 pb-0">
           <h2 className="text-xl font-semibold">{t.view_calendar || 'Calendário'} — {formatDate(dateISO, locale)}</h2>
-          <button onClick={onClose} className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700">{t.close || 'Fechar'}</button>
+          <button onClick={onClose} className="px-3 py-1 rounded-lg bg-slate-100">{t.close || 'Fechar'}</button>
         </div>
 
         <div className="overflow-y-auto flex-1 px-6 pb-6">
           {/* Totais do dia */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3">
-            <div className="rounded-xl p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 text-center">
+            <div className="rounded-xl p-2 bg-amber-50 text-amber-700 text-center">
               <div className="text-xs">{t.totals_open || 'Abertas'}</div>
               <div className="text-base font-semibold overflow-hidden text-ellipsis" title={money(openSum, currency, locale)}>{hideValues ? '••••••' : money(openSum, currency, locale)}</div>
             </div>
-            <div className="rounded-xl p-2 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200 text-center">
+            <div className="rounded-xl p-2 bg-red-50 text-red-700 text-center">
               <div className="text-xs">{t.filter_overdue || 'Atrasadas'}</div>
               <div className="text-base font-semibold overflow-hidden text-ellipsis" title={money(overdueSum, currency, locale)}>{hideValues ? '••••••' : money(overdueSum, currency, locale)}</div>
             </div>
-            <div className="rounded-xl p-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-200 text-center">
+            <div className="rounded-xl p-2 bg-green-50 text-green-700 text-center">
               <div className="text-xs">{t.totals_paid || 'Pagas'}</div>
               <div className="text-base font-semibold overflow-hidden text-ellipsis" title={money(paidSum, currency, locale)}>{hideValues ? '••••••' : money(paidSum, currency, locale)}</div>
             </div>
-            <div className="rounded-xl p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 text-center">
+            <div className="rounded-xl p-2 bg-blue-50 text-blue-700 text-center">
               <div className="text-xs">{t.purchases || 'Compras'}</div>
               <div className="text-base font-semibold overflow-hidden text-ellipsis" title={money(purchasesSum, currency, locale)}>{hideValues ? '••••••' : money(purchasesSum, currency, locale)}</div>
             </div>
@@ -92,9 +92,9 @@ const DayDetailsModal = memo(function DayDetailsModal({ open, onClose, dateISO, 
           {/* Lista de contas (padrão semelhante ao menu Contas) */}
           <div className="mb-3">
             <h3 className="text-base font-medium mb-2">{t.section_bills || 'Contas'}</h3>
-            <div className="divide-y divide-slate-200 dark:divide-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 overflow-hidden">
               {allDayBills.length === 0 && (
-                <div className="py-6 text-center text-slate-500">{t.no_bills || 'Sem contas neste dia.'}</div>
+                <div className="py-6 text-center text-slate-600">{t.no_bills || 'Sem contas neste dia.'}</div>
               )}
               {allDayBills.map((b) => {
                 const overdue = !b.paid && isBefore(b.dueDate, todayISO);
@@ -111,7 +111,7 @@ const DayDetailsModal = memo(function DayDetailsModal({ open, onClose, dateISO, 
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-medium truncate" title={b.title}>{b.title}</div>
-                      <div className="text-xs text-slate-500">{b.category || ''}</div>
+                      <div className="text-xs text-slate-600">{b.category || ''}</div>
                     </div>
                     <div className="text-right font-semibold min-w-[120px] overflow-hidden text-ellipsis" title={money(Number(b.amount || 0), currency, locale)}>{hideValues ? '••••••' : money(Number(b.amount || 0), currency, locale)}</div>
                   </div>
@@ -124,12 +124,12 @@ const DayDetailsModal = memo(function DayDetailsModal({ open, onClose, dateISO, 
           {dayPurchases.length > 0 && (
             <div className="mb-3">
               <h3 className="text-base font-medium mb-2">{t.purchases || 'Compras'}</h3>
-              <div className="divide-y divide-slate-200 dark:divide-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 overflow-hidden">
                 {dayPurchases.map((p) => (
                   <div key={p.id || p.title + p.date} className="py-3 px-4 flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="font-medium truncate" title={p.title}>{p.title}</div>
-                      <div className="text-xs text-slate-500">{p.category || ''}</div>
+                      <div className="text-xs text-slate-600">{p.category || ''}</div>
                     </div>
                     <div className="text-right font-semibold min-w-[120px] overflow-hidden text-ellipsis" title={money(Number(p.amount || 0), currency, locale)}>{hideValues ? '••••••' : money(Number(p.amount || 0), currency, locale)}</div>
                   </div>
@@ -144,4 +144,5 @@ const DayDetailsModal = memo(function DayDetailsModal({ open, onClose, dateISO, 
 })
 
 export default DayDetailsModal
+
 

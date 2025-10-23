@@ -1,4 +1,4 @@
-﻿import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { RecaptchaVerifier, type ApplicationVerifier } from 'firebase/auth';
 import { auth, isLocalMode } from '@/firebase';
@@ -198,7 +198,7 @@ export default function LoginScreen() {
           </div>
         </section>
 
-        <section className={cn(CSS_CLASSES.container.card, 'bg-white/95 text-slate-900 dark:bg-slate-900/80 dark:text-slate-50 m-0 p-8 backdrop-blur-md shadow-2xl border-0')}>
+        <section className={cn(CSS_CLASSES.container.card, 'bg-white/95 text-slate-900 m-0 p-8 backdrop-blur-md shadow-2xl border-0')}>
           <div className="flex gap-2 mb-6">
             {TABS.map((tab) => (
               <button
@@ -265,7 +265,7 @@ export default function LoginScreen() {
                 <button type="button" onClick={handlePrefillAdmin} className="text-blue-600 hover:underline">
                   Usar Admin / 0000
                 </button>
-                <button type="button" onClick={handleForgotPassword} className="text-slate-500 hover:text-blue-600">
+                <button type="button" onClick={handleForgotPassword} className="text-slate-600 hover:text-blue-600">
                   Esqueci minha senha
                 </button>
               </div>
@@ -361,3 +361,4 @@ export default function LoginScreen() {
     </div>
   );
 }
+

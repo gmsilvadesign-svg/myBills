@@ -8,14 +8,16 @@ import { fmtMoney, ymd } from '@/utils/utils';
 import Input from '@/components/UI/Input';
 import Select from '@/components/UI/Select';
 import Textarea from '@/components/UI/Textarea';
+import { TranslationDictionary } from '@/constants/translation';
 
 // Types
 import * as Types from '@/types';
+
 interface BillFormProps {
   initial?: Partial<Types.Bill>;
   onSave: (bill: Omit<Types.Bill, 'id'>) => void;
   onCancel: () => void;
-  t: Record<string, string>; // Traduções
+  t: TranslationDictionary; // Traduções
   locale: string;
   currency: string;
 }
@@ -167,7 +169,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
       {/* Modal do formulário com fundo branco, dark mode, bordas arredondadas e sombra - responsivo */}
       <div 
         ref={modalRef}
-        className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-4xl mx-4 shadow-xl max-h-[100vh] overflow-y-auto overflow-x-hidden"
+        className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-4 shadow-xl max-h-[100vh] overflow-y-auto overflow-x-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Título do formulário (novo ou edição) */}
@@ -187,7 +189,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
                 required
                 aria-describedby={!title.trim() ? "title-error" : undefined}
               />
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">
+              <div className="text-xs text-slate-600 mt-1 text-right">
                 {title.length}/20 caracteres
               </div>
             </div>
@@ -234,7 +236,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
 
           {/* Seção de Categoria (anteriormente Tags) otimizada para modal maior */}
           <div className="space-y-1">
-            <label className="block text-sm  text-slate-700 dark:text-slate-300">
+            <label className="block text-sm  text-slate-700">
               Categoria
             </label>
             
@@ -250,8 +252,8 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
                       onClick={() => handleTagSuggestionClick(suggestedCategory)}
                       className={`px-2 py-2 text-sm rounded-lg border transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 text-center font-medium ${
                         isSelected 
-                          ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300 shadow-md'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 hover:shadow-sm'
+                          ? 'bg-blue-100 border-blue-300 text-blue-700 shadow-md'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:shadow-sm'
                       }`}
                     >
                       {suggestedCategory}
@@ -270,7 +272,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
                 placeholder="Digite uma categoria personalizada..."
                 maxLength={12}
               />
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">
+              <div className="text-xs text-slate-600 mt-1 text-right">
                 {tags.length}/12 caracteres
               </div>
             </div>
@@ -285,7 +287,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
               maxLength={255}
               placeholder="Adicione observações sobre esta conta..."
             />
-            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">
+            <div className="text-xs text-slate-600 mt-1 text-right">
               {notes.length}/255 caracteres
             </div>
           </div>
@@ -296,7 +298,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
             <button 
               type="button"
               onClick={onCancel} 
-              className="w-full sm:w-auto sm:min-w-[80px] text-center px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 dark:from-slate-700 dark:to-slate-800 dark:text-slate-300 dark:hover:from-slate-600 dark:hover:to-slate-700 order-2 sm:order-1"
+              className="w-full sm:w-auto sm:min-w-[80px] text-center px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 order-2 sm:order-1"
               aria-label={`${t.cancel} ${initial ? t.edit : t.new_bill}`}
             >
               {t.cancel}
@@ -317,3 +319,5 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
     </div>
   );
 }
+
+

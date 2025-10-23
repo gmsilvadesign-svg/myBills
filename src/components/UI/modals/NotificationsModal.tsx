@@ -1,9 +1,10 @@
 import { useRef, useEffect } from 'react';
+import { TranslationDictionary } from '@/constants/translation';
 
 interface NotificationsModalProps {
   open: boolean;
   onClose: () => void;
-  t: Record<string, string>;
+  t: TranslationDictionary;
 }
 
 export default function NotificationsModal({ open, onClose, t }: NotificationsModalProps) {
@@ -55,7 +56,7 @@ export default function NotificationsModal({ open, onClose, t }: NotificationsMo
     >
       <div 
         ref={modalRef}
-        className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[80vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div id="notifications-title" className="text-lg font-semibold mb-4">{t.notifications}</div>
@@ -67,9 +68,9 @@ export default function NotificationsModal({ open, onClose, t }: NotificationsMo
               {notifications.map((notification: string, index: number) => (
                 <li 
                   key={index}
-                  className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                  className="p-3 bg-slate-50 rounded-lg border border-slate-200"
                 >
-                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                  <p className="text-sm text-slate-700">
                     {notification}
                   </p>
                 </li>
@@ -78,7 +79,7 @@ export default function NotificationsModal({ open, onClose, t }: NotificationsMo
           ) : (
             <div className="text-center py-8">
               <div className="text-4xl mb-2">🔔</div>
-              <p className="text-slate-500 dark:text-slate-400">
+              <p className="text-slate-600">
                 {t.no_notifications}
               </p>
             </div>
@@ -90,7 +91,7 @@ export default function NotificationsModal({ open, onClose, t }: NotificationsMo
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-all duration-200 min-w-[80px] text-center border border-slate-300 dark:border-slate-600/50"
+            className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 min-w-[80px] text-center border border-slate-300"
             aria-label={`${t.close} ${t.notifications}`}
           >
             {t.close}
@@ -100,3 +101,4 @@ export default function NotificationsModal({ open, onClose, t }: NotificationsMo
     </div>
   );
 }
+

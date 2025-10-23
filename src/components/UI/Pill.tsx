@@ -6,7 +6,7 @@ type PillTone = 'slate' | 'green' | 'red' | 'amber' | 'blue';
 
 // Interface para as props do componente
 interface PillProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   tone?: PillTone;
 }
 
@@ -15,11 +15,11 @@ const Pill = memo(function Pill({ children, tone = "slate" }: PillProps) {
 
   // Mapeamento de tons para classes de cor (modo claro e dark)
   const tones = {
-    slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
-    green: "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200",
-    red: "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200",
-    amber: "bg-amber-100 text-amber-700 dark:bg-amber-800 dark:text-amber-200",
-    blue: "bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200",
+    slate: "bg-slate-100 text-slate-700",
+    green: "bg-green-100 text-green-700",
+    red: "bg-red-100 text-red-700",
+    amber: "bg-amber-100 text-amber-700",
+    blue: "bg-blue-100 text-blue-700",
   };
 
   // JSX do rótulo: aplica padding, borda arredondada e tom conforme a prop
@@ -32,3 +32,4 @@ const Pill = memo(function Pill({ children, tone = "slate" }: PillProps) {
 })
 
 export default Pill
+

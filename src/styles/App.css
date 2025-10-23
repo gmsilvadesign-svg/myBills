@@ -24,7 +24,3 @@ header nav button:last-child::after {
   box-shadow: 0 -6px 0 0 #10b981, 0 6px 0 0 #10b981;
 }
 
-.dark header nav button:last-child::after {
-  background: #34d399; /* emerald-400 */
-  box-shadow: 0 -6px 0 0 #34d399, 0 6px 0 0 #34d399;
-}

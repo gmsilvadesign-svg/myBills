@@ -11,12 +11,13 @@ import { ymd } from '@/utils/utils';
 
 // Types
 import * as Types from '@/types';
+import { TranslationDictionary } from '@/constants/translation';
 
 interface PurchaseFormProps {
   initial?: Partial<Types.Purchase>;
   onSave: (purchase: Omit<Types.Purchase, 'id'>) => void;
   onCancel: () => void;
-  t: Record<string, string>;
+  t: TranslationDictionary;
 }
 
 export default function PurchaseForm({ initial, onSave, onCancel, t }: PurchaseFormProps) {
@@ -56,7 +57,7 @@ export default function PurchaseForm({ initial, onSave, onCancel, t }: PurchaseF
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-3xl shadow-2xl">
+      <div className="bg-white text-slate-900 rounded-2xl p-6 w-full max-w-3xl shadow-2xl">
         <h2 className="text-xl font-semibold mb-6">{t.new_purchase || '+ Compra'}</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -77,7 +78,7 @@ export default function PurchaseForm({ initial, onSave, onCancel, t }: PurchaseF
           </div>
           <Textarea label={t.notes || 'Notas'} value={notes} onChange={e => setNotes(e.target.value)} />
           <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
-            <button type="button" onClick={onCancel} className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{t.cancel}</button>
+            <button type="button" onClick={onCancel} className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 text-slate-700">{t.cancel}</button>
             <button type="submit" className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white">{t.save}</button>
           </div>
         </form>
@@ -85,4 +86,5 @@ export default function PurchaseForm({ initial, onSave, onCancel, t }: PurchaseF
     </div>
   );
 }
+
 

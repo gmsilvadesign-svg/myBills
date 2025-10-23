@@ -2,6 +2,7 @@ import { memo } from 'react';
 import ToggleButton from '@/components/UI/ToggleButton';
 import Select from '@/components/UI/Select';
 import * as Types from '@/types';
+import { TranslationDictionary } from '@/constants/translation';
 
 interface FiltersProps {
   view: Types.ViewType;
@@ -10,10 +11,10 @@ interface FiltersProps {
   setFilter: (filter: Types.FilterType) => void;
   search: string;
   setSearch: (search: string) => void;
-  t: Record<string, string>;
+  t: TranslationDictionary;
 }
 
-const Filters = memo(function Filters({ view, setView, filter, setFilter, search, setSearch, t }: FiltersProps) {
+const Filters = memo(function Filters({ view, setView, filter, setFilter, search: _search, setSearch: _setSearch, t }: FiltersProps) {
 
   // JSX do componente
   return (

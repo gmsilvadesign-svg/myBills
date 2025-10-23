@@ -12,12 +12,13 @@ import Modal from '@/components/UI/modals/Modal';
 // Styles & Utils
 import { CSS_CLASSES, cn } from '@/styles/constants';
 import { useAuth } from '@/contexts/AuthContext';
+import { TranslationDictionary } from '@/constants/translation';
 
 // Types
 import * as Types from '@/types';
 
 interface HeaderProps {
-  t: Record<string, string>;
+  t: TranslationDictionary;
   setEditing: (bill: Partial<Types.Bill> | null) => void;
   setEditingIncome?: (income: Partial<Types.Income> | null) => void;
   setEditingPurchase?: (purchase: Partial<Types.Purchase> | null) => void;
@@ -28,7 +29,7 @@ interface HeaderProps {
 }
 
 
-export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, onOpenGoals, addSampleData }: HeaderProps) {
+export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, onOpenGoals, addSampleData: _addSampleData }: HeaderProps) {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openAdminPanel, setOpenAdminPanel] = useState(false);
   const [openMore, setOpenMore] = useState(false);
@@ -58,7 +59,7 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
         <button
           onClick={() => setOpenAdd(true)}
           aria-label="Adicionar"
-          className="w-10 h-10 rounded-2xl bg-emerald-500 dark:bg-emerald-400 text-white font-bold flex items-center justify-center shadow-sm hover:shadow-md hover:bg-emerald-600 dark:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+          className="w-10 h-10 rounded-2xl bg-emerald-500 text-white font-bold flex items-center justify-center shadow-sm hover:shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
         >
           +
         </button>
@@ -66,7 +67,7 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
         <button
           onClick={() => setOpenMore(true)}
           aria-label="Mais opcoes"
-          className="w-10 h-10 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 dark:from-slate-800 dark:to-slate-700 dark:text-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md flex items-center justify-center"
+          className="w-10 h-10 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md flex items-center justify-center"
         >
           <span aria-hidden="true">≡</span>
         </button>
@@ -134,3 +135,4 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
     </header>
   );
 }
+

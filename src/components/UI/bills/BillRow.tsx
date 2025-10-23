@@ -6,7 +6,6 @@ import Pill from '@/components/UI/Pill'
 
 // Utils
 import {
-  fmtMoney,
   fmtMoneyTruncated,
   formatDate,
   isBefore,
@@ -16,6 +15,7 @@ import {
 
 // Types
 import * as Types from '@/types'
+import { TranslationDictionary } from '@/constants/translation'
 
 // Utility function for conditional classes
 const cn = (...classes: (string | undefined | false)[]): string => {
@@ -29,7 +29,7 @@ interface BillRowProps {
   paidInCurrentMonth?: boolean
   setEditing: (bill: Types.Bill) => void
   setConfirm: (confirm: Types.ConfirmState) => void
-  t: Record<string, any>
+  t: TranslationDictionary
   locale: string
   currency: string
   hideValues?: boolean
@@ -53,10 +53,21 @@ const BillRow = memo(function BillRow({
 
   const formatValueWithTruncation = (amount: number | string) => {
     if (hideValues) {
-      return "••••••"
+      return "*****"
     }
-    return fmtMoneyTruncated(amount, currency, locale)
+    const numericAmount = typeof amount === "number" ? amount : Number(amount || 0)
+    return fmtMoneyTruncated(numericAmount, currency, locale)
   }
+
+  const recurrenceLabels: Record<Exclude<Types.Bill["recurrence"], "NONE">, string> = {
+    DAILY: t.daily,
+    WEEKLY: t.weekly,
+    MONTHLY: t.monthly,
+    YEARLY: t.yearly,
+  }
+
+  const getRecurrenceLabel = (recurrence: Types.Bill["recurrence"]) =>
+    recurrence === "NONE" ? null : recurrenceLabels[recurrence] ?? recurrence.toLowerCase()
 
   const renderStatus = () => {
     if (!isPaid && overdue) {
@@ -67,7 +78,7 @@ const BillRow = memo(function BillRow({
             // Para contas atrasadas, apenas marcar como pago sem avançar
             markPaid(bill, false)
           }}
-          className="px-3 py-4 rounded-2xl bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-300 dark:hover:from-red-800/40 dark:hover:to-red-700/40 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-red-200 dark:border-red-700 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
+          className="px-3 py-4 rounded-2xl bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-red-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
           aria-label={`${t.mark_paid}: ${bill.title}`}
           title={t.mark_paid}
         >
@@ -83,7 +94,7 @@ const BillRow = memo(function BillRow({
             // Para contas pendentes, apenas marcar como pago sem avançar
             markPaid(bill, false)
           }}
-          className="px-3 py-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-700 dark:from-amber-900/30 dark:to-amber-800/30 dark:text-amber-300 dark:hover:from-amber-800/40 dark:hover:to-amber-700/40 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-amber-200 dark:border-amber-700 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
+          className="px-3 py-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-amber-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
           aria-label={`${t.mark_paid}: ${bill.title}`}
           title={t.mark_paid}
         >
@@ -98,9 +109,9 @@ const BillRow = memo(function BillRow({
           e.preventDefault()
           unmarkPaid(bill)
         }}
-        className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-300 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 dark:border-green-700 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
-        aria-label={`${t.mark_unpaid || 'Desmarcar pago'}: ${bill.title}`}
-        title={t.mark_unpaid || 'Desmarcar pago'}
+        className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
+        aria-label={`\: ${bill.title}`}
+        title={t.mark_unpaid}
       >
         {t.paid}
       </button>
@@ -114,7 +125,7 @@ const BillRow = memo(function BillRow({
           e.preventDefault()
           setEditing(bill)
         }}
-        className="px-2 py-2 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 dark:from-slate-800 dark:to-slate-700 dark:text-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+        className="px-2 py-2 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
         aria-label={`${t.edit} ${bill.title}`}
         title={t.edit}
       >
@@ -128,7 +139,7 @@ const BillRow = memo(function BillRow({
           e.preventDefault()
           setConfirm({ open: true, id: bill.id || null })
         }}
-        className="px-2 py-2 rounded-2xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/40 border border-red-200 dark:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+        className="px-2 py-2 rounded-2xl bg-red-100 text-red-600 hover:bg-red-200 border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
         aria-label={`${t.delete} ${bill.title}`}
         title={t.delete}
       >
@@ -141,7 +152,7 @@ const BillRow = memo(function BillRow({
 
   // JSX da linha da conta
   return (
-    <div className="py-4 px-4 hover:bg-slate-50 dark:hover:bg-[#AABBCC]/15 rounded-lg border-b border-slate-100 dark:border-[#AABBCC]/30 last:border-b-0 transition-colors duration-200">
+    <div className="py-4 px-4 hover:bg-slate-50 rounded-lg border-b border-slate-100 last:border-b-0 transition-colors duration-200">
       {/* Desktop: ordem solicitada */}
       <div className="hidden md:flex items-center gap-4">
         {/* 1) Status - oculto em zoom 500% */}
@@ -155,19 +166,24 @@ const BillRow = memo(function BillRow({
           )}
           
           {/* Recorrência */}
-          {bill.recurrence && bill.recurrence !== 'NONE' && (
-            <Pill><span className="whitespace-nowrap">{t[bill.recurrence.toLowerCase()]}</span></Pill>
-          )}
+          {(() => {
+            const label = getRecurrenceLabel(bill.recurrence)
+            return label ? (
+              <Pill>
+                <span className="whitespace-nowrap">{label}</span>
+              </Pill>
+            ) : null
+          })()}
         </div>
 
         {/* 4) Título - oculto em zoom 250% */}
         <div className="min-w-0 flex-1 zoom-250:hidden zoom-500:text-right" style={{textAlign: window.innerWidth <= 500 ? 'right' : 'inherit'}}>
-          <span className="font-semibold text-base zoom-500:text-sm text-slate-900 dark:text-slate-100 truncate block">{bill.title}</span>
+          <span className="font-semibold text-base zoom-500:text-sm text-slate-900 truncate block">{bill.title}</span>
         </div>
 
         {/* 5) Valor */}
         <div className="text-right whitespace-nowrap flex-shrink-0 max-w-[250px] zoom-500:max-w-[180px]">
-          <div className="font-bold text-lg zoom-500:text-xs text-slate-900 dark:text-slate-100 max-w-[250px] zoom-500:max-w-[180px] truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
+          <div className="font-bold text-lg zoom-500:text-xs text-slate-900 max-w-[250px] zoom-500:max-w-[180px] truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
             {formatValueWithTruncation(bill.amount)}
           </div>
         </div>
@@ -175,7 +191,7 @@ const BillRow = memo(function BillRow({
         {/* 6→8) Grupo à direita */}
         <div className="ml-auto flex items-center gap-2 justify-end text-right">
           {/* 6) Tempo / Data */}
-          <div className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+          <div className="text-sm text-slate-600 whitespace-nowrap">
             {(isPaid && bill.paidOn)
               ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
               : overdue
@@ -196,17 +212,20 @@ const BillRow = memo(function BillRow({
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {/* Categoria */}
               {bill.category && (
-                <div className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                <div className="text-sm text-slate-600 whitespace-nowrap">
                   {bill.category.length > 12 ? `${bill.category.substring(0, 12)}...` : bill.category}
                 </div>
               )}
               
               {/* Recorrência */}
-              {bill.recurrence && bill.recurrence !== 'NONE' && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  {t[bill.recurrence.toLowerCase()]}
-                </div>
-              )}
+              {(() => {
+                const label = getRecurrenceLabel(bill.recurrence)
+                return label ? (
+                  <div className="text-xs text-slate-600 whitespace-nowrap">
+                    {label}
+                  </div>
+                ) : null
+              })()}
             </div>
 
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -215,7 +234,7 @@ const BillRow = memo(function BillRow({
                 className="text-right max-w-[60%]"
                 style={{ textAlign: window.innerWidth <= 500 ? 'right' : 'inherit' }}
               >
-                <div className="font-semibold text-slate-900 dark:text-slate-100 truncate" title={bill.title}>
+                <div className="font-semibold text-slate-900 truncate" title={bill.title}>
                   {bill.title.length > 50 ? `${bill.title.substring(0, 50)}...` : bill.title}
                 </div>
               </div>
@@ -225,7 +244,7 @@ const BillRow = memo(function BillRow({
                 className="text-right"
                 style={{ textAlign: window.innerWidth <= 500 ? 'right' : 'inherit' }}
               >
-                <div className="font-bold text-xl text-slate-900 dark:text-slate-100 max-w-[300px] overflow-hidden text-ellipsis truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
+                <div className="font-bold text-xl text-slate-900 max-w-[300px] overflow-hidden text-ellipsis truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
                   {formatValueWithTruncation(bill.amount)}
                 </div>
               </div>
@@ -248,12 +267,12 @@ const BillRow = memo(function BillRow({
                 className={cn(
                   "px-4 py-3 rounded-full text-base font-medium transition-colors duration-200 min-w-[100px] text-center",
                   isPaid
-                    ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50"
+                    ? "bg-green-100 text-green-800 hover:bg-green-200"
                     : overdue
-                    ? "bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
-                    : "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                    ? "bg-red-100 text-red-800 hover:bg-red-200"
+                    : "bg-amber-100 text-amber-800 hover:bg-amber-200"
                 )}
-                title={isPaid ? t.unmark_paid : t.mark_paid}
+                title={isPaid ? t.mark_unpaid : t.mark_paid}
               >
                 {isPaid ? t.paid : overdue ? t.overdue : t.pending}
               </button>
@@ -261,7 +280,7 @@ const BillRow = memo(function BillRow({
 
             <div className="flex items-center gap-3 flex-shrink-0">
               {/* Data */}
-              <span className="text-sm text-slate-600 dark:text-slate-400 truncate">
+              <span className="text-sm text-slate-600 truncate">
                 {(isPaid && bill.paidOn)
                   ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
                   : formatDate(bill.dueDate, locale)}
@@ -270,7 +289,7 @@ const BillRow = memo(function BillRow({
               {/* Botão de editar */}
               <button
                 onClick={() => setEditing(bill)}
-                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors duration-200 p-1"
+                className="text-slate-400 hover:text-slate-600 transition-colors duration-200 p-1"
                 title={t.edit}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,7 +300,7 @@ const BillRow = memo(function BillRow({
               {/* Botão de excluir */}
               <button
                 onClick={() => setConfirm({ open: true, id: bill.id || null })}
-                className="text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-300 transition-colors duration-200 p-1"
+                className="text-red-400 hover:text-red-600 transition-colors duration-200 p-1"
                 title={t.delete}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,30 +319,33 @@ const BillRow = memo(function BillRow({
           <div className="zoom-500:flex zoom-500:items-center zoom-500:gap-1 zoom-500:flex-1 zoom-500:min-w-0">
             {/* Categoria */}
             {bill.category && (
-              <div className="zoom-500:bg-slate-100 dark:zoom-500:bg-slate-800 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 dark:zoom-500:text-slate-400 zoom-500:whitespace-nowrap">
+              <div className="zoom-500:bg-slate-100 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:whitespace-nowrap">
                 {bill.category.length > 6 ? `${bill.category.substring(0, 6)}...` : bill.category}
               </div>
             )}
             
             {/* Recorrência */}
-            {bill.recurrence && bill.recurrence !== 'NONE' && (
-              <div className="zoom-500:bg-slate-100 dark:zoom-500:bg-slate-800 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 dark:zoom-500:text-slate-400 zoom-500:whitespace-nowrap">
-                {t[bill.recurrence.toLowerCase()]}
-              </div>
-            )}
+            {(() => {
+              const label = getRecurrenceLabel(bill.recurrence)
+              return label ? (
+                <div className="zoom-500:bg-slate-100 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:whitespace-nowrap">
+                  {label}
+                </div>
+              ) : null
+            })()}
           </div>
 
           <div className="zoom-500:flex zoom-500:items-center zoom-500:gap-1 zoom-500:flex-shrink-0">
             {/* Título */}
             <div className="zoom-500:text-right zoom-500:max-w-[40%]">
-              <div className="zoom-500:font-semibold zoom-500:text-[8px] zoom-500:text-slate-900 dark:zoom-500:text-slate-100 zoom-500:truncate" title={bill.title}>
+              <div className="zoom-500:font-semibold zoom-500:text-[8px] zoom-500:text-slate-900 zoom-500:truncate" title={bill.title}>
                 {bill.title.length > 15 ? `${bill.title.substring(0, 15)}...` : bill.title}
               </div>
             </div>
             
             {/* Valor */}
             <div className="zoom-500:text-right">
-              <div className="zoom-500:font-bold zoom-500:text-[8px] zoom-500:text-slate-900 dark:zoom-500:text-slate-100 zoom-500:max-w-[80px] zoom-500:overflow-hidden zoom-500:text-ellipsis zoom-500:truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
+              <div className="zoom-500:font-bold zoom-500:text-[8px] zoom-500:text-slate-900 zoom-500:max-w-[80px] zoom-500:overflow-hidden zoom-500:text-ellipsis zoom-500:truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
                 {formatValueWithTruncation(bill.amount)}
               </div>
             </div>
@@ -345,12 +367,12 @@ const BillRow = memo(function BillRow({
               className={cn(
                 "zoom-500:px-1 zoom-500:py-1 zoom-500:rounded-full zoom-500:text-[8px] zoom-500:font-medium zoom-500:transition-colors zoom-500:duration-200 zoom-500:min-w-[40px] zoom-500:text-center",
                 isPaid
-                  ? "zoom-500:bg-green-100 zoom-500:text-green-800 hover:zoom-500:bg-green-200 dark:zoom-500:bg-green-900/30 dark:zoom-500:text-green-300 dark:hover:zoom-500:bg-green-900/50"
+                  ? "zoom-500:bg-green-100 zoom-500:text-green-800 hover:zoom-500:bg-green-200"
                   : overdue
-                  ? "zoom-500:bg-red-100 zoom-500:text-red-800 hover:zoom-500:bg-red-200 dark:zoom-500:bg-red-900/30 dark:zoom-500:text-red-300 dark:hover:zoom-500:bg-red-900/50"
-                  : "zoom-500:bg-amber-100 zoom-500:text-amber-800 hover:zoom-500:bg-amber-200 dark:zoom-500:bg-amber-900/30 dark:zoom-500:text-amber-300 dark:hover:zoom-500:bg-amber-900/50"
+                  ? "zoom-500:bg-red-100 zoom-500:text-red-800 hover:zoom-500:bg-red-200"
+                  : "zoom-500:bg-amber-100 zoom-500:text-amber-800 hover:zoom-500:bg-amber-200"
               )}
-              title={isPaid ? t.unmark_paid : t.mark_paid}
+              title={isPaid ? t.mark_unpaid : t.mark_paid}
             >
               {isPaid ? t.paid : overdue ? t.overdue : t.pending}
             </button>
@@ -358,7 +380,7 @@ const BillRow = memo(function BillRow({
 
           <div className="zoom-500:flex zoom-500:items-center zoom-500:gap-1 zoom-500:flex-shrink-0">
             {/* Data */}
-            <span className="zoom-500:text-[8px] zoom-500:text-slate-600 dark:zoom-500:text-slate-400 zoom-500:truncate">
+            <span className="zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:truncate">
               {(isPaid && bill.paidOn)
                 ? formatDate(bill.paidOn, locale)
                 : overdue
@@ -369,7 +391,7 @@ const BillRow = memo(function BillRow({
             {/* Botão de editar */}
             <button
               onClick={() => setEditing(bill)}
-              className="zoom-500:text-slate-400 hover:zoom-500:text-slate-600 dark:zoom-500:text-slate-500 dark:hover:zoom-500:text-slate-300 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
+              className="zoom-500:text-slate-400 hover:zoom-500:text-slate-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.edit}
             >
               <svg className="zoom-500:w-2 zoom-500:h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,7 +402,7 @@ const BillRow = memo(function BillRow({
             {/* Botão de excluir */}
             <button
               onClick={() => setConfirm({ open: true, id: bill.id || null })}
-              className="zoom-500:text-red-400 hover:zoom-500:text-red-600 dark:zoom-500:text-red-500 dark:hover:zoom-500:text-red-300 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
+              className="zoom-500:text-red-400 hover:zoom-500:text-red-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.delete}
             >
               <svg className="zoom-500:w-2 zoom-500:h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,12 +428,12 @@ const BillRow = memo(function BillRow({
               className={cn(
                 "zoom-500:px-1 zoom-500:py-1 zoom-500:rounded-full zoom-500:text-[8px] zoom-500:font-medium zoom-500:transition-colors zoom-500:duration-200 zoom-500:min-w-[40px] zoom-500:text-center",
                 isPaid
-                  ? "zoom-500:bg-green-100 zoom-500:text-green-800 hover:zoom-500:bg-green-200 dark:zoom-500:bg-green-900/30 dark:zoom-500:text-green-300 dark:hover:zoom-500:bg-green-900/50"
+                  ? "zoom-500:bg-green-100 zoom-500:text-green-800 hover:zoom-500:bg-green-200"
                   : overdue
-                  ? "zoom-500:bg-red-100 zoom-500:text-red-800 hover:zoom-500:bg-red-200 dark:zoom-500:bg-red-900/30 dark:zoom-500:text-red-300 dark:hover:zoom-500:bg-red-900/50"
-                  : "zoom-500:bg-amber-100 zoom-500:text-amber-800 hover:zoom-500:bg-amber-200 dark:zoom-500:bg-amber-900/30 dark:zoom-500:text-amber-300 dark:hover:zoom-500:bg-amber-900/50"
+                  ? "zoom-500:bg-red-100 zoom-500:text-red-800 hover:zoom-500:bg-red-200"
+                  : "zoom-500:bg-amber-100 zoom-500:text-amber-800 hover:zoom-500:bg-amber-200"
               )}
-              title={isPaid ? t.unmark_paid : t.mark_paid}
+              title={isPaid ? t.mark_unpaid : t.mark_paid}
             >
               {isPaid ? t.paid : overdue ? t.overdue : t.pending}
             </button>
@@ -421,29 +443,32 @@ const BillRow = memo(function BillRow({
           <div className="zoom-500:flex zoom-500:flex-col zoom-500:gap-0">
             {/* Categoria */}
             {bill.category && (
-              <div className="zoom-500:bg-slate-100 dark:zoom-500:bg-slate-800 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 dark:zoom-500:text-slate-400 zoom-500:whitespace-nowrap">
+              <div className="zoom-500:bg-slate-100 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:whitespace-nowrap">
                 {bill.category.length > 6 ? `${bill.category.substring(0, 6)}...` : bill.category}
               </div>
             )}
             
             {/* Recorrência */}
-            {bill.recurrence && bill.recurrence !== 'NONE' && (
-              <div className="zoom-500:bg-slate-100 dark:zoom-500:bg-slate-800 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 dark:zoom-500:text-slate-400 zoom-500:whitespace-nowrap zoom-500:mt-0">
-                {t[bill.recurrence.toLowerCase()]}
-              </div>
-            )}
+            {(() => {
+              const label = getRecurrenceLabel(bill.recurrence)
+              return label ? (
+                <div className="zoom-500:bg-slate-100 zoom-500:px-1 zoom-500:py-0 zoom-500:rounded zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:whitespace-nowrap zoom-500:mt-0">
+                  {label}
+                </div>
+              ) : null
+            })()}
           </div>
 
           {/* 3) Título */}
           <div className="zoom-500:min-w-0 zoom-500:flex-1">
-            <span className="zoom-500:font-semibold zoom-500:text-[8px] zoom-500:text-slate-900 dark:zoom-500:text-slate-100 zoom-500:truncate zoom-500:block">
+            <span className="zoom-500:font-semibold zoom-500:text-[8px] zoom-500:text-slate-900 zoom-500:truncate zoom-500:block">
               {bill.title.length > 15 ? `${bill.title.substring(0, 15)}...` : bill.title}
             </span>
           </div>
 
           {/* 4) Valor */}
           <div className="zoom-500:text-right zoom-500:whitespace-nowrap zoom-500:flex-shrink-0 zoom-500:max-w-[80px]">
-            <div className="zoom-500:font-bold zoom-500:text-[8px] zoom-500:text-slate-900 dark:zoom-500:text-slate-100 zoom-500:max-w-[80px] zoom-500:truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
+            <div className="zoom-500:font-bold zoom-500:text-[8px] zoom-500:text-slate-900 zoom-500:max-w-[80px] zoom-500:truncate" title={hideValues ? "Valor oculto" : fmtMoneyTruncated(bill.amount, currency, locale)}>
               {formatValueWithTruncation(bill.amount)}
             </div>
           </div>
@@ -451,7 +476,7 @@ const BillRow = memo(function BillRow({
           {/* 5) Grupo à direita */}
           <div className="zoom-500:ml-auto zoom-500:flex zoom-500:items-center zoom-500:gap-1 zoom-500:justify-end zoom-500:text-right">
             {/* Data */}
-            <div className="zoom-500:text-[8px] zoom-500:text-slate-600 dark:zoom-500:text-slate-400 zoom-500:whitespace-nowrap">
+            <div className="zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:whitespace-nowrap">
               {(isPaid && bill.paidOn)
                 ? formatDate(bill.paidOn, locale)
                 : overdue
@@ -462,7 +487,7 @@ const BillRow = memo(function BillRow({
             {/* Botão de editar */}
             <button
               onClick={() => setEditing(bill)}
-              className="zoom-500:text-slate-400 hover:zoom-500:text-slate-600 dark:zoom-500:text-slate-500 dark:hover:zoom-500:text-slate-300 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
+              className="zoom-500:text-slate-400 hover:zoom-500:text-slate-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.edit}
             >
               <svg className="zoom-500:w-2 zoom-500:h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -473,7 +498,7 @@ const BillRow = memo(function BillRow({
             {/* Botão de excluir */}
             <button
               onClick={() => setConfirm({ open: true, id: bill.id || null })}
-              className="zoom-500:text-red-400 hover:zoom-500:text-red-600 dark:zoom-500:text-red-500 dark:hover:zoom-500:text-red-300 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
+              className="zoom-500:text-red-400 hover:zoom-500:text-red-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.delete}
             >
               <svg className="zoom-500:w-2 zoom-500:h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,3 +512,11 @@ const BillRow = memo(function BillRow({
 })
 
 export default BillRow
+
+
+
+
+
+
+
+

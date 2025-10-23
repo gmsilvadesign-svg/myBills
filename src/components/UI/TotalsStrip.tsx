@@ -200,7 +200,7 @@ const TotalsStrip = memo(function TotalsStrip({
                 hideValue={valuesHidden}
                 mode="target"
               />
-              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Renda</div>
+              <div className="text-sm font-semibold text-slate-700">Renda</div>
             </div>
 
             <div className="flex flex-col items-center gap-5">
@@ -225,7 +225,7 @@ const TotalsStrip = memo(function TotalsStrip({
                 hideValue={valuesHidden}
                 mode="target"
               />
-              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Economia</div>
+              <div className="text-sm font-semibold text-slate-700">Economia</div>
             </div>
 
             <div className="flex flex-col items-center gap-5">
@@ -254,7 +254,7 @@ const TotalsStrip = memo(function TotalsStrip({
                 hideValue={valuesHidden}
                 mode="ceiling"
               />
-              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Contas</div>
+              <div className="text-sm font-semibold text-slate-700">Contas</div>
             </div>
           </div>
         )}
@@ -280,3 +280,4 @@ function savingPieData(savings: number, expenses: number) {
     { label: 'Déficit', value: overspend, color: '#dc2626' },
   ];
 }
+

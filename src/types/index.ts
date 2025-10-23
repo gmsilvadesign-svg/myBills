@@ -52,7 +52,6 @@ export interface UserGoals {
 }
 
 export interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
   language: 'pt' | 'en' | 'es';
   currency: string;
   hideValues?: boolean;
@@ -82,7 +81,7 @@ export interface ConfirmState {
   id: string | null;
 }
 
-export type NotificationType = 'success' | 'error' | 'info';
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
 export interface WithError { error?: string }
 export interface WithAriaLabel { ariaLabel?: string }
@@ -95,3 +94,5 @@ export interface Notification {
   type: NotificationType;
   duration?: number;
 }
+
+
