@@ -24,12 +24,11 @@ interface HeaderProps {
   setEditingPurchase?: (purchase: Partial<Types.Purchase> | null) => void;
   exportICS: () => void;
   setOpenSettings: (open: boolean) => void;
-  onOpenGoals?: () => void;
   addSampleData?: () => void;
 }
 
 
-export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, onOpenGoals, addSampleData: _addSampleData }: HeaderProps) {
+export default function Header({ t, setEditing, setEditingIncome, setEditingPurchase, exportICS, setOpenSettings, addSampleData: _addSampleData }: HeaderProps) {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openAdminPanel, setOpenAdminPanel] = useState(false);
   const [openMore, setOpenMore] = useState(false);
@@ -92,11 +91,6 @@ export default function Header({ t, setEditing, setEditingIncome, setEditingPurc
         <button onClick={() => { exportICS(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.export_ics}</button>
         <button onClick={() => { handleOpenNotifications(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.notifications}</button>
         <button onClick={() => { handleOpenSettings(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>{t.settings}</button>
-        {onOpenGoals && (
-          <button onClick={() => { onOpenGoals(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>
-            {t.goals ?? 'Metas'}
-          </button>
-        )}
         <button onClick={() => { handleOpenAdminPanel(); setOpenMore(false); }} className={CSS_CLASSES.button.secondary}>Painel de Administracao</button>
         {!user ? (
           <button onClick={() => { signInWithGoogle(); setOpenMore(false); }} className={CSS_CLASSES.button.primary}>Entrar</button>

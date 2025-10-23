@@ -184,7 +184,7 @@ export default function LoginScreen() {
             <p className="text-sm uppercase tracking-[0.35em] text-white/40">myBills</p>
             <h1 className="text-4xl font-semibold mt-3">Bem-vindo de volta</h1>
             <p className="text-white/70 leading-relaxed mt-4 max-w-lg">
-              Centralize seus books financeiros, acompanhe metas e organize pagamentos recorrentes em um unico lugar.
+              Centralize seus books financeiros e organize pagamentos recorrentes em um unico lugar.
             </p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">

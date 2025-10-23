@@ -32,7 +32,6 @@ import { CSS_CLASSES, cn } from "@/styles/constants";
 // Modals
 import DeleteConfirm from "@/components/UI/modals/DeleteConfirm";
 import SettingsModal from "@/components/UI/modals/Settings";
-import Modal from "@/components/UI/modals/Modal";
 
 // Hooks
 import { usePrefs } from "@/hooks/usePrefs";
@@ -82,7 +81,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const { width } = usePreview();
   const [openPurchasesModal, setOpenPurchasesModal] = useState(false);
   const [openIncomesModal, setOpenIncomesModal] = useState(false);
-  const [openGoals, setOpenGoals] = useState(false);
   const [chartRange, setChartRange] = useState<'6m' | '12m'>('12m');
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
@@ -93,7 +91,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const todayISOHeader = ymd(new Date());
   const overdueCount = bills.filter(b => !b.paid && (parseDate(b.dueDate) < parseDate(todayISOHeader))).length;
 
-  // Hook de notificaÔö£-¦Ôö£+ües
+  // Hook de notificacoes
   const exportICS = () => {
     import("@/utils/utils").then(({ buildICSForMonth, download }) => {
       const ics = buildICSForMonth(bills, monthDate, locale, currency);
@@ -105,23 +103,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   };
   const activeBook = useMemo(() => books.find((book) => book.id === activeBookId) ?? null, [books, activeBookId]);
   const hideValues = Boolean(prefs.hideValues);
-
-  const goalRows = useMemo(() => {
-    const rows: Array<{ label: string; value: string; tone: 'target' | 'limit' }> = [];
-    const goals = prefs.goals;
-    if (!goals) return rows;
-    const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency });
-    const addRow = (label: string, amount?: number | null, tone: 'target' | 'limit' = 'target') => {
-      if (typeof amount === 'number' && Number.isFinite(amount)) {
-        rows.push({ label, value: formatter.format(amount), tone });
-      }
-    };
-    addRow('Meta de renda', goals.incomeTarget, 'target');
-    addRow('Meta de economia', goals.savingsTarget, 'target');
-    addRow('Teto de gastos em contas', goals.expensesLimit, 'limit');
-    addRow('Teto de compras', goals.purchasesLimit, 'limit');
-    return rows;
-  }, [prefs.goals, locale, currency]);
 
   const countOccurrencesForSchedule = (dueDate: string, recurrence: Types.Bill['recurrence'], year: number, month: number) => {
     const stub: Types.Bill = {
@@ -182,7 +163,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   if (!activeBook) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500 dark:text-slate-300">
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
         Nenhum book selecionado.
       </div>
     );
@@ -191,7 +172,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const containerStyle = width ? { maxWidth: width, margin: '0 auto' } : { maxWidth: '1100px' };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50">
       <div className="w-full mx-auto px-4 py-8 space-y-8 zoom-500:px-2 zoom-500:py-4 zoom-500:space-y-4" style={containerStyle}>
         <Header
             t={t}
@@ -199,14 +180,13 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             setEditingIncome={setEditingIncome}
             setEditingPurchase={setEditingPurchase}
             exportICS={exportICS}
-            onOpenGoals={() => setOpenGoals(true)}
             setOpenSettings={setOpenSettings}
             addSampleData={addSampleBills}
           />
 
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm flex flex-col gap-4">
+        <section className="bg-white border border-slate-200 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm flex flex-col gap-4">
           <div className="flex flex-col gap-1 w-full">
-            <span className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Book ativo</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Book ativo</span>
             <div className="flex flex-col gap-4 w-full">
               {/* Layout responsivo para diferentes zooms */}
               <div className="flex flex-col gap-3">
@@ -215,7 +195,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                   <select
                     value={activeBookId}
                     onChange={(event) => onSelectBook(event.target.value)}
-                    className="px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 sm:flex-none sm:w-[320px] min-w-0"
+                    className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 sm:flex-none sm:w-[320px] min-w-0"
                   >
                     {books.map((book) => (
                       <option key={book.id} value={book.id}>
@@ -224,7 +204,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                     ))}
                   </select>
                   {activeBook && (
-                    <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                    <span className="text-xs text-slate-400 whitespace-nowrap">
                       Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
                     </span>
                   )}
@@ -274,13 +254,13 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
         </section>
 
           {overdueCount > 0 && (
-          <div className="rounded-3xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex flex-wrap items-center gap-3 shadow-sm">
-            <span className="text-sm text-amber-800 dark:text-amber-200">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-wrap items-center gap-3 shadow-sm">
+            <span className="text-sm text-amber-800">
               Voce possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso
             </span>
             <button
               onClick={() => { setView('list'); setFilter('overdue'); }}
-              className="px-3 py-1 rounded-xl bg-amber-200 hover:bg-amber-300 dark:bg-amber-700/60 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 text-xs font-semibold transition-colors"
+              className="px-3 py-1 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-semibold transition-colors"
             >
               Verificar
             </button>
@@ -288,19 +268,21 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
         )}
 
         {!hideCircles && (
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
+          <section className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
             <TotalsStrip
               bills={bills}
               incomes={incomes}
-              goals={prefs.goals}
               purchases={purchases}
-              onFilterOverdue={() => { setFilter('overdue'); setView('list'); }}
+              onFilterOverdue={() => {
+                setFilter('overdue');
+                setView('list');
+              }}
               filter={filter}
               valuesHidden={hideValues}
               hideCircles={hideCircles}
             />
             {hideValues && (
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+              <p className="mt-3 text-xs text-slate-500 text-center">
                 Valores ocultos. Toque em "Mostrar valores" para revelar.
               </p>
             )}
@@ -317,7 +299,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
            t={t}
          />
 
-        {/* Removido: Totais agora sempre visÔö£-íveis acima das opÔö£-¦Ôö£+ües */}
+        {/* Removido: Totais agora sempre visiveis acima das opcoes */}
 
         <div className="space-y-6">
           {(view === "list" || view === 'purchases' || view === 'incomes') && (
@@ -326,10 +308,10 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
               <BillsList
                 bills={(function(){
                   // Month view: incluir
-                  // - contas com vencimento no mÔö£-¼s atual (filteredBills)
-                  // - contas pagas neste mÔö£-¼s (seÔö£-¦Ôö£+¦o "Contas pagas")
-                  // - contas em atraso (de meses anteriores tambÔö£-«m), para que
-                  //   ao desmarcar um pagamento elas retornem Ôö£+í lista
+                  // - contas com vencimento no mes atual (filteredBills)
+                  // - contas pagas neste mes (secao "Contas pagas")
+                  // - contas em atraso (de meses anteriores tambem), para que
+                  //   ao desmarcar um pagamento elas retornem a lista
                   if (filter !== 'month') return filteredBills;
                   const now = new Date();
                   const y = now.getFullYear();
@@ -416,7 +398,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           />
         )}
 
-        {/* Removido: duplicaÔö£-¦Ôö£+¦o da aba de compras */}
+        {/* Removido: duplicacao da aba de compras */}
 
          {editingIncome && (
            <IncomeForm
@@ -494,43 +476,10 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           locale={locale}
           currency={currency}
         />
-        <Modal isOpen={openGoals} onClose={() => setOpenGoals(false)} title="metas">
-          <div className="space-y-4">
-            {goalRows.length ? (
-              <div className="space-y-3">
-                {goalRows.map(({ label, value, tone }) => (
-                  <div key={label} className="flex items-center justify-between gap-4 text-sm">
-                    <span className="font-medium text-slate-600 dark:text-slate-200">{label}</span>
-                    <span
-                      className={tone === 'target' ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}
-                    >
-                      {value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                Nenhuma meta definida ainda. Use as configuracoes para cadastrar metas de renda, economia ou tetos de gastos.
-              </p>
-            )}
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setOpenGoals(false)} className={CSS_CLASSES.button.secondary}>
-                Fechar
-              </button>
-              <button
-                onClick={() => { setOpenGoals(false); setOpenSettings(true); }}
-                className={CSS_CLASSES.button.primary}
-              >
-                Configurar metas
-              </button>
-            </div>
-          </div>
-        </Modal>
          {view === 'general' && (
-           <div className="general-summary mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
-             <h3 className="text-lg font-semibold mb-2">BalanÔö£-¦o geral do mÔö£-¼s</h3>
-             {/* CÔö£+¡lculo simples: soma despesas do mÔö£-¼s - soma rendas do mÔö£-¼s */}
+           <div className="general-summary mb-6 rounded-2xl border border-slate-200 p-4 bg-white">
+             <h3 className="text-lg font-semibold mb-2">Balanco geral do mes</h3>
+             {/* Calculo simples: soma despesas do mes - soma rendas do mes */}
              {(() => {
                const now = new Date();
                const y = now.getFullYear();
@@ -540,7 +489,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                  return dd.getFullYear() === y && dd.getMonth() === m;
                };
                const monthExpenses = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s, b) => s + Number(b.amount || 0), 0);
-               // Considera recorrÔö£-¼ncia para rendas: inclui item se tiver ocorrÔö£-¼ncia no mÔö£-¼s
+               // Considera recorrencia para rendas: inclui item se tiver ocorrencia no mes
                const monthIncomes = incomes.filter(i => {
                  try {
                    const occ = occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m);
@@ -553,20 +502,20 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
               const balance = monthIncomes - monthExpenses - monthPurchases;
                return (
                  <div className="hidden grid grid-cols-1 sm:grid-cols-4 gap-3">
-                   <div className="rounded-xl p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200">
-                     <div className="text-xs">Despesas do mÔö£-¼s</div>
+                   <div className="rounded-xl p-3 bg-red-50 text-red-700">
+                     <div className="text-xs">Despesas do mes</div>
                      <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
                    </div>
-                   <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200">
-                     <div className="text-xs">Rendas do mÔö£-¼s</div>
+                   <div className="rounded-xl p-3 bg-emerald-50 text-emerald-700">
+                     <div className="text-xs">Rendas do mes</div>
                      <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}</div>
                    </div>
-                   <div className="rounded-xl p-3 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                     <div className="text-xs">BalanÔö£-¦o</div>
+                   <div className="rounded-xl p-3 bg-slate-50 text-slate-700">
+                     <div className="text-xs">Balanco</div>
                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}</div>
                   </div>
-                  <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200">
-                    <div className="text-xs">Compras do mÔö£-¼s</div>
+                  <div className="rounded-xl p-3 bg-amber-50 text-amber-700">
+                    <div className="text-xs">Compras do mes</div>
                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}</div>
                   </div>
                  </div>
@@ -574,10 +523,10 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             })()}
             <div className="space-y-6">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600 dark:text-slate-300">Per+¡odo:</span>
-                <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>6m</button>
-                <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-transparent'} border-slate-300 dark:border-slate-600`}>12m</button>
-                {/* BotÔö£+¦o 1 ano removido */}
+                <span className="text-slate-600">Per+¡odo:</span>
+                <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>6m</button>
+                <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>12m</button>
+                {/* Botao 1 ano removido */}
               </div>
               {(() => {
                 const now = new Date();
@@ -622,8 +571,8 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 }
                 const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
-                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200 text-center">Projecao renda x gastos (semanas)</h4>
+                  <div className="rounded-xl border border-slate-200 p-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 text-center">Projecao renda x gastos (semanas)</h4>
                     <div className="flex justify-center">
                       <LineChart
                         labels={weekLabels}
@@ -669,8 +618,8 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 }
                 const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
-                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200 text-center">Historico Financeiro</h4>
+                  <div className="rounded-xl border border-slate-200 p-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 text-center">Historico Financeiro</h4>
                     <div className="flex justify-center">
                       <LineChart
                         labels={labels}
@@ -723,12 +672,12 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 const formatter = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de gastos (mes)</h4>
+                    <div className="rounded-xl border border-slate-200 p-4">
+                      <h4 className="font-semibold mb-2 text-slate-700">Distribuicao de gastos (mes)</h4>
                       <PieChart data={expenseSlices} paletteType="warm" formatValue={formatter} showLegend={true} />
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                      <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Distribuicao de renda (mes)</h4>
+                    <div className="rounded-xl border border-slate-200 p-4">
+                      <h4 className="font-semibold mb-2 text-slate-700">Distribuicao de renda (mes)</h4>
                       <PieChart data={incomeSlices} paletteType="cool" formatValue={formatter} showLegend={true} />
                     </div>
                   </div>
@@ -747,4 +696,13 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 }
 
 export default LegacyDashboard;
+
+
+
+
+
+
+
+
+
 
