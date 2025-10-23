@@ -1,6 +1,6 @@
-
-import { memo, useMemo } from 'react';
+﻿import { memo, useMemo } from 'react';
 import * as Types from '@/types';
+import { cn } from '@/styles/constants';
 import { parseDate, daysInMonth } from '@/utils/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -98,11 +98,19 @@ const TotalsStrip = memo(function TotalsStrip({
     })
     .reduce((sum, purchase) => sum + Number(purchase.amount || 0), 0);
 
+  const totalBills = billsMetrics.open + billsMetrics.overdue + billsMetrics.paid;
+  const economy = incomeMonth - totalBills - purchasesTotal;
+  const economyClass = valuesHidden
+    ? 'text-slate-900'
+    : economy >= 0
+      ? 'text-emerald-600'
+      : 'text-rose-600';
+
   if (hideCircles) return null;
 
   return (
     <div className="w-full flex justify-center mb-6">
-      <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-sm font-semibold text-slate-600">Renda prevista</div>
           <div className="mt-2 text-2xl font-semibold text-slate-900">
@@ -137,10 +145,20 @@ const TotalsStrip = memo(function TotalsStrip({
             {maskCurrency(purchasesTotal, formatter.format, valuesHidden)}
           </div>
         </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-slate-600">Economia</div>
+          <div className={cn('mt-2 text-2xl font-semibold', economyClass)}>
+            {maskCurrency(economy, formatter.format, valuesHidden)}
+          </div>
+        </div>
       </div>
     </div>
   );
 });
 
 export default TotalsStrip;
+
+
+
 
