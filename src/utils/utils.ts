@@ -124,7 +124,6 @@ import * as Types from '@/types';
 export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthIndex: number): string[] {
   const occ: string[] = [];
   const base = parseDate(bill.dueDate);
-  const today = new Date();
   const requestedMonth = new Date(year, monthIndex, 1);
 
   if (bill.recurrence === "NONE" || !bill.recurrence) {
@@ -136,13 +135,10 @@ export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthI
     const day = base.getDate();
     const occurrenceDate = new Date(year, monthIndex, clampDay(year, monthIndex, day));
     
-    // Para contas mensais, gera ocorrências se:
-    // 1. A data base é anterior ou igual ao mês solicitado
-    // 2. A ocorrência é no mês atual ou futuro (incluindo o mês de criação)
+    // Para contas mensais, gera ocorrencias se a data base for anterior ou igual ao mes solicitado
     const baseMonth = new Date(base.getFullYear(), base.getMonth(), 1);
-    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     
-    if (base <= requestedMonth && requestedMonth >= baseMonth && requestedMonth >= currentMonth) {
+    if (base <= requestedMonth && requestedMonth >= baseMonth) {
       occ.push(ymd(occurrenceDate));
     }
     return occ;

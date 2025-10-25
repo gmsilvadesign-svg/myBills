@@ -1,5 +1,5 @@
-﻿// React
-import { useMemo, useState } from "react";
+// React
+import { useCallback, useMemo, useState } from "react";
 
 // Styles
 import "@/styles/index.css";
@@ -75,7 +75,12 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   });
   const [editingIncome, setEditingIncome] = useState<Partial<Types.Income> | null>(null);
   const [editingPurchase, setEditingPurchase] = useState<Partial<Types.Purchase> | null>(null);
-  const [monthDate] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const base = new Date();
+    base.setDate(1);
+    base.setHours(0, 0, 0, 0);
+    return base;
+  });
   const [openSettings, setOpenSettings] = useState(false);
   const { purchases, upsertPurchase, removePurchase } = useFirebasePurchases(activeBookId);
   const { width } = usePreview();
@@ -84,25 +89,116 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const [chartRange, setChartRange] = useState<'6m' | '12m'>('12m');
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
-  const [hideCircles, setHideCircles] = useState(false);
+  const [showCreateBookModal, setShowCreateBookModal] = useState(false);
+  const [newBookName, setNewBookName] = useState("");
+  const [createBookError, setCreateBookError] = useState("");
 
-  const filteredBills = useFilteredBills(bills, filter, search);
-  // Overdue count for header banner
+  const filteredBills = useFilteredBills(bills, filter, search, selectedMonth);
+  const overdueBills = useFilteredBills(bills, 'overdue', '', selectedMonth);
+  const getOccurrenceDate = (bill: Types.Bill) => {
+    const meta = (bill as any).__meta__ as { occurrenceDate?: string } | undefined;
+    return meta?.occurrenceDate ?? bill.dueDate;
+  };
   const todayISOHeader = ymd(new Date());
-  const overdueCount = bills.filter(b => !b.paid && (parseDate(b.dueDate) < parseDate(todayISOHeader))).length;
+  const listBillsData = useMemo(() => {
+    if (filter !== "month") return filteredBills;
+    const targetMonth = selectedMonth.getMonth();
+    const targetYear = selectedMonth.getFullYear();
+    const seen = new Set<string>();
+    const monthItems: Types.Bill[] = [];
+
+    const pushIfUnique = (bill: Types.Bill) => {
+      const meta = (bill as any).__meta__ as { displayKey?: string } | undefined;
+      const occurrenceKey = getOccurrenceDate(bill);
+      const key =
+        meta?.displayKey ??
+        (bill.id ? `${bill.id}-${occurrenceKey}` : `${bill.title}-${occurrenceKey}`);
+      if (seen.has(key)) return;
+      seen.add(key);
+      monthItems.push(bill);
+    };
+
+    filteredBills.forEach((bill) => {
+      const occurrence = parseDate(getOccurrenceDate(bill));
+      if (occurrence.getFullYear() === targetYear && occurrence.getMonth() === targetMonth) {
+        pushIfUnique(bill);
+      }
+    });
+
+    bills.forEach((bill) => {
+      if (!bill.paidOn) return;
+      const paidDate = parseDate(bill.paidOn);
+      if (paidDate.getFullYear() !== targetYear || paidDate.getMonth() !== targetMonth) return;
+      pushIfUnique(bill);
+    });
+
+    return monthItems;
+  }, [filteredBills, filter, selectedMonth, bills]);
+  const overdueCount = useMemo(() => {
+    const todayRef = parseDate(todayISOHeader);
+    const seen = new Set<string>();
+    const keyFor = (bill: Types.Bill) => {
+      const meta = (bill as any).__meta__ as { displayKey?: string } | undefined;
+      if (meta?.displayKey) return meta.displayKey;
+      if (bill.id) return `${bill.id}-${bill.dueDate}`;
+      return `${bill.title}-${bill.dueDate}`;
+    };
+    overdueBills.forEach((bill) => {
+      const effectiveDue = parseDate(getOccurrenceDate(bill));
+      if (!bill.paid && effectiveDue < todayRef) {
+        seen.add(keyFor(bill));
+      }
+    });
+    return seen.size;
+  }, [overdueBills, todayISOHeader]);
+  const handleViewOverdue = useCallback(() => {
+    setView("list");
+    setFilter("overdue");
+    setSelectedMonth(() => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      monthStart.setHours(0, 0, 0, 0);
+      return monthStart;
+    });
+  }, []);
 
   // Hook de notificacoes
   const exportICS = () => {
     import("@/utils/utils").then(({ buildICSForMonth, download }) => {
-      const ics = buildICSForMonth(bills, monthDate, locale, currency);
-      const fname = `contas-${monthDate.getFullYear()}-${String(
-        monthDate.getMonth() + 1
+      const ics = buildICSForMonth(bills, selectedMonth, locale, currency);
+      const fname = `contas-${selectedMonth.getFullYear()}-${String(
+        selectedMonth.getMonth() + 1
       ).padStart(2, "0")}.ics`;
       download(fname, ics);
     });
   };
   const activeBook = useMemo(() => books.find((book) => book.id === activeBookId) ?? null, [books, activeBookId]);
   const hideValues = Boolean(prefs.hideValues);
+  const monthFilterActive = filter === "month";
+  const monthLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
+    const label = formatter.format(selectedMonth);
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }, [locale, selectedMonth]);
+  const handlePrevMonth = () => {
+    setSelectedMonth((prev) => {
+      const next = new Date(prev);
+      next.setMonth(prev.getMonth() - 1);
+      next.setDate(1);
+      next.setHours(0, 0, 0, 0);
+      return next;
+    });
+  };
+  const handleNextMonth = () => {
+    setSelectedMonth((prev) => {
+      const next = new Date(prev);
+      next.setMonth(prev.getMonth() + 1);
+      next.setDate(1);
+      next.setHours(0, 0, 0, 0);
+      return next;
+    });
+  };
+  const showMonthSelector = view === "list" || view === "purchases" || view === "incomes";
 
   const countOccurrencesForSchedule = (dueDate: string, recurrence: Types.Bill['recurrence'], year: number, month: number) => {
     const stub: Types.Bill = {
@@ -117,24 +213,39 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     return occurrencesForBillInMonth(stub, year, month).length;
   };
 
-  const handleToggleHideValues = () => {
-    setPrefs((prev) => ({ ...prev, hideValues: !prev.hideValues }));
+  const handleCreateBookClick = () => {
+    if (isCreatingBook) return;
+    setNewBookName("");
+    setCreateBookError("");
+    setShowCreateBookModal(true);
   };
 
-  const handleToggleHideCircles = () => {
-    setHideCircles(!hideCircles);
-  };
-
-  const handleCreateBookClick = async () => {
+  const handleSubmitCreateBook = useCallback(async () => {
+    const trimmed = newBookName.trim();
+    if (!trimmed) {
+      setCreateBookError('Informe um nome para o book.');
+      return;
+    }
     try {
       setIsCreatingBook(true);
-      const name = window.prompt('Qual nome deseja atribuir ao novo book? (deixe em branco para padrao)');
-      const trimmed = name && name.trim().length > 0 ? name.trim() : undefined;
       await onCreateBook(trimmed);
+      setShowCreateBookModal(false);
+      setNewBookName('');
+      setCreateBookError('');
+    } catch (error) {
+      console.error('[LegacyDashboard] createBook error', error);
+      setCreateBookError('N�o foi poss�vel criar o book. Tente novamente.');
     } finally {
       setIsCreatingBook(false);
     }
-  };
+  }, [newBookName, onCreateBook]);
+
+  const handleCloseCreateBookModal = useCallback(() => {
+    if (isCreatingBook) return;
+    setShowCreateBookModal(false);
+    setNewBookName('');
+    setCreateBookError('');
+  }, [isCreatingBook]);
 
   const handleDeleteBookClick = async () => {
     if (books.length <= 1) {
@@ -143,6 +254,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     }
     const confirmed = window.confirm('Excluir este book? Esta acao remove todas as informacoes relacionadas.');
     if (!confirmed) return;
+    const securityAnswer = window.prompt(`Para confirmar, digite o nome do book ativo ("${activeBook?.name || ''}").`);
+    if ((securityAnswer || '').trim() !== (activeBook?.name || '').trim()) {
+      alert('Confirmacao invalida. Nenhuma alteracao foi realizada.');
+      return;
+    }
     try {
       setIsDeletingBook(true);
       await onDeleteBook(activeBookId);
@@ -153,7 +269,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">Carregando+ö+ç-¬</div>
+      <div className="min-h-screen flex items-center justify-center text-slate-600">Carregando+�+�-�</div>
     );
   }
 
@@ -184,82 +300,57 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             addSampleData={addSampleBills}
           />
 
-        <section className="bg-white border border-slate-200 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm flex flex-col gap-4">
-          <div className="flex flex-col gap-1 w-full">
-            <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Book ativo</span>
-            <div className="flex flex-col gap-4 w-full">
-              {/* Layout responsivo para diferentes zooms */}
-              <div className="flex flex-col gap-3">
-                {/* Primeira linha: Select e data de cria+º+úo */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap">
-                  <select
-                    value={activeBookId}
-                    onChange={(event) => onSelectBook(event.target.value)}
-                    className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 sm:flex-none sm:w-[320px] min-w-0"
-                  >
-                    {books.map((book) => (
-                      <option key={book.id} value={book.id}>
-                        {book.name}
-                      </option>
-                    ))}
-                  </select>
-                  {activeBook && (
-                    <span className="text-xs text-slate-400 whitespace-nowrap">
-                      Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Segunda linha: Bot+Áes principais +á esquerda e bot+Áes de visualiza+º+úo +á direita */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap zoom-300:flex-row zoom-300:items-start zoom-300:justify-between zoom-300:gap-2 zoom-400:flex-row zoom-400:items-start zoom-400:justify-between zoom-400:gap-2 zoom-500:flex-row zoom-500:items-start zoom-500:justify-between zoom-500:gap-2">
-                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap zoom-300:flex-row zoom-300:gap-2 zoom-400:flex-col zoom-400:gap-2 zoom-500:flex-col zoom-500:gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCreateBookClick}
-                      className={cn(CSS_CLASSES.button.primary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-400:order-1 zoom-500:mb-2 zoom-500:w-fixed zoom-500:order-1')}
-                      disabled={isCreatingBook}
-                    >
-                      {isCreatingBook ? 'Criando...' : '+ Novo controle'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDeleteBookClick}
-                      className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-400:order-3 zoom-500:mb-2 zoom-500:w-fixed zoom-500:order-3')}
-                      disabled={isDeletingBook}
-                    >
-                      {isDeletingBook ? 'Excluindo...' : 'Excluir book'}
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap zoom-300:flex-row zoom-300:gap-2 zoom-400:flex-col zoom-400:gap-2 zoom-500:flex-col zoom-500:gap-2">
-                    <button
-                      type="button"
-                      onClick={handleToggleHideValues}
-                      className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-400:order-2 zoom-500:mb-2 zoom-500:w-fixed zoom-500:order-2')}
-                    >
-                      {hideValues ? 'Mostrar valores' : 'Ocultar valores'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleToggleHideCircles}
-                      className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center w-full sm:w-[150px] min-w-[120px] flex-shrink-0 zoom-300:mb-2 zoom-400:mb-2 zoom-400:w-fixed zoom-500:mb-2 zoom-500:w-fixed')}
-                    >
-                      {hideCircles ? 'Mostrar total' : 'Ocultar total'}
-                    </button>
-                  </div>
-                </div>
+        <section className="bg-white border border-slate-200 rounded-3xl px-4 py-5 md:px-6 md:py-6 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-2 flex-1">
+              <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Book ativo</span>
+              <div className="flex flex-col md:flex-row md:items-center md:gap-4">
+                <select
+                  value={activeBookId}
+                  onChange={(event) => onSelectBook(event.target.value)}
+                  className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full md:w-[320px] min-w-0"
+                >
+                  {books.map((book) => (
+                    <option key={book.id} value={book.id}>
+                      {book.name}
+                    </option>
+                  ))}
+                </select>
+                {activeBook && (
+                  <span className="text-xs text-slate-400 md:whitespace-nowrap">
+                    Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(activeBook.createdAt))}
+                  </span>
+                )}
               </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={handleCreateBookClick}
+                className={cn(CSS_CLASSES.button.primary, 'flex items-center gap-2 justify-center min-w-[140px]')}
+                disabled={isCreatingBook}
+              >
+                {isCreatingBook ? 'Criando...' : 'Novo Book'}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteBookClick}
+                className={cn(CSS_CLASSES.button.secondary, 'flex items-center gap-2 justify-center min-w-[140px]')}
+                disabled={isDeletingBook}
+              >
+                {isDeletingBook ? 'Excluindo...' : 'Excluir book'}
+              </button>
             </div>
           </div>
         </section>
 
-          {overdueCount > 0 && (
+        {overdueCount > 0 && (
           <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-wrap items-center gap-3 shadow-sm">
             <span className="text-sm text-amber-800">
               Voce possui {overdueCount} {overdueCount === 1 ? 'conta' : 'contas'} em atraso
             </span>
             <button
-              onClick={() => { setView('list'); setFilter('overdue'); }}
+              onClick={handleViewOverdue}
               className="px-3 py-1 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-semibold transition-colors"
             >
               Verificar
@@ -267,37 +358,38 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           </div>
         )}
 
-        {!hideCircles && (
-          <section className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
-            <TotalsStrip
-              bills={bills}
-              incomes={incomes}
-              purchases={purchases}
-              onFilterOverdue={() => {
-                setFilter('overdue');
-                setView('list');
-              }}
-              filter={filter}
-              valuesHidden={hideValues}
-              hideCircles={hideCircles}
-            />
-            {hideValues && (
-              <p className="mt-3 text-xs text-slate-500 text-center">
-                Valores ocultos. Toque em "Mostrar valores" para revelar.
-              </p>
-            )}
-          </section>
-        )}
+        <section className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+          <TotalsStrip
+            bills={bills}
+            incomes={incomes}
+            purchases={purchases}
+            onFilterOverdue={() => {
+              setFilter('overdue');
+              setView('list');
+            }}
+            filter={filter}
+            valuesHidden={hideValues}
+          />
+          {hideValues && (
+            <p className="mt-3 text-xs text-slate-500 text-center">
+              Valores ocultos. Toque em "Mostrar valores" para revelar.
+            </p>
+          )}
+        </section>
 
         <Filters
-           view={view}
-           setView={setView}
-           filter={filter}
-           setFilter={setFilter}
-           search={search}
-           setSearch={setSearch}
-           t={t}
-         />
+          view={view}
+          setView={setView}
+          filter={filter}
+          setFilter={setFilter}
+          search={search}
+          setSearch={setSearch}
+          t={t}
+          monthLabel={monthLabel}
+          onPrevMonth={handlePrevMonth}
+          onNextMonth={handleNextMonth}
+          showMonthSelector={showMonthSelector}
+        />
 
         {/* Removido: Totais agora sempre visiveis acima das opcoes */}
 
@@ -306,25 +398,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
          <div className="min-h-[60vh]">
             {view === 'list' && (
               <BillsList
-                bills={(function(){
-                  // Month view: incluir
-                  // - contas com vencimento no mes atual (filteredBills)
-                  // - contas pagas neste mes (secao "Contas pagas")
-                  // - contas em atraso (de meses anteriores tambem), para que
-                  //   ao desmarcar um pagamento elas retornem a lista
-                  if (filter !== 'month') return filteredBills;
-                  const now = new Date();
-                  const y = now.getFullYear();
-                  const m = now.getMonth();
-                  const inSameMonth = (iso?: string | null) => { if (!iso) return false; const d = parseDate(iso); return d.getFullYear()===y && d.getMonth()===m; };
-                  const todayISO = ymd(new Date());
-                  const isOverdue = (b: Types.Bill) => !b.paid && parseDate(b.dueDate) < parseDate(todayISO);
-                  const extrasPaid = bills.filter(b => inSameMonth(b.paidOn));
-                  const extrasOverdue = bills.filter(isOverdue);
-                  const all = [...filteredBills, ...extrasPaid, ...extrasOverdue];
-                  const seen = new Set<string>();
-                  return all.filter(b => { const id = (b as any).id as string | undefined; if (!id) return true; if (seen.has(id)) return false; seen.add(id); return true; });
-                })()}
+                bills={listBillsData}
                 loading={loading}
                 markPaid={markPaid}
                 unmarkPaid={unmarkPaid}
@@ -333,22 +407,38 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 t={t}
                 locale={locale}
                 currency={currency}
-                purchasesTotalMonth={(() => { const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); return purchases.filter(p => { const d = new Date(p.date); return d.getFullYear() === y && d.getMonth() === m; }).reduce((s, p) => s + Number(p.amount || 0), 0); })()}
+                purchasesTotalMonth={monthFilterActive ? (() => {
+                  const monthRef = selectedMonth;
+                  const y = monthRef.getFullYear();
+                  const m = monthRef.getMonth();
+                  return purchases
+                    .filter((p) => {
+                      const d = new Date(p.date);
+                      return d.getFullYear() === y && d.getMonth() === m;
+                    })
+                    .reduce((s, p) => s + Number(p.amount || 0), 0);
+                })() : undefined}
                 onOpenPurchases={() => setOpenPurchasesModal(true)}
-                incomesTotalMonth={(() => {
-                  const now = new Date();
-                  const y = now.getFullYear();
-                  const m = now.getMonth();
+                incomesTotalMonth={monthFilterActive ? (() => {
+                  const monthRef = selectedMonth;
+                  const y = monthRef.getFullYear();
+                  const m = monthRef.getMonth();
                   return incomes.reduce((sum, income) => {
-                    const occurrences = countOccurrencesForSchedule(income.dueDate, income.recurrence, y, m);
+                    const occurrences = countOccurrencesForSchedule(
+                      income.dueDate,
+                      income.recurrence,
+                      y,
+                      m,
+                    );
                     if (occurrences > 0) {
                       return sum + occurrences * Number(income.amount || 0);
                     }
                     return sum;
                   }, 0);
-                })()}
+                })() : undefined}
                 onOpenIncomes={() => setOpenIncomesModal(true)}
                 hideValues={prefs.hideValues}
+                referenceMonth={monthFilterActive ? selectedMonth : undefined}
               />
             )}
             {view === 'purchases' && (
@@ -361,6 +451,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 currency={currency}
                 filter={filter}
                 hideValues={prefs.hideValues}
+                referenceMonth={monthFilterActive ? selectedMonth : undefined}
               />
             )}
             {view === 'incomes' && (
@@ -373,6 +464,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 currency={currency}
                 filter={filter}
                 hideValues={prefs.hideValues}
+                referenceMonth={monthFilterActive ? selectedMonth : undefined}
               />
             )}
           </div>
@@ -417,7 +509,49 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
            />
          )}
 
-         {editingPurchase && (
+         {showCreateBookModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+            <div className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-xl">
+              <h2 className="text-lg font-semibold text-slate-900">Criar novo book</h2>
+              <p className="text-sm text-slate-600">Informe um nome para identificar este conjunto de dados financeiros.</p>
+              <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); handleSubmitCreateBook(); }}>
+                <div>
+                  <label className="text-sm font-medium text-slate-700" htmlFor="newBookName">Nome do book</label>
+                  <input
+                    id="newBookName"
+                    type="text"
+                    value={newBookName}
+                    onChange={(event) => { setNewBookName(event.target.value); if (createBookError) setCreateBookError(''); }}
+                    disabled={isCreatingBook}
+                    autoFocus
+                    className="mt-1 w-full rounded-2xl border border-slate-300 px-3 py-2 text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                    placeholder="Ex.: Planejamento 2025"
+                  />
+                </div>
+                {createBookError && (<p className="text-sm text-red-600">{createBookError}</p>)}
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseCreateBookModal}
+                    disabled={isCreatingBook}
+                    className={cn(CSS_CLASSES.button.secondary, 'min-w-[110px] justify-center')}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingBook}
+                    className={cn(CSS_CLASSES.button.primary, 'min-w-[110px] justify-center')}
+                  >
+                    {isCreatingBook ? 'Criando...' : 'Criar book'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {editingPurchase && (
            <PurchaseForm
              initial={editingPurchase}
              onCancel={() => setEditingPurchase(null)}
@@ -523,7 +657,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
             })()}
             <div className="space-y-6">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600">Per+¡odo:</span>
+                <span className="text-slate-600">Per+�odo:</span>
                 <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>6m</button>
                 <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>12m</button>
                 {/* Botao 1 ano removido */}

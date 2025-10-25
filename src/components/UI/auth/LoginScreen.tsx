@@ -177,23 +177,25 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-5xl grid md:grid-cols-[1.2fr_1fr] gap-10 items-center">
-        <section className="hidden md:flex flex-col gap-10">
-          <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-white/40">myBills</p>
-            <h1 className="text-4xl font-semibold mt-3">Bem-vindo de volta</h1>
-            <p className="text-white/70 leading-relaxed mt-4 max-w-lg">
+        <section className="hidden md:flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
+          <div className="space-y-3">
+            <span className="text-2xl font-bold brand-konta bg-gradient-to-r from-emerald-400 to-emerald-700 bg-clip-text text-transparent select-none">
+              Konta
+            </span>
+            <h1 className="text-4xl font-semibold text-slate-900">Bem-vindo de volta</h1>
+            <p className="text-slate-600 leading-relaxed max-w-lg">
               Centralize seus books financeiros e organize pagamentos recorrentes em um unico lugar.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-            <h2 className="text-lg font-semibold mb-2">Acesso rapido</h2>
-            <p className="text-sm text-white/60">Use as credenciais padrao para explorar o sistema:</p>
-            <ul className="mt-3 space-y-1 text-sm text-white">
-              <li><span className="text-white/60">Login:</span> {ADMIN_USERNAME}</li>
-              <li><span className="text-white/60">Senha:</span> {ADMIN_PASSWORD}</li>
-              <li><span className="text-white/60">SMS local:</span> codigo {LOCAL_PHONE_CODE}</li>
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900 mb-2">Acesso rapido</h2>
+            <p className="text-sm text-slate-600">Use as credenciais padrao para explorar o sistema:</p>
+            <ul className="mt-3 space-y-1 text-sm text-slate-700">
+              <li><span className="text-slate-500">Login:</span> {ADMIN_USERNAME}</li>
+              <li><span className="text-slate-500">Senha:</span> {ADMIN_PASSWORD}</li>
+              <li><span className="text-slate-500">SMS local:</span> codigo {LOCAL_PHONE_CODE}</li>
             </ul>
           </div>
         </section>
@@ -211,7 +213,7 @@ export default function LoginScreen() {
                 className={cn(
                   'flex-1 rounded-2xl px-4 py-2 text-sm font-medium transition-all duration-200',
                   activeTab === tab.key
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-emerald-500 text-white shadow-lg'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
                 )}
               >
@@ -262,10 +264,10 @@ export default function LoginScreen() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <button type="button" onClick={handlePrefillAdmin} className="text-blue-600 hover:underline">
+                <button type="button" onClick={handlePrefillAdmin} className="text-emerald-600 hover:underline">
                   Usar Admin / 0000
                 </button>
-                <button type="button" onClick={handleForgotPassword} className="text-slate-600 hover:text-blue-600">
+                <button type="button" onClick={handleForgotPassword} className="text-slate-600 hover:text-emerald-600">
                   Esqueci minha senha
                 </button>
               </div>

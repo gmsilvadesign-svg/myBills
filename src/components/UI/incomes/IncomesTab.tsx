@@ -12,26 +12,55 @@ interface IncomesTabProps {
   currency: string;
   filter?: Types.FilterType;
   hideValues?: boolean;
+  referenceMonth?: Date;
 }
 
-export default function IncomesTab({ incomes, onEdit, onRemove, t, locale, currency, filter = 'month', hideValues = false }: IncomesTabProps) {
+export default function IncomesTab({
+  incomes,
+  onEdit,
+  onRemove,
+  t,
+  locale,
+  currency,
+  filter = 'month',
+  hideValues = false,
+  referenceMonth,
+}: IncomesTabProps) {
   const today = new Date();
-  const y = today.getFullYear();
-  const m = today.getMonth();
+  const monthRef = referenceMonth ?? today;
+  const y = monthRef.getFullYear();
+  const m = monthRef.getMonth();
   const isToday = (iso: string) => {
     const d = new Date(iso);
     return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
   };
   const hasOccurrenceThisMonth = (inc: Types.Income) => {
-    try { return occurrencesForBillInMonth({ dueDate: inc.dueDate, recurrence: inc.recurrence } as any, y, m).length > 0; }
-    catch { const d = new Date(inc.dueDate); return d.getFullYear() === y && d.getMonth() === m; }
+    try {
+      return occurrencesForBillInMonth(
+        { dueDate: inc.dueDate, recurrence: inc.recurrence } as any,
+        y,
+        m,
+      ).length > 0;
+    } catch {
+      const d = new Date(inc.dueDate);
+      return d.getFullYear() === y && d.getMonth() === m;
+    }
   };
   const hasOccurrenceToday = (inc: Types.Income) => {
-    try { return occurrencesForBillInMonth({ dueDate: inc.dueDate, recurrence: inc.recurrence } as any, y, m).some(d => d === ymd(today)); }
-    catch { return isToday(inc.dueDate); }
+    try {
+      return occurrencesForBillInMonth(
+        { dueDate: inc.dueDate, recurrence: inc.recurrence } as any,
+        today.getFullYear(),
+        today.getMonth(),
+      ).some((d) => d === ymd(today));
+    } catch {
+      return isToday(inc.dueDate);
+    }
   };
 
-  const filtered = incomes.filter(i => filter === 'today' ? hasOccurrenceToday(i) : filter === 'month' ? hasOccurrenceThisMonth(i) : true);
+  const filtered = incomes.filter((i) =>
+    filter === 'today' ? hasOccurrenceToday(i) : filter === 'month' ? hasOccurrenceThisMonth(i) : true,
+  );
   const total = filtered.reduce((s, i) => s + Number(i.amount || 0), 0);
 
   return (

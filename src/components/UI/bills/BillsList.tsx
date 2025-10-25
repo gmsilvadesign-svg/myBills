@@ -1,9 +1,18 @@
-import { memo } from 'react'
-import Section from '@/components/layout/Section'
-import BillRow from '@/components/UI/bills/BillRow'
-import * as Types from '@/types'
-import { parseDate } from '@/utils/utils'
-import { TranslationDictionary } from '@/constants/translation'
+import { memo, useMemo } from 'react';
+import Section from '@/components/layout/Section';
+import BillRow from '@/components/UI/bills/BillRow';
+import * as Types from '@/types';
+import { parseDate } from '@/utils/utils';
+import { TranslationDictionary } from '@/constants/translation';
+
+type BillOccurrenceMeta = {
+  displayKey: string;
+  virtual: boolean;
+  source: Types.Bill;
+  occurrenceDate: string;
+  originalDueDate: string;
+  timeRelation: "past" | "current" | "future";
+};
 
 interface BillsListProps {
   bills: Types.Bill[];
@@ -20,6 +29,7 @@ interface BillsListProps {
   incomesTotalMonth?: number;
   onOpenIncomes?: () => void;
   hideValues?: boolean;
+  referenceMonth?: Date;
 }
 
 const BillsList = memo(function BillsList({
@@ -33,18 +43,30 @@ const BillsList = memo(function BillsList({
   locale,
   currency,
   hideValues = false,
+  referenceMonth: _referenceMonth,
 }: BillsListProps) {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth()
-  const inMonth = (iso?: string | null) => {
-    if (!iso) return false
-    const d = parseDate(iso)
-    return d.getFullYear() === y && d.getMonth() === m
-  }
-  const isPaidThisMonth = (b: Types.Bill) => !!b.paidOn && inMonth(b.paidOn)
-  const openBills = bills.filter(b => !isPaidThisMonth(b))
-  const paidBills = bills.filter(isPaidThisMonth)
+  const getMeta = (bill: Types.Bill) =>
+    ((bill as any).__meta__ as BillOccurrenceMeta | undefined) ?? undefined;
+  const occurrenceDateFor = (bill: Types.Bill) => {
+    const meta = getMeta(bill);
+    return meta?.occurrenceDate ?? bill.dueDate;
+  };
+  const displayKeyFor = (bill: Types.Bill) => {
+    const meta = getMeta(bill);
+    if (meta?.displayKey) return meta.displayKey;
+    if (bill.id) return `${bill.id}-${bill.dueDate}`;
+    return `${bill.title}-${bill.dueDate}`;
+  };
+
+  const sorted = useMemo(() => {
+    return bills
+      .slice()
+      .sort((a, b) => parseDate(occurrenceDateFor(a)).getTime() - parseDate(occurrenceDateFor(b)).getTime());
+  }, [bills]);
+
+  const openBills = sorted.filter((bill) => !bill.paid);
+  const paidBills = sorted.filter((bill) => bill.paid);
+
   return (
     <Section>
       <div className="divide-y divide-slate-200 overflow-hidden">
@@ -55,10 +77,10 @@ const BillsList = memo(function BillsList({
         )}
 
         {!loading && openBills.length > 0 &&
-          openBills.map((b) => (
+          openBills.map((bill) => (
             <BillRow
-              key={b.id}
-              bill={b}
+              key={displayKeyFor(bill)}
+              bill={bill}
               markPaid={markPaid}
               setEditing={setEditing}
               setConfirm={setConfirm}
@@ -66,6 +88,7 @@ const BillsList = memo(function BillsList({
               locale={locale}
               currency={currency}
               hideValues={hideValues}
+              occurrenceMeta={getMeta(bill)}
             />
           ))}
 
@@ -75,10 +98,10 @@ const BillsList = memo(function BillsList({
               {t.paid_bills || 'Contas pagas'}
             </div>
             <div className="divide-y divide-slate-200">
-              {paidBills.map((b) => (
+              {paidBills.map((bill) => (
                 <BillRow
-                  key={b.id}
-                  bill={b}
+                  key={displayKeyFor(bill)}
+                  bill={bill}
                   markPaid={markPaid}
                   unmarkPaid={unmarkPaid}
                   paidInCurrentMonth
@@ -88,6 +111,7 @@ const BillsList = memo(function BillsList({
                   locale={locale}
                   currency={currency}
                   hideValues={hideValues}
+                  occurrenceMeta={getMeta(bill)}
                 />
               ))}
             </div>
@@ -101,9 +125,7 @@ const BillsList = memo(function BillsList({
         )}
       </div>
     </Section>
-  )
-})
+  );
+});
 
-export default BillsList
-
-
+export default BillsList;

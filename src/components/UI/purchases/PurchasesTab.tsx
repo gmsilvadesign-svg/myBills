@@ -12,18 +12,39 @@ interface PurchasesTabProps {
   currency: string;
   filter?: Types.FilterType;
   hideValues?: boolean;
+  referenceMonth?: Date;
 }
 
-export default function PurchasesTab({ purchases, onEdit, onRemove, t, locale, currency, filter = 'month', hideValues = false }: PurchasesTabProps) {
+export default function PurchasesTab({
+  purchases,
+  onEdit,
+  onRemove,
+  t,
+  locale,
+  currency,
+  filter = 'month',
+  hideValues = false,
+  referenceMonth,
+}: PurchasesTabProps) {
   const today = new Date();
-  const y = today.getFullYear();
-  const m = today.getMonth();
+  const monthRef = referenceMonth ?? today;
+  const y = monthRef.getFullYear();
+  const m = monthRef.getMonth();
   const isToday = (iso: string) => {
     const d = new Date(iso);
-    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
   };
-  const inMonth = (iso: string) => { const d = new Date(iso); return d.getFullYear() === y && d.getMonth() === m; };
-  const filtered = purchases.filter(p => filter === 'today' ? isToday(p.date) : filter === 'month' ? inMonth(p.date) : true);
+  const inMonth = (iso: string) => {
+    const d = new Date(iso);
+    return d.getFullYear() === y && d.getMonth() === m;
+  };
+  const filtered = purchases.filter((p) =>
+    filter === 'today' ? isToday(p.date) : filter === 'month' ? inMonth(p.date) : true,
+  );
   const total = filtered.reduce((s, p) => s + Number(p.amount || 0), 0);
 
   return (

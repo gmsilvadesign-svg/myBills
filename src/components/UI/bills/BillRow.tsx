@@ -22,6 +22,15 @@ const cn = (...classes: (string | undefined | false)[]): string => {
   return classes.filter(Boolean).join(' ')
 }
 
+type BillOccurrenceMeta = {
+  virtual: boolean;
+  timeRelation: "past" | "current" | "future";
+  occurrenceDate: string;
+  originalDueDate: string;
+  displayKey: string;
+  source: Types.Bill;
+};
+
 interface BillRowProps {
   bill: Types.Bill
   markPaid: (bill: Types.Bill, advance: boolean) => void
@@ -33,6 +42,7 @@ interface BillRowProps {
   locale: string
   currency: string
   hideValues?: boolean
+  occurrenceMeta?: BillOccurrenceMeta
 }
 
 const BillRow = memo(function BillRow({
@@ -46,10 +56,13 @@ const BillRow = memo(function BillRow({
   currency,
   paidInCurrentMonth,
   hideValues = false,
+  occurrenceMeta,
 }: BillRowProps) {
+  const displayDueDate = occurrenceMeta?.occurrenceDate ?? bill.dueDate
+  const sourceBill = occurrenceMeta?.source ?? bill
   const isPaid = !!bill.paid || !!paidInCurrentMonth
-  const overdue = !isPaid && isBefore(bill.dueDate, ymd(new Date()))
-  const overdueDays = overdue ? daysDifference(bill.dueDate, ymd(new Date())) : 0
+  const overdue = !isPaid && isBefore(displayDueDate, ymd(new Date()))
+  const overdueDays = overdue ? daysDifference(displayDueDate, ymd(new Date())) : 0
 
   const formatValueWithTruncation = (amount: number | string) => {
     if (hideValues) {
@@ -75,8 +88,7 @@ const BillRow = memo(function BillRow({
         <button
           onClick={(e) => {
             e.preventDefault()
-            // Para contas atrasadas, apenas marcar como pago sem avançar
-            markPaid(bill, false)
+            markPaid(sourceBill, false)
           }}
           className="px-3 py-4 rounded-2xl bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-red-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
           aria-label={`${t.mark_paid}: ${bill.title}`}
@@ -91,8 +103,7 @@ const BillRow = memo(function BillRow({
         <button
           onClick={(e) => {
             e.preventDefault()
-            // Para contas pendentes, apenas marcar como pago sem avançar
-            markPaid(bill, false)
+            markPaid(sourceBill, false)
           }}
           className="px-3 py-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-amber-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
           aria-label={`${t.mark_paid}: ${bill.title}`}
@@ -107,9 +118,9 @@ const BillRow = memo(function BillRow({
         onClick={(e) => {
           if (!unmarkPaid) return
           e.preventDefault()
-          unmarkPaid(bill)
+          unmarkPaid(sourceBill)
         }}
-        className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
+        className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
         aria-label={`\: ${bill.title}`}
         title={t.mark_unpaid}
       >
@@ -118,37 +129,39 @@ const BillRow = memo(function BillRow({
     )
   }
 
-  const renderActionButtons = () => (
-    <>
-      <button
-        onClick={(e) => {
-          e.preventDefault()
-          setEditing(bill)
-        }}
-        className="px-2 py-2 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
-        aria-label={`${t.edit} ${bill.title}`}
-        title={t.edit}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-      </button>
+  const renderActionButtons = () => {
+    return (
+      <>
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            setEditing(sourceBill)
+          }}
+          className="px-2 py-2 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+          aria-label={`${t.edit} ${bill.title}`}
+          title={t.edit}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
 
-      <button
-        onClick={(e) => {
-          e.preventDefault()
-          setConfirm({ open: true, id: bill.id || null })
-        }}
-        className="px-2 py-2 rounded-2xl bg-red-100 text-red-600 hover:bg-red-200 border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
-        aria-label={`${t.delete} ${bill.title}`}
-        title={t.delete}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
-    </>
-  )
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            setConfirm({ open: true, id: sourceBill.id || null })
+          }}
+          className="px-2 py-2 rounded-2xl bg-red-100 text-red-600 hover:bg-red-200 border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+          aria-label={`${t.delete} ${bill.title}`}
+          title={t.delete}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </>
+    )
+  }
 
   // JSX da linha da conta
   return (
@@ -196,7 +209,7 @@ const BillRow = memo(function BillRow({
               ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
               : overdue
               ? (t.days_overdue as (days: number) => string)(overdueDays)
-              : `${t.due_on} ${formatDate(bill.dueDate, locale)}`}
+              : `${t.due_on} ${formatDate(displayDueDate, locale)}`}
           </div>
           {/* 7,8) Ações */}
           {renderActionButtons()}
@@ -258,10 +271,10 @@ const BillRow = memo(function BillRow({
               <button
                 onClick={() => {
                   if (isPaid && unmarkPaid) {
-                    unmarkPaid(bill);
+                    unmarkPaid(sourceBill);
                   } else {
                     // Marcar como pago sem avançar automaticamente
-                    markPaid(bill, false);
+                    markPaid(sourceBill, false);
                   }
                 }}
                 className={cn(
@@ -283,12 +296,12 @@ const BillRow = memo(function BillRow({
               <span className="text-sm text-slate-600 truncate">
                 {(isPaid && bill.paidOn)
                   ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
-                  : formatDate(bill.dueDate, locale)}
+                  : formatDate(displayDueDate, locale)}
               </span>
               
               {/* Botão de editar */}
               <button
-                onClick={() => setEditing(bill)}
+                onClick={() => setEditing(sourceBill)}
                 className="text-slate-400 hover:text-slate-600 transition-colors duration-200 p-1"
                 title={t.edit}
               >
@@ -299,7 +312,7 @@ const BillRow = memo(function BillRow({
               
               {/* Botão de excluir */}
               <button
-                onClick={() => setConfirm({ open: true, id: bill.id || null })}
+                onClick={() => setConfirm({ open: true, id: sourceBill.id || null })}
                 className="text-red-400 hover:text-red-600 transition-colors duration-200 p-1"
                 title={t.delete}
               >
@@ -359,9 +372,9 @@ const BillRow = memo(function BillRow({
             <button
               onClick={() => {
                 if (isPaid && unmarkPaid) {
-                  unmarkPaid(bill);
+                  unmarkPaid(sourceBill);
                 } else {
-                  markPaid(bill, false);
+                  markPaid(sourceBill, false);
                 }
               }}
               className={cn(
@@ -385,12 +398,12 @@ const BillRow = memo(function BillRow({
                 ? formatDate(bill.paidOn, locale)
                 : overdue
                 ? `${overdueDays}d`
-                : formatDate(bill.dueDate, locale)}
+                : formatDate(displayDueDate, locale)}
             </span>
             
             {/* Botão de editar */}
             <button
-              onClick={() => setEditing(bill)}
+              onClick={() => setEditing(sourceBill)}
               className="zoom-500:text-slate-400 hover:zoom-500:text-slate-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.edit}
             >
@@ -401,7 +414,7 @@ const BillRow = memo(function BillRow({
             
             {/* Botão de excluir */}
             <button
-              onClick={() => setConfirm({ open: true, id: bill.id || null })}
+              onClick={() => setConfirm({ open: true, id: sourceBill.id || null })}
               className="zoom-500:text-red-400 hover:zoom-500:text-red-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.delete}
             >
@@ -420,9 +433,9 @@ const BillRow = memo(function BillRow({
             <button
               onClick={() => {
                 if (isPaid && unmarkPaid) {
-                  unmarkPaid(bill);
+                  unmarkPaid(sourceBill);
                 } else {
-                  markPaid(bill, false);
+                  markPaid(sourceBill, false);
                 }
               }}
               className={cn(
@@ -481,12 +494,12 @@ const BillRow = memo(function BillRow({
                 ? formatDate(bill.paidOn, locale)
                 : overdue
                 ? `${overdueDays}d`
-                : formatDate(bill.dueDate, locale)}
+                : formatDate(displayDueDate, locale)}
             </div>
             
             {/* Botão de editar */}
             <button
-              onClick={() => setEditing(bill)}
+              onClick={() => setEditing(sourceBill)}
               className="zoom-500:text-slate-400 hover:zoom-500:text-slate-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.edit}
             >
@@ -497,7 +510,7 @@ const BillRow = memo(function BillRow({
             
             {/* Botão de excluir */}
             <button
-              onClick={() => setConfirm({ open: true, id: bill.id || null })}
+              onClick={() => setConfirm({ open: true, id: sourceBill.id || null })}
               className="zoom-500:text-red-400 hover:zoom-500:text-red-600 zoom-500:transition-colors zoom-500:duration-200 zoom-500:p-0"
               title={t.delete}
             >
