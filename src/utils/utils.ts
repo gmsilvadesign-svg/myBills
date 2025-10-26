@@ -121,7 +121,11 @@ export function monthLabel(date: Date, locale = "pt-BR"): string {
 // Gera todas as ocorrências de uma conta recorrente em um mês específico.
 import * as Types from '@/types';
 
-export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthIndex: number): string[] {
+export function occurrencesForBillInMonth(
+  bill: Pick<Types.Bill, 'dueDate' | 'recurrence'>,
+  year: number,
+  monthIndex: number,
+): string[] {
   const occ: string[] = [];
   const base = parseDate(bill.dueDate);
   const requestedMonth = new Date(year, monthIndex, 1);
@@ -175,6 +179,19 @@ export function occurrencesForBillInMonth(bill: Types.Bill, year: number, monthI
   }
 
   return occ;
+}
+
+export function occurrencesForIncomeInMonth(
+  income: Pick<Types.Income, 'dueDate' | 'recurrence'>,
+  year: number,
+  monthIndex: number,
+): string[] {
+  if (!income.dueDate) return [];
+  return occurrencesForBillInMonth(
+    { dueDate: income.dueDate, recurrence: income.recurrence } as Pick<Types.Bill, 'dueDate' | 'recurrence'>,
+    year,
+    monthIndex,
+  );
 }
 
 // Calcula a próxima ocorrência de uma data com base na recorrência.

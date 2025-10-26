@@ -1,6 +1,11 @@
 import React from 'react';
 
-interface Slice { label: string; value: number; color: string; }
+interface Slice {
+  label: string;
+  value: number;
+  color: string;
+  children?: { label: string; value: number }[];
+}
 
 interface PieChartProps {
   data: Slice[];
@@ -17,6 +22,8 @@ interface PieChartProps {
   centerSubText?: string;
   centerTextColor?: string;
   centerBold?: boolean;
+  showTotal?: boolean;
+  totalLabel?: string;
   // If true, draw a green "check" in the center instead of text
   centerCheck?: boolean;
   // Hover behaviour overrides
@@ -29,18 +36,18 @@ interface PieChartProps {
 
 function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
   // High-contrast selections (alternating hues and light/dark)
-  const warm = [
-    '#dc2626', // red-600
-    '#ea580c', // orange-600
-    '#f59e0b', // amber-500
-    '#be185d', // rose-700
-    '#b45309', // amber-800
-    '#f43f5e', // rose-500
-    '#7c2d12', // orange-900 (brownish)
-    '#fb923c', // orange-300
-    '#d946ef', // fuchsia-500 (warm magenta)
-    '#a16207', // amber-700
-  ];
+  if (type === 'warm') {
+    const hues = { start: 8, end: 48 };
+    const light = { start: 48, end: 72 };
+    const colors: string[] = [];
+    for (let i = 0; i < n; i += 1) {
+      const t = n <= 1 ? 0 : i / (n - 1);
+      const hue = hues.start + (hues.end - hues.start) * t;
+      const lightness = light.start + (light.end - light.start) * t;
+      colors.push(`hsl(${hue}, 85%, ${lightness}%)`);
+    }
+    return colors;
+  }
   const cool = [
     '#2563eb', // blue-600
     '#0ea5e9', // sky-500
@@ -53,9 +60,8 @@ function palette(n: number, type: 'warm' | 'cool' = 'warm'): string[] {
     '#14b8a6', // teal-500
     '#3b82f6', // blue-500
   ];
-  const base = type === 'cool' ? cool : warm;
   const out: string[] = [];
-  for (let i = 0; i < n; i++) out.push(base[i % base.length]);
+  for (let i = 0; i < n; i++) out.push(cool[i % cool.length]);
   return out;
 }
 
@@ -72,6 +78,8 @@ export default function PieChart({
   centerSubText,
   centerTextColor = '#ffffff',
   centerBold = true,
+  showTotal = false,
+  totalLabel,
   centerCheck = false,
   hoverCenterText,
   hoverCenterSubText,
@@ -81,13 +89,22 @@ export default function PieChart({
 }: PieChartProps) {
   const [hovered, setHovered] = React.useState(false);
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
+  const [expandedIndex, setExpandedIndex] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setExpandedIndex(null);
+  }, [data]);
   const totalRaw = data.reduce((s, d) => s + (d.value || 0), 0);
   // Use `total` only for arc calculations (avoid divide-by-zero)
   const total = totalRaw > 0 ? totalRaw : 1;
   // Ensure distinct colors per item if not provided or if all equal
-  const allEqualColor = data.length > 1 && data.every(d => d.color === data[0].color);
-  const colors = palette(data.length, paletteType || 'warm');
-  const colored = data.map((d, i) => ({ ...d, color: (allEqualColor || !d.color || paletteType) ? colors[i] : d.color }));
+  const sortedData = [...data].sort((a, b) => (b.value || 0) - (a.value || 0));
+  const allEqualColor = sortedData.length > 1 && sortedData.every((d) => d.color === sortedData[0].color);
+  const colors = palette(sortedData.length, paletteType || 'warm');
+  const colored = sortedData.map((d, i) => ({
+    ...d,
+    color: (allEqualColor || !d.color || paletteType) ? colors[i] : d.color,
+  }));
   const radius = size / 2;
   const center = size / 2;
   const strokeWidth = 24; // donut thickness
@@ -168,7 +185,14 @@ export default function PieChart({
     return text.substring(0, Math.max(1, maxChars - 3)) + '...';
   };
   const fallbackK = `${(totalRaw / 1000).toFixed(1)}K`;
-  const baseMainText = centerText ?? fallbackK;
+  const formatCompact = (value: number) => {
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 1 : 2)}k`;
+    if (value >= 1) return value.toFixed(value >= 100 ? 0 : 1);
+    return value.toFixed(2);
+  };
+  const totalText = showTotal ? formatCompact(totalRaw) : undefined;
+  const baseMainText = centerText ?? totalText ?? fallbackK;
   
   // Keep text inside inner hole
   const innerRadius = radius - strokeWidth; // inner empty hole radius
@@ -185,15 +209,32 @@ export default function PieChart({
   const rawMainText = hoverActive ? (hoverCenterText as string) : baseMainText;
   const mainText = truncateText(rawMainText, availableWidth, fontSize);
   const originalMainText = rawMainText;
+  const effectiveCenterSubText = centerSubText ?? (showTotal ? totalLabel : undefined);
   const rawSubText = hoverActive
-    ? (hoverCenterSubText === undefined ? centerSubText : hoverCenterSubText || undefined)
-    : centerSubText;
+    ? (hoverCenterSubText === undefined ? effectiveCenterSubText : hoverCenterSubText || undefined)
+    : effectiveCenterSubText;
   const subText = rawSubText ? truncateText(rawSubText, availableWidth, fontSize * 0.55) : undefined;
-  const textColor = hoverActive && hoverCenterTextColor ? hoverCenterTextColor : centerTextColor;
+  const resolvedCenterColor =
+    showTotal && !centerText && centerTextColor === '#ffffff' ? '#0f172a' : centerTextColor;
+  const textColor = hoverActive && hoverCenterTextColor ? hoverCenterTextColor : resolvedCenterColor;
   const showSubText = typeof subText === 'string' && subText.trim().length > 0;
 
+  const breakdownSlice = React.useMemo(() => {
+    if (expandedIndex !== null && colored[expandedIndex]?.children?.length) {
+      return { index: expandedIndex, slice: colored[expandedIndex] };
+    }
+    if (hoverIndex !== null && colored[hoverIndex]?.children?.length) {
+      return { index: hoverIndex, slice: colored[hoverIndex] };
+    }
+    return null;
+  }, [expandedIndex, hoverIndex, colored]);
+
   return (
-    <div className="flex flex-col items-center gap-4" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
+    <div
+      className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+    >
       <svg width={size} height={size}>
         {circles}
         {centerCheck ? (
@@ -245,21 +286,70 @@ export default function PieChart({
         )}
       </svg>
       {showLegend && (
-        <div className="text-[8px] space-y-0.5 zoom-responsive-legend flex flex-col items-center">
-          {colored.map(d => {
-            const pct = (d.value / total) * 100;
-            const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
-            const pctStr = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct) + '%';
-            const displayValue = truncateValue(valueStr);
-            return (
-              <div key={d.label} className="flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded" style={{ background: d.color }} />
-                <span className="text-slate-600 truncate max-w-[120px]" title={d.label}>{d.label}</span>
-                <span className="text-slate-600 whitespace-nowrap" title={valueStr}>{displayValue}</span>
-                <span className="text-slate-400 whitespace-nowrap">{pctStr}</span>
-              </div>
-            );
-          })}
+        <div className="flex flex-col md:items-start items-center gap-3">
+          <div className="text-xs space-y-1 zoom-responsive-legend flex flex-col md:items-start items-center max-w-[240px]">
+            {colored.map((d, i) => {
+              const pct = total > 0 ? (d.value / total) * 100 : 0;
+              const valueStr = formatValue ? formatValue(d.value) : d.value.toLocaleString();
+              const pctStr = `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct)}%`;
+              const displayValue = truncateValue(valueStr);
+              const hasChildren = !!(d.children && d.children.length);
+              const isExpanded = breakdownSlice?.index === i;
+              return (
+                <button
+                  key={`${d.label}-${i}`}
+                  type="button"
+                  className={`w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1 transition-colors ${hasChildren ? 'hover:bg-slate-100 text-left cursor-pointer' : 'cursor-default'} ${isExpanded ? 'bg-slate-100' : ''}`}
+                  onClick={() => {
+                    if (!hasChildren) return;
+                    setExpandedIndex((prev) => (prev === i ? null : i));
+                  }}
+                  onMouseEnter={() => {
+                    if (hasChildren) setHoverIndex(i);
+                  }}
+                  onMouseLeave={() => {
+                    if (hasChildren && hoverIndex === i) setHoverIndex(null);
+                  }}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                    <span className="text-slate-600 truncate" title={d.label}>
+                      {d.label}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2 text-right">
+                    <span className="text-slate-600 whitespace-nowrap" title={valueStr}>
+                      {displayValue}
+                    </span>
+                    <span className="text-slate-400 whitespace-nowrap">{pctStr}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {breakdownSlice?.slice.children && (
+            <div className="text-xs bg-white/90 backdrop-blur rounded-xl px-3 py-2 shadow-sm border border-slate-200/70 space-y-1 w-full max-w-[240px]">
+              <div className="font-semibold text-slate-700">{breakdownSlice.slice.label}</div>
+              {breakdownSlice.slice.children.map((child, idx) => {
+                const valueStr = formatValue ? formatValue(child.value) : child.value.toLocaleString();
+                const pct = total > 0 ? (child.value / total) * 100 : 0;
+                const pctStr = `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(pct)}%`;
+                return (
+                  <div key={`${child.label}-${idx}`} className="flex items-center justify-between gap-2">
+                    <span className="text-slate-600 truncate" title={child.label}>
+                      {child.label}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-slate-600 whitespace-nowrap" title={valueStr}>
+                        {truncateValue(valueStr)}
+                      </span>
+                      <span className="text-slate-400 whitespace-nowrap">{pctStr}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       {!showLegend && hoverLegend && hovered && (

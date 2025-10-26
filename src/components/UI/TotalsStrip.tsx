@@ -1,7 +1,7 @@
 ﻿import { memo, useMemo } from 'react';
 import * as Types from '@/types';
 import { cn } from '@/styles/constants';
-import { parseDate, daysInMonth } from '@/utils/utils';
+import { parseDate, occurrencesForIncomeInMonth } from '@/utils/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface TotalsStripProps {
@@ -12,6 +12,7 @@ interface TotalsStripProps {
   valuesHidden?: boolean;
   hideCircles?: boolean;
   onFilterOverdue?: () => void;
+  referenceMonth?: Date;
 }
 
 const maskCurrency = (value: number, format: (v: number) => string, hidden: boolean) =>
@@ -25,11 +26,15 @@ const TotalsStrip = memo(function TotalsStrip({
   valuesHidden = false,
   hideCircles = false,
   onFilterOverdue,
+  referenceMonth,
 }: TotalsStripProps) {
   const { locale, currency } = useTranslation();
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const today = new Date();
+  const referenceDate = referenceMonth ? new Date(referenceMonth) : new Date();
+  referenceDate.setHours(0, 0, 0, 0);
+  referenceDate.setDate(1);
+  const year = referenceDate.getFullYear();
+  const month = referenceDate.getMonth();
 
   const formatter = useMemo(
     () => new Intl.NumberFormat(locale, { style: 'currency', currency }),
@@ -42,27 +47,13 @@ const TotalsStrip = memo(function TotalsStrip({
   };
 
   const incomeMonth = incomes.reduce((sum, income) => {
-    const base = parseDate(income.dueDate);
-    const amount = Number(income.amount || 0);
-    switch (income.recurrence) {
-      case 'MONTHLY':
-        return sum + amount;
-      case 'WEEKLY': {
-        const weekday = base.getDay();
-        let count = 0;
-        for (let day = 1; day <= daysInMonth(year, month); day += 1) {
-          if (new Date(year, month, day).getDay() === weekday) count += 1;
-        }
-        return sum + count * amount;
-      }
-      case 'DAILY':
-        return sum + daysInMonth(year, month) * amount;
-      case 'YEARLY':
-        return base.getMonth() === month ? sum + amount : sum;
-      case 'NONE':
-      default:
-        return inMonth(income.dueDate) ? sum + amount : sum;
-    }
+    const occurrences = occurrencesForIncomeInMonth(
+      { dueDate: income.dueDate, recurrence: income.recurrence },
+      year,
+      month,
+    );
+    if (!occurrences.length) return sum;
+    return sum + occurrences.length * Number(income.amount || 0);
   }, 0);
 
   const billsMetrics = bills.reduce(

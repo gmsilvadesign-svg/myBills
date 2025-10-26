@@ -46,7 +46,7 @@ import { usePreview } from "@/contexts/PreviewContext";
 
 // Utils
 import { addSampleBills } from "@/utils/addSampleData";
-import { occurrencesForBillInMonth, parseDate, ymd } from "@/utils/utils";
+import { occurrencesForBillInMonth, occurrencesForIncomeInMonth, parseDate, ymd } from "@/utils/utils";
 
 interface LegacyDashboardProps {
   activeBookId: string;
@@ -92,6 +92,52 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
   const [newBookName, setNewBookName] = useState("");
   const [createBookError, setCreateBookError] = useState("");
+
+  const statsYear = selectedMonth.getFullYear();
+  const statsMonthIndex = selectedMonth.getMonth();
+
+  const isSameMonth = (iso: string, year: number, monthIndex: number) => {
+    const date = parseDate(iso);
+    return date.getFullYear() === year && date.getMonth() === monthIndex;
+  };
+
+  const billOccurrencesInMonth = (bill: Types.Bill, year: number, monthIndex: number): string[] => {
+    const meta = (bill as any).__meta__ as { occurrenceDate?: string } | undefined;
+    if (meta?.occurrenceDate) {
+      if (isSameMonth(meta.occurrenceDate, year, monthIndex)) {
+        return [meta.occurrenceDate];
+      }
+      return [];
+    }
+    return occurrencesForBillInMonth(bill, year, monthIndex);
+  };
+
+  const incomeTotalForMonth = (year: number, monthIndex: number) =>
+    incomes.reduce((total, income) => {
+      const occurrences = occurrencesForIncomeInMonth(income, year, monthIndex);
+      if (!occurrences.length) return total;
+      return total + occurrences.length * Number(income.amount || 0);
+    }, 0);
+
+  const purchasesTotalForMonth = (year: number, monthIndex: number) =>
+    purchases.reduce((total, purchase) => {
+      return isSameMonth(purchase.date, year, monthIndex)
+        ? total + Number(purchase.amount || 0)
+        : total;
+    }, 0);
+
+  const billsTotalForMonth = (year: number, monthIndex: number) =>
+    bills.reduce((total, bill) => {
+      const amount = Number(bill.amount || 0);
+      const occurrences = billOccurrencesInMonth(bill, year, monthIndex);
+      if (occurrences.length > 0) {
+        return total + occurrences.length * amount;
+      }
+      if (bill.paid && bill.paidOn && isSameMonth(bill.paidOn, year, monthIndex)) {
+        return total + amount;
+      }
+      return total;
+    }, 0);
 
   const filteredBills = useFilteredBills(bills, filter, search, selectedMonth);
   const overdueBills = useFilteredBills(bills, 'overdue', '', selectedMonth);
@@ -198,7 +244,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
       return next;
     });
   };
-  const showMonthSelector = view === "list" || view === "purchases" || view === "incomes";
+  const showMonthSelector = view === "list" || view === "purchases" || view === "incomes" || view === "general";
 
   const countOccurrencesForSchedule = (dueDate: string, recurrence: Types.Bill['recurrence'], year: number, month: number) => {
     const stub: Types.Bill = {
@@ -234,7 +280,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
       setCreateBookError('');
     } catch (error) {
       console.error('[LegacyDashboard] createBook error', error);
-      setCreateBookError('Não foi possível criar o book. Tente novamente.');
+      setCreateBookError('Nao foi possivel criar o book. Tente novamente.');
     } finally {
       setIsCreatingBook(false);
     }
@@ -269,7 +315,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">Carregando+ö+ç-¬</div>
+      <div className="min-h-screen flex items-center justify-center text-slate-600">Carregando...</div>
     );
   }
 
@@ -614,146 +660,36 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
            <div className="general-summary mb-6 rounded-2xl border border-slate-200 p-4 bg-white">
              <h3 className="text-lg font-semibold mb-2">Balanco geral do mes</h3>
              {/* Calculo simples: soma despesas do mes - soma rendas do mes */}
-             {(() => {
-               const now = new Date();
-               const y = now.getFullYear();
-               const m = now.getMonth();
-               const inMonth = (d: string) => {
-                 const dd = new Date(d);
-                 return dd.getFullYear() === y && dd.getMonth() === m;
-               };
-               const monthExpenses = bills.filter(b => inMonth(b.dueDate) && !b.paid).reduce((s, b) => s + Number(b.amount || 0), 0);
-               // Considera recorrencia para rendas: inclui item se tiver ocorrencia no mes
-               const monthIncomes = incomes.filter(i => {
-                 try {
-                   const occ = occurrencesForBillInMonth({ dueDate: i.dueDate, recurrence: i.recurrence } as any, y, m);
-                   return occ.length > 0;
-                 } catch {
-                   return inMonth(i.dueDate);
-                 }
-               }).reduce((s, i) => s + Number(i.amount || 0), 0);
-              const monthPurchases = purchases.filter(p => inMonth(p.date)).reduce((s, p) => s + Number(p.amount || 0), 0);
-              const balance = monthIncomes - monthExpenses - monthPurchases;
-               return (
-                 <div className="hidden grid grid-cols-1 sm:grid-cols-4 gap-3">
-                   <div className="rounded-xl p-3 bg-red-50 text-red-700">
-                     <div className="text-xs">Despesas do mes</div>
-                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthExpenses)}</div>
-                   </div>
-                   <div className="rounded-xl p-3 bg-emerald-50 text-emerald-700">
-                     <div className="text-xs">Rendas do mes</div>
-                     <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthIncomes)}</div>
-                   </div>
-                   <div className="rounded-xl p-3 bg-slate-50 text-slate-700">
-                     <div className="text-xs">Balanco</div>
-                    <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(balance)}</div>
-                  </div>
-                  <div className="rounded-xl p-3 bg-amber-50 text-amber-700">
-                    <div className="text-xs">Compras do mes</div>
-                    <div className="text-lg font-semibold truncate" title={new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}>{new Intl.NumberFormat(locale, { style: 'currency', currency }).format(monthPurchases)}</div>
-                  </div>
-                 </div>
-               );
-            })()}
+            {/* Indicadores mensais removidos conforme solicitado */}
             <div className="space-y-6">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600">Per+¡odo:</span>
-                <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>6m</button>
-                <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>12m</button>
-                {/* Botao 1 ano removido */}
-              </div>
               {(() => {
-                const now = new Date();
-                const y = now.getFullYear();
-                const m = now.getMonth();
-                const totalDays = new Date(y, m + 1, 0).getDate();
-                const weeks = Math.max(1, Math.ceil(totalDays / 7));
-                const weekPrefix = prefs.language === 'en' ? 'Week' : 'Semana';
-                const weekLabels = Array.from({ length: weeks }, (_, idx) => `${weekPrefix} ${idx + 1}`);
-                const weekIncome = Array.from({ length: weeks }, () => 0);
-                const weekBills = Array.from({ length: weeks }, () => 0);
-                const weekPurchases = Array.from({ length: weeks }, () => 0);
-                const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear() === y && d.getMonth() === m; };
-                const indexFor = (date: Date) => Math.min(weeks - 1, Math.floor((date.getDate() - 1) / 7));
-                incomes.forEach((income) => {
-                  const occ = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
-                  const amount = Number(income.amount || 0);
-                  occ.forEach((iso) => {
-                    const day = parseDate(iso);
-                    weekIncome[indexFor(day)] += amount;
-                  });
-                });
-                bills.forEach((bill) => {
-                  const occ = occurrencesForBillInMonth(bill, y, m);
-                  const amount = Number(bill.amount || 0);
-                  occ.forEach((iso) => {
-                    const day = parseDate(iso);
-                    weekBills[indexFor(day)] += amount;
-                  });
-                });
-                purchases.forEach((purchase) => {
-                  if (!inMonth(purchase.date)) return;
-                  const day = parseDate(purchase.date);
-                  weekPurchases[indexFor(day)] += Number(purchase.amount || 0);
-                });
-                const weekExpenses = weekBills.map((value, idx) => value + weekPurchases[idx]);
-                const cumulativeSaldo: number[] = [];
-                let running = 0;
-                for (let idx = 0; idx < weeks; idx += 1) {
-                  running += weekIncome[idx] - weekExpenses[idx];
-                  cumulativeSaldo.push(running);
-                }
-                const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
-                return (
-                  <div className="rounded-xl border border-slate-200 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 text-center">Projecao renda x gastos (semanas)</h4>
-                    <div className="flex justify-center">
-                      <LineChart
-                        labels={weekLabels}
-                        height={240}
-                        series={[
-                          { name: 'Renda', color: '#10b981', values: weekIncome },
-                          { name: 'Contas', color: '#f97316', values: weekBills },
-                          { name: 'Compras', color: '#06b6d4', values: weekPurchases },
-                          { name: 'Saldo acumulado', color: '#2563eb', values: cumulativeSaldo },
-                        ]}
-                        formatY={formatCurrency}
-                      />
-                    </div>
-                  </div>
-                );
-              })()}
-              {(() => {
-                const now = new Date();
-                const months = (chartRange === '6m' ? 6 : 12);
+                const months = chartRange === '6m' ? 6 : 12;
                 const labels: string[] = [];
                 const exp: number[] = [];
                 const inc: number[] = [];
                 for (let i = months - 1; i >= 0; i--) {
-                  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                  const d = new Date(statsYear, statsMonthIndex - i, 1);
                   labels.push(d.toLocaleDateString(locale, { month: 'short' }));
                   const y = d.getFullYear();
                   const m = d.getMonth();
-                  const inMonth = (iso: string) => { const dd = parseDate(iso); return dd.getFullYear()===y && dd.getMonth()===m; };
-                                    const monthBills = bills.reduce((sum, bill) => {
-                    const occurrences = occurrencesForBillInMonth(bill, y, m);
-                    if (!occurrences.length) return sum;
-                    const billAmount = Number(bill.amount || 0);
-                    const monthlyTotal = occurrences.length * billAmount;
-                    return sum + monthlyTotal;
-                  }, 0);
-                  const monthPurch = purchases.filter(p => inMonth(p.date)).reduce((s,p)=> s + Number(p.amount||0), 0);
-                  const monthInc = incomes.reduce((sum, income) => {
-                  const occurrences = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
-                  return sum + occurrences.length * Number(income.amount || 0);
-                }, 0);
+                  const monthBills = billsTotalForMonth(y, m);
+                  const monthPurch = purchasesTotalForMonth(y, m);
+                  const monthInc = incomeTotalForMonth(y, m);
                   exp.push(monthBills + monthPurch);
                   inc.push(monthInc);
                 }
-                const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
+                const formatCurrency = (v: number) =>
+                  new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
                 return (
                   <div className="rounded-xl border border-slate-200 p-4">
-                    <h4 className="font-semibold mb-2 text-slate-700 text-center">Historico Financeiro</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-slate-700">Historico Financeiro</h4>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-slate-600">Periodo:</span>
+                        <button onClick={() => setChartRange('6m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='6m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>6m</button>
+                        <button onClick={() => setChartRange('12m')} className={`px-3 py-1 rounded-lg border text-xs ${chartRange==='12m' ? 'bg-slate-200' : 'bg-transparent'} border-slate-300`}>12m</button>
+                      </div>
+                    </div>
                     <div className="flex justify-center">
                       <LineChart
                         labels={labels}
@@ -770,37 +706,140 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 );
               })()}
               {(() => {
-                const now = new Date();
-                const y = now.getFullYear();
-                const m = now.getMonth();
+                const y = statsYear;
+                const m = statsMonthIndex;
+                const totalDays = new Date(y, m + 1, 0).getDate();
+                const weekPrefix = prefs.language === 'en' ? 'Week' : 'Semana';
+                const dayLabels = Array.from({ length: totalDays }, (_, idx) => String(idx + 1).padStart(2, '0'));
+                const secondaryWeekLabels = Array.from({ length: totalDays }, (_, idx) => {
+                  const weekIndex = Math.floor(idx / 7);
+                  return idx % 7 === 0 ? `${weekPrefix} ${weekIndex + 1}` : '';
+                });
+                const dayIncome = Array.from({ length: totalDays }, () => 0);
+                const dayBills = Array.from({ length: totalDays }, () => 0);
+                const dayPurchases = Array.from({ length: totalDays }, () => 0);
                 const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear() === y && d.getMonth() === m; };
-                const expenseMap = new Map<string, number>();
-                bills.forEach((bill) => {
-                  const occ = occurrencesForBillInMonth(bill, y, m);
-                  if (!occ.length) return;
-                  const total = occ.length * Number(bill.amount || 0);
-                  const label = bill.category || 'Contas diversas';
-                  expenseMap.set(label, (expenseMap.get(label) || 0) + total);
+                const indexFor = (date: Date) => date.getDate() - 1;
+
+                const processedBillKeys = new Set<string>();
+                const registerBillValue = (bill: Types.Bill, iso: string, amount: number) => {
+                  const key = `${bill.id ?? bill.title}-${iso}`;
+                  if (processedBillKeys.has(key)) return;
+                  processedBillKeys.add(key);
+                  const day = parseDate(iso);
+                  const idx = indexFor(day);
+                  if (idx >= 0 && idx < totalDays) dayBills[idx] += amount;
+                };
+
+                incomes.forEach((income) => {
+                  const occ = occurrencesForIncomeInMonth(income, y, m);
+                  const amount = Number(income.amount || 0);
+                  occ.forEach((iso) => {
+                    const day = parseDate(iso);
+                    const idx = indexFor(day);
+                    if (idx >= 0 && idx < totalDays) dayIncome[idx] += amount;
+                  });
+                });
+                listBillsData.forEach((bill) => {
+                  const amount = Number(bill.amount || 0);
+                  const occurrenceISO = getOccurrenceDate(bill);
+                  if (!occurrenceISO) return;
+                  if (!inMonth(occurrenceISO)) return;
+                  registerBillValue(bill, occurrenceISO, amount);
                 });
                 purchases.forEach((purchase) => {
                   if (!inMonth(purchase.date)) return;
-                  const label = purchase.category || 'Outros';
-                  const key = `Compra: ${label}`;
-                  expenseMap.set(key, (expenseMap.get(key) || 0) + Number(purchase.amount || 0));
+                  const day = parseDate(purchase.date);
+                  const idx = indexFor(day);
+                  if (idx >= 0 && idx < totalDays) dayPurchases[idx] += Number(purchase.amount || 0);
                 });
-                const expenseSlices = expenseMap.size
-                  ? Array.from(expenseMap, ([label, value]) => ({ label, value, color: '' }))
+                const dayExpenses = dayBills.map((value, idx) => value + dayPurchases[idx]);
+                const dayTotalExpenses = dayExpenses;
+                const cumulativeSaldo: number[] = [];
+                let running = 0;
+                for (let idx = 0; idx < totalDays; idx += 1) {
+                  running += dayIncome[idx] - dayExpenses[idx];
+                  cumulativeSaldo.push(running);
+                }
+                const formatCurrency = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
+                return (
+                  <div className="rounded-xl border border-slate-200 p-4">
+                    <h4 className="font-semibold mb-2 text-slate-700 text-center">Projecao renda x gastos (semanas)</h4>
+                    <div className="flex justify-center">
+                      <LineChart
+                        labels={dayLabels}
+                        secondaryLabels={secondaryWeekLabels}
+                        height={240}
+                        series={[
+                          { name: 'Renda', color: '#10b981', values: dayIncome },
+                          { name: 'Gastos', color: '#f97316', values: dayTotalExpenses },
+                          { name: 'Saldo acumulado', color: '#2563eb', values: cumulativeSaldo },
+                        ]}
+                        formatY={formatCurrency}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+              {(() => {
+                const y = statsYear;
+                const m = statsMonthIndex;
+                const inMonth = (iso: string) => { const d = parseDate(iso); return d.getFullYear() === y && d.getMonth() === m; };
+                const expenseItems: { label: string; value: number }[] = [];
+                listBillsData.forEach((bill) => {
+                  const occurrenceISO = getOccurrenceDate(bill);
+                  if (!occurrenceISO || !inMonth(occurrenceISO)) return;
+                  expenseItems.push({
+                    label: bill.title,
+                    value: Number(bill.amount || 0),
+                  });
+                });
+                purchases.forEach((purchase) => {
+                  if (!inMonth(purchase.date)) return;
+                  expenseItems.push({
+                    label: purchase.title,
+                    value: Number(purchase.amount || 0),
+                  });
+                });
+                const totalExpenses = expenseItems.reduce((sum, item) => sum + item.value, 0);
+                const sortedExpenses = expenseItems.sort((a, b) => (a.value || 0) - (b.value || 0));
+                const SMALL_THRESHOLD = 0.05;
+                const MAX_OTHERS_SHARE = 0.15;
+                const majorExpenses: { label: string; value: number; children?: { label: string; value: number }[] }[] = [];
+                const othersChildren: { label: string; value: number }[] = [];
+                let othersTotal = 0;
+                sortedExpenses.forEach((item) => {
+                  if (!totalExpenses) {
+                    majorExpenses.push(item);
+                    return;
+                  }
+                  const share = item.value / totalExpenses;
+                  if (share < SMALL_THRESHOLD && (othersTotal + item.value) / totalExpenses <= MAX_OTHERS_SHARE) {
+                    othersChildren.push(item);
+                    othersTotal += item.value;
+                  } else {
+                    majorExpenses.push(item);
+                  }
+                });
+                if (othersChildren.length) {
+                  majorExpenses.push({ label: 'Outros', value: othersTotal, children: othersChildren });
+                }
+                const expenseSlices = majorExpenses.length
+                  ? majorExpenses
+                      .sort((a, b) => (b.value || 0) - (a.value || 0))
+                      .map((item) => ({ ...item, color: '' }))
                   : [{ label: 'Sem gastos', value: 1, color: '#94a3b8' }];
 
                 const incomeMap = new Map<string, number>();
                 incomes.forEach((income) => {
-                  const occ = occurrencesForBillInMonth({ dueDate: income.dueDate, recurrence: income.recurrence } as any, y, m);
-                  if (!occ.length) return;
+                  const occurrences = occurrencesForIncomeInMonth(income, y, m);
+                  if (!occurrences.length) return;
                   const label = income.category || 'Outros';
-                  incomeMap.set(label, (incomeMap.get(label) || 0) + occ.length * Number(income.amount || 0));
+                  incomeMap.set(label, (incomeMap.get(label) || 0) + occurrences.length * Number(income.amount || 0));
                 });
                 const incomeSlices = incomeMap.size
                   ? Array.from(incomeMap, ([label, value]) => ({ label, value, color: '' }))
+                      .sort((a, b) => (b.value || 0) - (a.value || 0))
                   : [{ label: 'Sem renda', value: 1, color: '#94a3b8' }];
 
                 const formatter = (v: number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(v);
@@ -808,11 +847,25 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="rounded-xl border border-slate-200 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700">Distribuicao de gastos (mes)</h4>
-                      <PieChart data={expenseSlices} paletteType="warm" formatValue={formatter} showLegend={true} />
+                      <PieChart
+                        data={expenseSlices}
+                        paletteType="warm"
+                        formatValue={formatter}
+                        showLegend
+                        showTotal
+                        totalLabel="Total"
+                      />
                     </div>
                     <div className="rounded-xl border border-slate-200 p-4">
                       <h4 className="font-semibold mb-2 text-slate-700">Distribuicao de renda (mes)</h4>
-                      <PieChart data={incomeSlices} paletteType="cool" formatValue={formatter} showLegend={true} />
+                      <PieChart
+                        data={incomeSlices}
+                        paletteType="cool"
+                        formatValue={formatter}
+                        showLegend
+                        showTotal
+                        totalLabel="Total"
+                      />
                     </div>
                   </div>
                 );

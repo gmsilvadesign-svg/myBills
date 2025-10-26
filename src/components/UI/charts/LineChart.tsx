@@ -11,6 +11,7 @@ interface LineChartProps {
   series: Series[];
   height?: number;
   formatY?: (v: number) => string;
+  secondaryLabels?: string[];
 }
 
 const TICK_COUNT = 5;
@@ -36,25 +37,34 @@ const niceNumber = (value: number, round: boolean): number => {
 
 const buildRoundedTicks = (min: number, max: number, desiredCount: number) => {
   if (!(max > min)) {
-    const fallbackMax = min === 0 ? 1 : min * 2;
-    const step = (fallbackMax - min) / Math.max(1, desiredCount - 1);
+    const padding = Math.max(1, Math.abs(min) || 1);
+    const domainMin = min - padding;
+    const domainMax = max + padding;
+    const step = (domainMax - domainMin) / Math.max(1, desiredCount - 1);
     const ticks = Array.from({ length: desiredCount }, (_, i) =>
-      parseFloat((min + step * i).toFixed(6)),
+      parseFloat((domainMin + step * i).toFixed(6)),
     );
-    return { domainMax: fallbackMax, ticks };
+    return { domainMin, domainMax, ticks };
   }
   const range = max - min;
   const niceRange = niceNumber(range, false);
-  const step = niceNumber(niceRange / Math.max(1, desiredCount - 1), true);
+  const step = Math.max(1e-9, niceNumber(niceRange / Math.max(1, desiredCount - 1), true));
+  const niceMin = Math.floor(min / step) * step;
   const niceMax = Math.ceil(max / step) * step;
   const ticks: number[] = [];
-  for (let tick = min; tick <= niceMax + step * 0.5; tick += step) {
+  for (let tick = niceMin; tick <= niceMax + step * 0.5; tick += step) {
     ticks.push(parseFloat(tick.toFixed(6)));
   }
-  return { domainMax: niceMax, ticks };
+  return { domainMin: niceMin, domainMax: niceMax, ticks };
 };
 
-export default function LineChart({ labels, series, height = 220, formatY }: LineChartProps) {
+export default function LineChart({
+  labels,
+  series,
+  height = 220,
+  formatY,
+  secondaryLabels,
+}: LineChartProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(640);
@@ -87,23 +97,27 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
     });
   }, [series]);
 
-  const padding = { top: 36, right: 36, bottom: 44, left: 120 };
+  const hasSecondary = secondaryLabels?.some((label) => !!label?.trim());
+  const padding = { top: 36, right: 36, bottom: hasSecondary ? 60 : 44, left: 120 };
   const innerW = Math.max(0, width - padding.left - padding.right);
   const innerH = Math.max(0, height - padding.top - padding.bottom);
 
   const visibleSeries = series.filter((s) => enabled[s.name] !== false);
   const scaleSeries = visibleSeries.length ? visibleSeries : series;
 
-  const maxLineVal = Math.max(0, ...scaleSeries.flatMap((s) => s.values));
-  const domainMin = 0;
-  const { domainMax, ticks } = buildRoundedTicks(domainMin, maxLineVal, TICK_COUNT);
-  const effectiveMax = Math.max(domainMax, domainMin + 1);
+  const flatValues = scaleSeries.flatMap((s) => s.values).filter((v) => Number.isFinite(v));
+  const maxLineVal = flatValues.length ? Math.max(...flatValues) : 0;
+  const minLineVal = flatValues.length ? Math.min(...flatValues) : 0;
+  const candidateMin = Math.min(0, minLineVal);
+  const candidateMax = Math.max(0, maxLineVal);
+  const { domainMin, domainMax, ticks } = buildRoundedTicks(candidateMin, candidateMax, TICK_COUNT);
+  const effectiveRange = Math.max(1e-6, domainMax - domainMin);
 
   const stepX = labels.length <= 1 ? innerW : innerW / Math.max(1, labels.length - 1);
   const x = (index: number) => (labels.length <= 1 ? innerW / 2 : index * stepX);
   const y = (value: number) => {
-    const clamped = Math.min(effectiveMax, Math.max(domainMin, value));
-    const t = (clamped - domainMin) / Math.max(1e-6, effectiveMax - domainMin);
+    const clamped = Math.max(domainMin, Math.min(domainMax, value));
+    const t = (clamped - domainMin) / effectiveRange;
     return innerH - t * innerH;
   };
 
@@ -142,11 +156,13 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
       color: s.color,
       value: s.values[hoverIndex] ?? 0,
     }));
+    const baseLabel = labels[hoverIndex] ?? '';
+    const secondary = secondaryLabels?.[hoverIndex];
     return {
-      label: labels[hoverIndex] ?? '',
+      label: secondary ? `${baseLabel} (${secondary})` : baseLabel,
       items,
     };
-  }, [hoverIndex, labels, visibleSeries]);
+  }, [hoverIndex, labels, secondaryLabels, visibleSeries]);
 
   const tooltipStyle = useMemo(() => {
     if (!tooltipPos) return null;
@@ -202,7 +218,30 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
                 </text>
               </g>
             ))}
-            <line x1={0} x2={innerW} y1={y(domainMin)} y2={y(domainMin)} stroke="#94a3b8" opacity={0.3} />
+            {(() => {
+              const baselineY =
+                domainMin < 0 && domainMax > 0 ? y(0) : y(domainMin);
+              return (
+                <line
+                  x1={0}
+                  x2={innerW}
+                  y1={baselineY}
+                  y2={baselineY}
+                  stroke="#94a3b8"
+                  opacity={0.3}
+                />
+              );
+            })()}
+            {domainMin < 0 && (
+              <line
+                x1={0}
+                x2={innerW}
+                y1={y(domainMin)}
+                y2={y(domainMin)}
+                stroke="#94a3b8"
+                opacity={0.15}
+              />
+            )}
 
             <g clipPath={`url(#${clipPathId})`}>
               {hoverIndex !== null && (
@@ -250,11 +289,28 @@ export default function LineChart({ labels, series, height = 220, formatY }: Lin
               )}
             </g>
 
-            {labels.map((label, i) => (
-              <text key={`label-${i}`} x={x(i)} y={innerH + 22} textAnchor="middle" fontSize={11} fill="#64748b" className="zoom-500:hidden">
-                {label}
-              </text>
-            ))}
+            {labels.map((label, i) => {
+              const secondary = secondaryLabels?.[i];
+              const baseY = innerH + 22;
+              return (
+                <g key={`label-${i}`} className="zoom-500:hidden">
+                  <text x={x(i)} y={baseY} textAnchor="middle" fontSize={11} fill="#64748b">
+                    {label}
+                  </text>
+                  {secondary && secondary.trim() && (
+                    <text
+                      x={x(i)}
+                      y={baseY + 14}
+                      textAnchor="middle"
+                      fontSize={10}
+                      fill="#94a3b8"
+                    >
+                      {secondary}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
           </g>
         </svg>
         {tooltipData && tooltipStyle && (

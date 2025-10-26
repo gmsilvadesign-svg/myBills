@@ -1,6 +1,7 @@
 import Section from '@/components/layout/Section';
-import { fmtMoney } from '@/utils/utils';
+import PurchaseRow from '@/components/UI/purchases/PurchaseRow';
 import * as Types from '@/types';
+import { fmtMoneyTruncated } from '@/utils/utils';
 import { TranslationDictionary } from '@/constants/translation';
 
 interface PurchasesTabProps {
@@ -30,56 +31,49 @@ export default function PurchasesTab({
   const monthRef = referenceMonth ?? today;
   const y = monthRef.getFullYear();
   const m = monthRef.getMonth();
+
   const isToday = (iso: string) => {
     const d = new Date(iso);
-    return (
-      d.getFullYear() === today.getFullYear() &&
-      d.getMonth() === today.getMonth() &&
-      d.getDate() === today.getDate()
-    );
+    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
   };
+
   const inMonth = (iso: string) => {
     const d = new Date(iso);
     return d.getFullYear() === y && d.getMonth() === m;
   };
-  const filtered = purchases.filter((p) =>
-    filter === 'today' ? isToday(p.date) : filter === 'month' ? inMonth(p.date) : true,
+
+  const filtered = purchases.filter((purchase) =>
+    filter === 'today' ? isToday(purchase.date) : filter === 'month' ? inMonth(purchase.date) : true,
   );
-  const total = filtered.reduce((s, p) => s + Number(p.amount || 0), 0);
+
+  const total = filtered.reduce((sum, purchase) => sum + Number(purchase.amount || 0), 0);
+  const totalFormatted = hideValues ? '*****' : fmtMoneyTruncated(total, currency, locale);
 
   return (
     <Section title={t.purchases || 'Compras'}>
-      <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">{t.monthly_purchases || 'Compras do mês'}</h3>
-          <div className="text-sm font-semibold">{hideValues ? "••••••" : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-slate-600 text-center py-8">{t.no_purchases || 'Nenhuma compra registrada neste mês.'}</div>
-        )}
-        {filtered.length > 0 && (
-          <ul className="divide-y divide-slate-200">
-            {filtered.map(p => (
-              <li key={p.id} className="py-2 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{p.title}</div>
-                  <div className="text-xs text-slate-600">{p.date}{p.category ? ` • ${p.category}` : ''}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-semibold">{hideValues ? "••••••" : fmtMoney(p.amount, currency, locale)}</div>
-                  <button onClick={() => onEdit(p)} className="text-slate-600 hover:text-slate-800 text-sm">{t.edit || 'Editar'}</button>
-                  {p.id && (
-                    <button onClick={() => onRemove(p.id!)} className="text-red-600 hover:text-red-700 text-sm">{t.delete || 'Excluir'}</button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-900">{t.monthly_purchases || 'Compras do mês'}</h3>
+        <span className="text-sm font-semibold text-slate-900">{totalFormatted}</span>
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-slate-600 text-center py-8">{t.no_purchases || 'Nenhuma compra registrada neste mês.'}</div>
+      ) : (
+        <div>
+          {filtered.map((purchase) => (
+            <PurchaseRow
+              key={purchase.id ?? `${purchase.title}-${purchase.date}`}
+              purchase={purchase}
+              onEdit={onEdit}
+              onRemove={onRemove}
+              locale={locale}
+              currency={currency}
+              t={t}
+              hideValues={hideValues}
+            />
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
-
-
-

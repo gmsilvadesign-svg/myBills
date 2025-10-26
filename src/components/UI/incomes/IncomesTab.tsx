@@ -1,6 +1,7 @@
 import Section from '@/components/layout/Section';
+import IncomeRow from '@/components/UI/incomes/IncomeRow';
 import * as Types from '@/types';
-import { occurrencesForBillInMonth, ymd } from '@/utils/utils';
+import { occurrencesForIncomeInMonth, ymd, fmtMoneyTruncated } from '@/utils/utils';
 import { TranslationDictionary } from '@/constants/translation';
 
 interface IncomesTabProps {
@@ -30,69 +31,70 @@ export default function IncomesTab({
   const monthRef = referenceMonth ?? today;
   const y = monthRef.getFullYear();
   const m = monthRef.getMonth();
+
   const isToday = (iso: string) => {
     const d = new Date(iso);
     return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
   };
-  const hasOccurrenceThisMonth = (inc: Types.Income) => {
-    try {
-      return occurrencesForBillInMonth(
-        { dueDate: inc.dueDate, recurrence: inc.recurrence } as any,
-        y,
-        m,
-      ).length > 0;
-    } catch {
-      const d = new Date(inc.dueDate);
-      return d.getFullYear() === y && d.getMonth() === m;
+
+  const hasOccurrenceToday = (income: Types.Income) => {
+    const occurrences = occurrencesForIncomeInMonth(income, today.getFullYear(), today.getMonth());
+    if (occurrences.some((date) => date === ymd(today))) {
+      return true;
     }
-  };
-  const hasOccurrenceToday = (inc: Types.Income) => {
-    try {
-      return occurrencesForBillInMonth(
-        { dueDate: inc.dueDate, recurrence: inc.recurrence } as any,
-        today.getFullYear(),
-        today.getMonth(),
-      ).some((d) => d === ymd(today));
-    } catch {
-      return isToday(inc.dueDate);
-    }
+    return isToday(income.dueDate);
   };
 
-  const filtered = incomes.filter((i) =>
-    filter === 'today' ? hasOccurrenceToday(i) : filter === 'month' ? hasOccurrenceThisMonth(i) : true,
-  );
-  const total = filtered.reduce((s, i) => s + Number(i.amount || 0), 0);
+  const isSameMonth = (iso: string, year: number, monthIndex: number) => {
+    const date = new Date(iso);
+    return date.getFullYear() === year && date.getMonth() === monthIndex;
+  };
+
+  const entries = incomes.flatMap((income) => {
+    const occurrences = occurrencesForIncomeInMonth(income, y, m);
+    if (!occurrences.length) return [];
+    return occurrences.map((iso) => ({ income, occurrence: iso }));
+  });
+
+  const filteredEntries = entries.filter(({ income, occurrence }) => {
+    if (filter === 'today') {
+      return hasOccurrenceToday(income) && occurrence === ymd(today);
+    }
+    if (filter === 'month') {
+      return isSameMonth(occurrence, y, m);
+    }
+    return true;
+  });
+
+  const total = filteredEntries.reduce((sum, { income }) => sum + Number(income.amount || 0), 0);
+  const totalFormatted = hideValues ? '*****' : fmtMoneyTruncated(total, currency, locale);
 
   return (
-    <Section title={t.monthly_incomes || 'Rendas do mês'}>
-      <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">{t.monthly_incomes || 'Rendas do mês'}</h3>
-          <div className="text-sm font-semibold">{hideValues ? "••••••" : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(total)}</div>
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-slate-600 text-center py-8">{t.no_incomes || 'Nenhuma renda registrada neste mês.'}</div>
-        )}
-        {filtered.length > 0 && (
-          <ul className="divide-y divide-slate-200">
-            {filtered.map(i => (
-              <li key={i.id} className="py-2 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{i.title}</div>
-                  <div className="text-xs text-slate-600">{i.dueDate}{i.category ? ` • ${i.category}` : ''}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-semibold">{hideValues ? "••••••" : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(i.amount)}</div>
-                  <button onClick={() => onEdit(i)} className="text-slate-600 hover:text-slate-800 text-sm">{t.edit || 'Editar'}</button>
-                  {i.id && (
-                    <button onClick={() => onRemove(i.id!)} className="text-red-600 hover:text-red-700 text-sm">{t.delete || 'Excluir'}</button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+    <Section title={t.monthly_incomes || 'Rendas do mes'}>
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-900">{t.monthly_incomes || 'Rendas do mes'}</h3>
+        <span className="text-sm font-semibold text-slate-900">{totalFormatted}</span>
       </div>
+
+      {filteredEntries.length === 0 ? (
+        <div className="text-slate-600 text-center py-8">{t.no_incomes || 'Nenhuma renda registrada neste mes.'}</div>
+      ) : (
+        <div>
+          {filteredEntries.map(({ income, occurrence }, index) => (
+            <IncomeRow
+              key={`${income.id ?? income.title}-${occurrence}-${index}`}
+              income={income}
+              occurrenceDate={occurrence}
+              onEdit={onEdit}
+              onRemove={onRemove}
+              locale={locale}
+              currency={currency}
+              t={t}
+              hideValues={hideValues}
+            />
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
