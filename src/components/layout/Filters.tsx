@@ -46,17 +46,17 @@ const Filters = memo(function Filters({
         />
       </div>
 
-      {(view === 'list' || view === 'purchases' || view === 'incomes') && (
+      {view === 'list' && (
         <div className="max-w-xs">
           <Select
             label="Filtro"
             value={filter}
             onChange={(e) => setFilter(e.target.value as Types.FilterType)}
           >
-            <option value="today">{t.filter_today}</option>
-            <option value="month">{t.filter_month || t.totals_month}</option>
+            <option value="all">{t.filter_all || 'Todas'}</option>
+            <option value="paid">{t.filter_paid || t.paid_bills || 'Pagas'}</option>
             <option value="overdue">{t.filter_overdue}</option>
-            <option value="all">{t.filter_all}</option>
+            <option value="pending">{t.filter_pending || t.pending || 'Pendentes'}</option>
           </Select>
         </div>
       )}

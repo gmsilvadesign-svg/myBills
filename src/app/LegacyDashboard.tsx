@@ -66,7 +66,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
     useFirebaseBills(activeBookId);
   const { incomes, upsertIncome, removeIncome } = useFirebaseIncomes(activeBookId);
   const [view, setView] = useState<Types.ViewType>("list");
-  const [filter, setFilter] = useState<Types.FilterType>("month");
+  const [filter, setFilter] = useState<Types.FilterType>("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Partial<Types.Bill> | null>(null);
   const [confirm, setConfirm] = useState<Types.ConfirmState>({
@@ -147,7 +147,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   };
   const todayISOHeader = ymd(new Date());
   const listBillsData = useMemo(() => {
-    if (filter !== "month") return filteredBills;
+    if (filter !== "all") return filteredBills;
     const targetMonth = selectedMonth.getMonth();
     const targetYear = selectedMonth.getFullYear();
     const seen = new Set<string>();
@@ -220,7 +220,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   };
   const activeBook = useMemo(() => books.find((book) => book.id === activeBookId) ?? null, [books, activeBookId]);
   const hideValues = Boolean(prefs.hideValues);
-  const monthFilterActive = filter === "month";
+  const monthFilterActive = filter !== "overdue";
   const monthLabel = useMemo(() => {
     const formatter = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
     const label = formatter.format(selectedMonth);
@@ -495,7 +495,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 t={t}
                 locale={locale}
                 currency={currency}
-                filter={filter}
                 hideValues={prefs.hideValues}
                 referenceMonth={monthFilterActive ? selectedMonth : undefined}
               />
@@ -508,7 +507,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
                 t={t}
                 locale={locale}
                 currency={currency}
-                filter={filter}
                 hideValues={prefs.hideValues}
                 referenceMonth={monthFilterActive ? selectedMonth : undefined}
               />

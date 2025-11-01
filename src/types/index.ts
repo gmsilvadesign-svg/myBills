@@ -58,7 +58,7 @@ export interface Book {
   order: number;
 }
 
-export type FilterType = 'all' | 'today' | 'month' | 'overdue' | 'next7' | 'next30';
+export type FilterType = 'all' | 'paid' | 'overdue' | 'pending';
 export type ViewType = 'general' | 'list' | 'purchases' | 'incomes';
 
 export interface Totals {
