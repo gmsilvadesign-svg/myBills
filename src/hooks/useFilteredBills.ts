@@ -1,8 +1,11 @@
 import { useMemo } from 'react';
-import { occurrencesForBillInMonth, parseDate, isBefore, isSameDayISO, ymd } from '@/utils/utils';
+import { parseDate, ymd } from '@/utils/utils';
 import * as Types from '@/types';
-
-const MAX_OVERDUE_MONTHS = 60;
+import {
+  BillOccurrenceSummary,
+  collectBillOccurrencesForMonth,
+  collectBillOccurrencesUpToMonth,
+} from '@/utils/billOccurrences';
 
 type BillOccurrenceMeta = {
   displayKey: string;
@@ -11,10 +14,47 @@ type BillOccurrenceMeta = {
   occurrenceDate: string;
   originalDueDate: string;
   timeRelation: "past" | "current" | "future";
+  pendingOverdue?: boolean;
+  oldestPendingOccurrence?: string;
 };
 
 type BillWithMeta = Types.Bill & {
   __meta__?: BillOccurrenceMeta;
+};
+
+const buildBillWithMeta = (
+  summary: BillOccurrenceSummary,
+  now: Date,
+  options: { forcePaid?: boolean; virtualOverride?: boolean } = {},
+): BillWithMeta => {
+  const clone: BillWithMeta = { ...summary.bill };
+  clone.paid = options.forcePaid ?? summary.paid;
+  clone.paidOn = summary.paidOn;
+
+  const occurrenceDate = parseDate(summary.occurrence);
+  const occurrenceKey = occurrenceDate.getFullYear() * 12 + occurrenceDate.getMonth();
+  const currentKey = now.getFullYear() * 12 + now.getMonth();
+
+  clone.__meta__ = {
+    displayKey: `${summary.bill.id || summary.bill.title}-${summary.occurrence}`,
+    virtual:
+      options.virtualOverride !== undefined
+        ? options.virtualOverride
+        : summary.occurrence !== summary.bill.dueDate,
+    source: summary.bill,
+    originalDueDate: summary.bill.dueDate,
+    occurrenceDate: summary.occurrence,
+    timeRelation:
+      occurrenceKey < currentKey
+        ? "past"
+        : occurrenceKey > currentKey
+          ? "future"
+          : "current",
+    pendingOverdue: summary.pendingOverdue,
+    oldestPendingOccurrence: summary.oldestPendingOccurrence ?? undefined,
+  };
+
+  return clone;
 };
 
 export default function useFilteredBills(
@@ -33,7 +73,6 @@ export default function useFilteredBills(
     const targetMonth = monthRef.getMonth();
     const targetYear = monthRef.getFullYear();
     const now = new Date();
-    const currentKey = now.getFullYear() * 12 + now.getMonth();
 
     return bills
       .flatMap<BillWithMeta>((bill) => {
@@ -43,100 +82,27 @@ export default function useFilteredBills(
           .toLowerCase()
           .includes(search.toLowerCase());
         if (!matchesSearch) return [];
-
         if (filter === 'overdue') {
           const today = new Date();
-          const todayKey = today.getFullYear() * 12 + today.getMonth();
-          const paidOnDate = bill.paidOn ? parseDate(bill.paidOn) : null;
-          const paidOnTime = paidOnDate ? paidOnDate.getTime() : null;
-          const overdueOccurrences: BillWithMeta[] = [];
-
-          const pushOccurrence = (occurrenceISO: string, virtual: boolean) => {
-            const occurrenceDate = parseDate(occurrenceISO);
-            if (occurrenceDate >= today) return;
-            if (bill.paid && paidOnTime !== null && occurrenceDate.getTime() <= paidOnTime) return;
-            const clone: BillWithMeta = { ...bill, paid: false, paidOn: null };
-            clone.__meta__ = {
-              displayKey: `${bill.id || bill.title}-overdue-${occurrenceISO}`,
-              virtual,
-              source: bill,
-              occurrenceDate: occurrenceISO,
-              originalDueDate: bill.dueDate,
-              timeRelation: "past",
-            };
-            overdueOccurrences.push(clone);
-          };
-
-          if (!bill.recurrence || bill.recurrence === "NONE") {
-            if (!bill.paid && isBefore(bill.dueDate, todayISO)) {
-              pushOccurrence(bill.dueDate, false);
-            }
-            return overdueOccurrences;
-          }
-
-          const baseDate = parseDate(bill.dueDate);
-          const startKey = baseDate.getFullYear() * 12 + baseDate.getMonth();
-          const limitKey = Math.min(todayKey, startKey + MAX_OVERDUE_MONTHS);
-
-          for (let key = startKey; key <= limitKey; key += 1) {
-            const year = Math.floor(key / 12);
-            const month = key % 12;
-            const monthOccurrences = occurrencesForBillInMonth(bill, year, month);
-            monthOccurrences.forEach((occurrenceISO) => pushOccurrence(occurrenceISO, true));
-          }
-
-          return overdueOccurrences;
+          const summaries = collectBillOccurrencesUpToMonth(
+            bill,
+            today.getFullYear(),
+            today.getMonth(),
+            today,
+          );
+          return summaries
+            .filter((summary) => !summary.paid && parseDate(summary.occurrence) < today)
+            .map((summary) => buildBillWithMeta(summary, now, { forcePaid: false, virtualOverride: true }));
         }
 
-        const occurrences = occurrencesForBillInMonth(bill, targetYear, targetMonth);
-        if (!occurrences.length) return [];
-
-        return occurrences.map((occurrence) => {
-          const isSameAsBase = occurrence === bill.dueDate;
-          const occurrenceDate = parseDate(occurrence);
-          const occurrenceKey =
-            occurrenceDate.getFullYear() * 12 + occurrenceDate.getMonth();
-          const isPastOccurrence = occurrenceKey < currentKey;
-          const isFutureOccurrence = occurrenceKey > currentKey;
-          const paidOnDate = bill.paidOn ? parseDate(bill.paidOn) : null;
-          const paidOnTime = paidOnDate ? paidOnDate.getTime() : null;
-          const occurrenceTime = occurrenceDate.getTime();
-          const isOccurrencePaid = (() => {
-            if (isSameAsBase) {
-              return Boolean(bill.paid);
-            }
-            if (!paidOnDate) return false;
-            return paidOnTime! >= occurrenceTime;
-          })();
-          const resolvedPaidOn = (() => {
-            if (!isOccurrencePaid) return null;
-            if (bill.paidOn && isSameDayISO(bill.paidOn, occurrence)) {
-              return bill.paidOn;
-            }
-            if (bill.paidOn && paidOnDate && paidOnDate.getFullYear() === occurrenceDate.getFullYear() && paidOnDate.getMonth() === occurrenceDate.getMonth()) {
-              return bill.paidOn;
-            }
-            return occurrence;
-          })();
-          const clone: BillWithMeta = isSameAsBase ? { ...bill } : { ...bill };
-          if (!isSameAsBase) {
-            clone.paid = isOccurrencePaid;
-            clone.paidOn = resolvedPaidOn;
-          }
-          clone.__meta__ = {
-            displayKey: `${bill.id || bill.title}-${occurrence}`,
-            virtual: !isSameAsBase,
-            source: bill,
-            originalDueDate: bill.dueDate,
-            occurrenceDate: occurrence,
-            timeRelation: isPastOccurrence
-              ? "past"
-              : isFutureOccurrence
-                ? "future"
-                : "current",
-          };
-          return clone;
-        });
+        const summaries = collectBillOccurrencesForMonth(
+          bill,
+          targetYear,
+          targetMonth,
+          now,
+        );
+        if (!summaries.length) return [];
+        return summaries.map((summary) => buildBillWithMeta(summary, now));
       })
         .filter((bill) => {
           if (filter === 'paid') {
@@ -149,3 +115,5 @@ export default function useFilteredBills(
         });
   }, [bills, filter, search, todayISO, referenceKey]);
 }
+
+

@@ -15,6 +15,7 @@ export interface Bill {
   bookId?: string;
   createdAt?: any;
   updatedAt?: any;
+  clearedOccurrences?: Record<string, string>;
 }
 
 export interface Income {

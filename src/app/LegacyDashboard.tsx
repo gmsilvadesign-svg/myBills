@@ -47,6 +47,33 @@ import { usePreview } from "@/contexts/PreviewContext";
 // Utils
 import { addSampleBills } from "@/utils/addSampleData";
 import { occurrencesForBillInMonth, occurrencesForIncomeInMonth, parseDate, ymd } from "@/utils/utils";
+import { collectBillOccurrencesForMonth, collectBillOccurrencesUpToMonth } from "@/utils/billOccurrences";
+
+type IncomeOccurrenceSummary = {
+  income: Types.Income;
+  occurrence: string;
+  amount: number;
+};
+
+const normalizeISO = (iso: string) => ymd(parseDate(iso));
+
+const isSameMonthISO = (iso: string, year: number, monthIndex: number) => {
+  const date = parseDate(iso);
+  return date.getFullYear() === year && date.getMonth() === monthIndex;
+};
+
+const computeIncomeOccurrencesForMonth = (
+  income: Types.Income,
+  year: number,
+  monthIndex: number,
+): IncomeOccurrenceSummary[] => {
+  const occurrences = occurrencesForIncomeInMonth(income, year, monthIndex);
+  return occurrences.map((iso) => ({
+    income,
+    occurrence: normalizeISO(iso),
+    amount: Number(income.amount || 0),
+  }));
+};
 
 interface LegacyDashboardProps {
   activeBookId: string;
@@ -96,22 +123,6 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   const statsYear = selectedMonth.getFullYear();
   const statsMonthIndex = selectedMonth.getMonth();
 
-  const isSameMonth = (iso: string, year: number, monthIndex: number) => {
-    const date = parseDate(iso);
-    return date.getFullYear() === year && date.getMonth() === monthIndex;
-  };
-
-  const billOccurrencesInMonth = (bill: Types.Bill, year: number, monthIndex: number): string[] => {
-    const meta = (bill as any).__meta__ as { occurrenceDate?: string } | undefined;
-    if (meta?.occurrenceDate) {
-      if (isSameMonth(meta.occurrenceDate, year, monthIndex)) {
-        return [meta.occurrenceDate];
-      }
-      return [];
-    }
-    return occurrencesForBillInMonth(bill, year, monthIndex);
-  };
-
   const incomeTotalForMonth = (year: number, monthIndex: number) =>
     incomes.reduce((total, income) => {
       const occurrences = occurrencesForIncomeInMonth(income, year, monthIndex);
@@ -121,31 +132,89 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
   const purchasesTotalForMonth = (year: number, monthIndex: number) =>
     purchases.reduce((total, purchase) => {
-      return isSameMonth(purchase.date, year, monthIndex)
+      return isSameMonthISO(purchase.date, year, monthIndex)
         ? total + Number(purchase.amount || 0)
         : total;
     }, 0);
 
   const billsTotalForMonth = (year: number, monthIndex: number) =>
     bills.reduce((total, bill) => {
-      const amount = Number(bill.amount || 0);
-      const occurrences = billOccurrencesInMonth(bill, year, monthIndex);
-      if (occurrences.length > 0) {
-        return total + occurrences.length * amount;
-      }
-      if (bill.paid && bill.paidOn && isSameMonth(bill.paidOn, year, monthIndex)) {
-        return total + amount;
-      }
-      return total;
+      const occurrences = collectBillOccurrencesForMonth(bill, year, monthIndex);
+      if (!occurrences.length) return total;
+      return total + occurrences.reduce((sum, occ) => sum + occ.amount, 0);
     }, 0);
 
   const filteredBills = useFilteredBills(bills, filter, search, selectedMonth);
-  const overdueBills = useFilteredBills(bills, 'overdue', '', selectedMonth);
   const getOccurrenceDate = (bill: Types.Bill) => {
     const meta = (bill as any).__meta__ as { occurrenceDate?: string } | undefined;
     return meta?.occurrenceDate ?? bill.dueDate;
   };
   const todayISOHeader = ymd(new Date());
+
+  const billOccurrencesUpToSelectedMonth = useMemo(() => {
+    const targetYear = selectedMonth.getFullYear();
+    const targetMonth = selectedMonth.getMonth();
+    return bills.flatMap((bill) =>
+      collectBillOccurrencesUpToMonth(bill, targetYear, targetMonth),
+    );
+  }, [bills, selectedMonth]);
+
+  const billOccurrencesUpToToday = useMemo(() => {
+    const today = new Date();
+    return bills.flatMap((bill) =>
+      collectBillOccurrencesUpToMonth(bill, today.getFullYear(), today.getMonth(), today),
+    );
+  }, [bills]);
+
+  const monthlyIncomeOccurrences = useMemo(() => {
+    const targetYear = selectedMonth.getFullYear();
+    const targetMonth = selectedMonth.getMonth();
+    return incomes.flatMap((income) =>
+      computeIncomeOccurrencesForMonth(income, targetYear, targetMonth),
+    );
+  }, [incomes, selectedMonth]);
+
+  const monthlyPurchases = useMemo(() => {
+    const targetYear = selectedMonth.getFullYear();
+    const targetMonth = selectedMonth.getMonth();
+    return purchases.filter((purchase) => isSameMonthISO(purchase.date, targetYear, targetMonth));
+  }, [purchases, selectedMonth]);
+
+  const totalsForSelectedMonth = useMemo(() => {
+    const todayRef = parseDate(todayISOHeader);
+    const billMetrics = billOccurrencesUpToSelectedMonth.reduce(
+      (acc, occurrence) => {
+        acc.total += occurrence.amount;
+        if (occurrence.paid) {
+          acc.paid += occurrence.amount;
+          return acc;
+        }
+        const occurrenceDate = parseDate(occurrence.occurrence);
+        if (occurrenceDate < todayRef) {
+          acc.overdue += occurrence.amount;
+        } else {
+          acc.open += occurrence.amount;
+        }
+        return acc;
+      },
+      { open: 0, overdue: 0, paid: 0, total: 0 },
+    );
+
+    const incomeTotal = monthlyIncomeOccurrences.reduce((sum, entry) => sum + entry.amount, 0);
+    const purchasesTotal = monthlyPurchases.reduce((sum, purchase) => sum + Number(purchase.amount || 0), 0);
+
+    return {
+      bills: billMetrics,
+      income: incomeTotal,
+      purchases: purchasesTotal,
+    };
+  }, [
+    billOccurrencesUpToSelectedMonth,
+    monthlyIncomeOccurrences,
+    monthlyPurchases,
+    todayISOHeader,
+  ]);
+
   const listBillsData = useMemo(() => {
     if (filter !== "all") return filteredBills;
     const targetMonth = selectedMonth.getMonth();
@@ -182,21 +251,13 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
   }, [filteredBills, filter, selectedMonth, bills]);
   const overdueCount = useMemo(() => {
     const todayRef = parseDate(todayISOHeader);
-    const seen = new Set<string>();
-    const keyFor = (bill: Types.Bill) => {
-      const meta = (bill as any).__meta__ as { displayKey?: string } | undefined;
-      if (meta?.displayKey) return meta.displayKey;
-      if (bill.id) return `${bill.id}-${bill.dueDate}`;
-      return `${bill.title}-${bill.dueDate}`;
-    };
-    overdueBills.forEach((bill) => {
-      const effectiveDue = parseDate(getOccurrenceDate(bill));
-      if (!bill.paid && effectiveDue < todayRef) {
-        seen.add(keyFor(bill));
-      }
-    });
-    return seen.size;
-  }, [overdueBills, todayISOHeader]);
+    return billOccurrencesUpToToday.reduce((count, occurrence) => {
+      if (occurrence.paid) return count;
+      const occurrenceDate = parseDate(occurrence.occurrence);
+      if (occurrenceDate >= todayRef) return count;
+      return count + 1;
+    }, 0);
+  }, [billOccurrencesUpToToday, todayISOHeader]);
   const handleViewOverdue = useCallback(() => {
     setView("list");
     setFilter("overdue");
@@ -406,14 +467,11 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 
         <section className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
           <TotalsStrip
-            bills={bills}
-            incomes={incomes}
-            purchases={purchases}
+            totals={totalsForSelectedMonth}
             onFilterOverdue={() => {
               setFilter('overdue');
               setView('list');
             }}
-            filter={filter}
             valuesHidden={hideValues}
           />
           {hideValues && (
@@ -642,6 +700,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           t={t}
           locale={locale}
           currency={currency}
+          referenceMonth={selectedMonth}
         />
 
         <IncomesModal
@@ -653,6 +712,7 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
           t={t}
           locale={locale}
           currency={currency}
+          referenceMonth={selectedMonth}
         />
          {view === 'general' && (
            <div className="general-summary mb-6 rounded-2xl border border-slate-200 p-4 bg-white">
@@ -881,6 +941,14 @@ function LegacyDashboard({ activeBookId, books, onSelectBook, onCreateBook, onDe
 }
 
 export default LegacyDashboard;
+
+
+
+
+
+
+
+
 
 
 

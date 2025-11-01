@@ -29,6 +29,8 @@ type BillOccurrenceMeta = {
   originalDueDate: string;
   displayKey: string;
   source: Types.Bill;
+  pendingOverdue?: boolean;
+  oldestPendingOccurrence?: string;
 };
 
 interface BillRowProps {
@@ -61,8 +63,30 @@ const BillRow = memo(function BillRow({
   const displayDueDate = occurrenceMeta?.occurrenceDate ?? bill.dueDate
   const sourceBill = occurrenceMeta?.source ?? bill
   const isPaid = !!bill.paid || !!paidInCurrentMonth
-  const overdue = !isPaid && isBefore(displayDueDate, ymd(new Date()))
-  const overdueDays = overdue ? daysDifference(displayDueDate, ymd(new Date())) : 0
+  const todayISO = ymd(new Date())
+  const isOccurrencePastDue = isBefore(displayDueDate, todayISO)
+  const showOverdueStatus = !isPaid && isOccurrencePastDue
+  const overdueDays = showOverdueStatus ? Math.max(0, daysDifference(displayDueDate, todayISO)) : 0
+
+  const statusDetailText = (() => {
+    if (isPaid && bill.paidOn) {
+      return `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
+    }
+    if (showOverdueStatus) {
+      return (t.days_overdue as (days: number) => string)(overdueDays)
+    }
+    return `${t.due_on} ${formatDate(displayDueDate, locale)}`
+  })()
+
+  const shortStatusText = (() => {
+    if (isPaid && bill.paidOn) {
+      return formatDate(bill.paidOn, locale)
+    }
+    if (showOverdueStatus) {
+      return `${overdueDays}d`
+    }
+    return formatDate(displayDueDate, locale)
+  })()
 
   const formatValueWithTruncation = (amount: number | string) => {
     if (hideValues) {
@@ -83,12 +107,12 @@ const BillRow = memo(function BillRow({
     recurrence === "NONE" ? null : recurrenceLabels[recurrence] ?? recurrence.toLowerCase()
 
   const renderStatus = () => {
-    if (!isPaid && overdue) {
+    if (!isPaid && showOverdueStatus) {
       return (
         <button
           onClick={(e) => {
             e.preventDefault()
-            markPaid(sourceBill, false)
+            markPaid(bill, false)
           }}
           className="px-3 py-4 rounded-2xl bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-red-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
           aria-label={`${t.mark_paid}: ${bill.title}`}
@@ -98,12 +122,12 @@ const BillRow = memo(function BillRow({
         </button>
       )
     }
-    if (!isPaid && !overdue) {
+    if (!isPaid && !showOverdueStatus) {
       return (
         <button
           onClick={(e) => {
             e.preventDefault()
-            markPaid(sourceBill, false)
+            markPaid(bill, false)
           }}
           className="px-3 py-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-amber-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
           aria-label={`${t.mark_paid}: ${bill.title}`}
@@ -118,7 +142,7 @@ const BillRow = memo(function BillRow({
         onClick={(e) => {
           if (!unmarkPaid) return
           e.preventDefault()
-          unmarkPaid(sourceBill)
+          unmarkPaid(bill)
         }}
         className="px-3 py-4 rounded-2xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 text-xs font-medium cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 shadow-sm hover:shadow-md border border-green-200 min-w-[110px] text-center zoom-500:text-[4px] zoom-500:px-1 zoom-500:py-1 zoom-500:min-w-[40px]"
         aria-label={`\: ${bill.title}`}
@@ -205,11 +229,7 @@ const BillRow = memo(function BillRow({
         <div className="ml-auto flex items-center gap-2 justify-end text-right">
           {/* 6) Tempo / Data */}
           <div className="text-sm text-slate-600 whitespace-nowrap">
-            {(isPaid && bill.paidOn)
-              ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
-              : overdue
-              ? (t.days_overdue as (days: number) => string)(overdueDays)
-              : `${t.due_on} ${formatDate(displayDueDate, locale)}`}
+            {statusDetailText}
           </div>
           {/* 7,8) Ações */}
           {renderActionButtons()}
@@ -271,32 +291,30 @@ const BillRow = memo(function BillRow({
               <button
                 onClick={() => {
                   if (isPaid && unmarkPaid) {
-                    unmarkPaid(sourceBill);
+                    unmarkPaid(bill);
                   } else {
                     // Marcar como pago sem avançar automaticamente
-                    markPaid(sourceBill, false);
+                    markPaid(bill, false);
                   }
                 }}
                 className={cn(
                   "px-4 py-3 rounded-full text-base font-medium transition-colors duration-200 min-w-[100px] text-center",
                   isPaid
                     ? "bg-green-100 text-green-800 hover:bg-green-200"
-                    : overdue
+                    : showOverdueStatus
                     ? "bg-red-100 text-red-800 hover:bg-red-200"
                     : "bg-amber-100 text-amber-800 hover:bg-amber-200"
                 )}
                 title={isPaid ? t.mark_unpaid : t.mark_paid}
               >
-                {isPaid ? t.paid : overdue ? t.overdue : t.pending}
+                {isPaid ? t.paid : showOverdueStatus ? t.overdue : t.pending}
               </button>
             </div>
 
             <div className="flex items-center gap-3 flex-shrink-0">
               {/* Data */}
               <span className="text-sm text-slate-600 truncate">
-                {(isPaid && bill.paidOn)
-                  ? `${t.paid_on} ${formatDate(bill.paidOn, locale)}`
-                  : formatDate(displayDueDate, locale)}
+                {statusDetailText}
               </span>
               
               {/* Botão de editar */}
@@ -372,34 +390,30 @@ const BillRow = memo(function BillRow({
             <button
               onClick={() => {
                 if (isPaid && unmarkPaid) {
-                  unmarkPaid(sourceBill);
+                  unmarkPaid(bill);
                 } else {
-                  markPaid(sourceBill, false);
+                  markPaid(bill, false);
                 }
               }}
               className={cn(
                 "zoom-500:px-1 zoom-500:py-1 zoom-500:rounded-full zoom-500:text-[8px] zoom-500:font-medium zoom-500:transition-colors zoom-500:duration-200 zoom-500:min-w-[40px] zoom-500:text-center",
                 isPaid
                   ? "zoom-500:bg-green-100 zoom-500:text-green-800 hover:zoom-500:bg-green-200"
-                  : overdue
+                  : showOverdueStatus
                   ? "zoom-500:bg-red-100 zoom-500:text-red-800 hover:zoom-500:bg-red-200"
                   : "zoom-500:bg-amber-100 zoom-500:text-amber-800 hover:zoom-500:bg-amber-200"
               )}
               title={isPaid ? t.mark_unpaid : t.mark_paid}
             >
-              {isPaid ? t.paid : overdue ? t.overdue : t.pending}
+              {isPaid ? t.paid : showOverdueStatus ? t.overdue : t.pending}
             </button>
           </div>
 
           <div className="zoom-500:flex zoom-500:items-center zoom-500:gap-1 zoom-500:flex-shrink-0">
             {/* Data */}
-            <span className="zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:truncate">
-              {(isPaid && bill.paidOn)
-                ? formatDate(bill.paidOn, locale)
-                : overdue
-                ? `${overdueDays}d`
-                : formatDate(displayDueDate, locale)}
-            </span>
+              <span className="zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:truncate">
+                {shortStatusText}
+              </span>
             
             {/* Botão de editar */}
             <button
@@ -433,22 +447,22 @@ const BillRow = memo(function BillRow({
             <button
               onClick={() => {
                 if (isPaid && unmarkPaid) {
-                  unmarkPaid(sourceBill);
+                  unmarkPaid(bill);
                 } else {
-                  markPaid(sourceBill, false);
+                  markPaid(bill, false);
                 }
               }}
               className={cn(
                 "zoom-500:px-1 zoom-500:py-1 zoom-500:rounded-full zoom-500:text-[8px] zoom-500:font-medium zoom-500:transition-colors zoom-500:duration-200 zoom-500:min-w-[40px] zoom-500:text-center",
                 isPaid
                   ? "zoom-500:bg-green-100 zoom-500:text-green-800 hover:zoom-500:bg-green-200"
-                  : overdue
+                  : showOverdueStatus
                   ? "zoom-500:bg-red-100 zoom-500:text-red-800 hover:zoom-500:bg-red-200"
                   : "zoom-500:bg-amber-100 zoom-500:text-amber-800 hover:zoom-500:bg-amber-200"
               )}
               title={isPaid ? t.mark_unpaid : t.mark_paid}
             >
-              {isPaid ? t.paid : overdue ? t.overdue : t.pending}
+              {isPaid ? t.paid : showOverdueStatus ? t.overdue : t.pending}
             </button>
           </div>
 
@@ -490,11 +504,7 @@ const BillRow = memo(function BillRow({
           <div className="zoom-500:ml-auto zoom-500:flex zoom-500:items-center zoom-500:gap-1 zoom-500:justify-end zoom-500:text-right">
             {/* Data */}
             <div className="zoom-500:text-[8px] zoom-500:text-slate-600 zoom-500:whitespace-nowrap">
-              {(isPaid && bill.paidOn)
-                ? formatDate(bill.paidOn, locale)
-                : overdue
-                ? `${overdueDays}d`
-                : formatDate(displayDueDate, locale)}
+              {shortStatusText}
             </div>
             
             {/* Botão de editar */}
@@ -525,6 +535,12 @@ const BillRow = memo(function BillRow({
 })
 
 export default BillRow
+
+
+
+
+
+
 
 
 

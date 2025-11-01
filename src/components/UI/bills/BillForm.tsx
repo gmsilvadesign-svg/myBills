@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // Utils
-import { fmtMoney, ymd } from '@/utils/utils';
+import { fmtMoney, ymd, parseDate } from '@/utils/utils';
 
 // Components
 import Input from '@/components/UI/Input';
@@ -23,6 +23,13 @@ interface BillFormProps {
 }
 
 export default function BillForm({ initial, onSave, onCancel, t, locale, currency }: BillFormProps) {
+  const startOfCurrentMonth = (() => {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  })();
+  const minDueDate = ymd(startOfCurrentMonth);
   const [title, setTitle] = useState(initial?.title || "");
   const [amount, setAmount] = useState(initial?.amount ?? "");
   const [dueDate, setDueDate] = useState(initial?.dueDate || ymd(new Date()));
@@ -97,6 +104,12 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
     if (!title.trim()) {
       alert("Informe um título");
       titleInputRef.current?.focus();
+      return;
+    }
+    const due = parseDate(dueDate);
+    if (due < startOfCurrentMonth) {
+      alert(t.error_backdated_bill || "Cadastre contas a partir do mês atual.");
+      setDueDate(minDueDate);
       return;
     }
     if (!amount || Number(amount) <= 0) {
@@ -206,7 +219,7 @@ export default function BillForm({ initial, onSave, onCancel, t, locale, currenc
 
           {/* Segunda linha: Vencimento e Recorrência */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Input label="Vencimento" type="date" value={dueDate} onChange={handleDueDateChange} />
+            <Input label="Vencimento" type="date" value={dueDate} onChange={handleDueDateChange} min={initial?.id ? undefined : minDueDate} />
 
             <Select label="Recorrência" value={recurrence} onChange={handleRecurrenceChange}>
               <option value="NONE">Sem recorrência</option>

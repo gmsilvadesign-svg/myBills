@@ -45,10 +45,14 @@ export function subscribeToBills({
   const unsubscribe = onSnapshot(
     billsRef,
     (snapshot) => {
-      const data: Types.Bill[] = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<Types.Bill, "id">),
-      }));
+      const data: Types.Bill[] = snapshot.docs.map((docSnap) => {
+        const raw = docSnap.data() as Omit<Types.Bill, "id">;
+        return {
+          id: docSnap.id,
+          ...raw,
+          clearedOccurrences: raw.clearedOccurrences ?? {},
+        };
+      });
       onData(data);
     },
     (error) => {
@@ -88,6 +92,7 @@ export async function addBill(userId: string, bill: BillBase) {
       userId,
       paid: bill.paid ?? false,
       paidOn: bill.paidOn ?? null,
+      clearedOccurrences: {},
     });
     return;
   }
@@ -104,6 +109,7 @@ export async function addBill(userId: string, bill: BillBase) {
     tags: bill.tags || [],
     userId,
     bookId: bill.bookId,
+    clearedOccurrences: {},
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -127,6 +133,9 @@ export async function updateBill(bill: Types.Bill) {
     ...(bill.notes ? { notes: bill.notes } : { notes: null }),
     ...(bill.tags ? { tags: bill.tags } : {}),
     ...(bill.bookId ? { bookId: bill.bookId } : {}),
+    ...(bill.clearedOccurrences !== undefined
+      ? { clearedOccurrences: bill.clearedOccurrences }
+      : {}),
     updatedAt: serverTimestamp(),
   });
 }

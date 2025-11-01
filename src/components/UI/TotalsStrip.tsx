@@ -1,101 +1,53 @@
-﻿import { memo, useMemo } from 'react';
-import * as Types from '@/types';
-import { cn } from '@/styles/constants';
-import { parseDate, occurrencesForIncomeInMonth } from '@/utils/utils';
-import { useTranslation } from '@/hooks/useTranslation';
+import { memo, useMemo } from "react";
+
+import { useTranslation } from "@/hooks/useTranslation";
+import { cn } from "@/styles/constants";
+
+interface TotalsStripTotals {
+  bills: {
+    open: number;
+    overdue: number;
+    paid: number;
+    total: number;
+  };
+  income: number;
+  purchases: number;
+}
 
 interface TotalsStripProps {
-  bills: Types.Bill[];
-  incomes: Types.Income[];
-  purchases: Types.Purchase[];
-  filter?: Types.FilterType;
+  totals: TotalsStripTotals;
   valuesHidden?: boolean;
   hideCircles?: boolean;
   onFilterOverdue?: () => void;
-  referenceMonth?: Date;
 }
 
 const maskCurrency = (value: number, format: (v: number) => string, hidden: boolean) =>
-  hidden ? '*****' : format(value);
+  hidden ? "*****" : format(value);
 
 const TotalsStrip = memo(function TotalsStrip({
-  bills,
-  incomes,
-  purchases,
-  filter = 'month',
+  totals,
   valuesHidden = false,
   hideCircles = false,
   onFilterOverdue,
-  referenceMonth,
 }: TotalsStripProps) {
   const { locale, currency } = useTranslation();
-  const today = new Date();
-  const referenceDate = referenceMonth ? new Date(referenceMonth) : new Date();
-  referenceDate.setHours(0, 0, 0, 0);
-  referenceDate.setDate(1);
-  const year = referenceDate.getFullYear();
-  const month = referenceDate.getMonth();
 
   const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: 'currency', currency }),
+    () => new Intl.NumberFormat(locale, { style: "currency", currency }),
     [locale, currency],
   );
 
-  const inMonth = (iso: string) => {
-    const date = parseDate(iso);
-    return date.getFullYear() === year && date.getMonth() === month;
-  };
-
-  const incomeMonth = incomes.reduce((sum, income) => {
-    const occurrences = occurrencesForIncomeInMonth(
-      { dueDate: income.dueDate, recurrence: income.recurrence },
-      year,
-      month,
-    );
-    if (!occurrences.length) return sum;
-    return sum + occurrences.length * Number(income.amount || 0);
-  }, 0);
-
-  const billsMetrics = bills.reduce(
-    (acc, bill) => {
-      const amount = Number(bill.amount || 0);
-      const isOverdue = !bill.paid && parseDate(bill.dueDate) < now;
-      if (bill.paid && bill.paidOn && inMonth(bill.paidOn)) {
-        acc.paid += amount;
-        return acc;
-      }
-      if (!bill.paid && inMonth(bill.dueDate)) {
-        if (isOverdue) acc.overdue += amount;
-        else acc.open += amount;
-      }
-      return acc;
-    },
-    { open: 0, overdue: 0, paid: 0 },
-  );
-
-  const purchasesTotal = purchases
-    .filter((purchase) => {
-      if (filter === 'today') {
-        const date = parseDate(purchase.date);
-        return (
-          date.getFullYear() === now.getFullYear() &&
-          date.getMonth() === now.getMonth() &&
-          date.getDate() === now.getDate()
-        );
-      }
-      if (filter === 'month') return inMonth(purchase.date);
-      if (filter === 'all') return true;
-      return inMonth(purchase.date);
-    })
-    .reduce((sum, purchase) => sum + Number(purchase.amount || 0), 0);
+  const incomeMonth = totals.income;
+  const billsMetrics = totals.bills;
+  const purchasesTotal = totals.purchases;
 
   const totalBills = billsMetrics.open + billsMetrics.overdue + billsMetrics.paid;
   const economy = incomeMonth - totalBills - purchasesTotal;
   const economyClass = valuesHidden
-    ? 'text-slate-900'
+    ? "text-slate-900"
     : economy >= 0
-      ? 'text-emerald-600'
-      : 'text-rose-600';
+      ? "text-emerald-600"
+      : "text-rose-600";
 
   if (hideCircles) return null;
 
@@ -139,7 +91,7 @@ const TotalsStrip = memo(function TotalsStrip({
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-sm font-semibold text-slate-600">Economia</div>
-          <div className={cn('mt-2 text-2xl font-semibold', economyClass)}>
+          <div className={cn("mt-2 text-2xl font-semibold", economyClass)}>
             {maskCurrency(economy, formatter.format, valuesHidden)}
           </div>
         </div>
@@ -149,7 +101,3 @@ const TotalsStrip = memo(function TotalsStrip({
 });
 
 export default TotalsStrip;
-
-
-
-

@@ -14,6 +14,16 @@ import {
   updateBill as updateBillService,
 } from "@/services/data/billsRepository";
 import * as Types from "@/types";
+import { ymd } from "@/utils/utils";
+
+type BillOccurrenceMeta = {
+  virtual?: boolean;
+  occurrenceDate?: string;
+  originalDueDate?: string;
+  source?: Types.Bill;
+};
+
+type BillWithMeta = Types.Bill & { __meta__?: BillOccurrenceMeta };
 
 export default function useFirebaseBills(activeBookId?: string | null) {
   const [bills, setBills] = useState<Types.Bill[]>([]);
@@ -103,9 +113,46 @@ export default function useFirebaseBills(activeBookId?: string | null) {
     }
   };
 
+  const stripMeta = (entry: Types.Bill): Types.Bill => {
+    const { __meta__, ...rest } = entry as BillWithMeta;
+    return { ...rest };
+  };
+
+  const settleVirtualOccurrence = async (bill: Types.Bill, occurrenceISO: string) => {
+    const source = stripMeta(bill);
+    if (!source.id) return;
+    const paidOnISO = ymd(new Date());
+    const cleared = { ...(source.clearedOccurrences ?? {}) };
+    cleared[occurrenceISO] = paidOnISO;
+
+    const updated: Types.Bill = {
+      ...source,
+      clearedOccurrences: cleared,
+    };
+    await updateBillService(updated);
+  };
+
+  const removeVirtualOccurrence = async (bill: Types.Bill, occurrenceISO: string) => {
+    const source = stripMeta(bill);
+    if (!source.id) return;
+    const cleared = { ...(source.clearedOccurrences ?? {}) };
+    if (!cleared[occurrenceISO]) return;
+    delete cleared[occurrenceISO];
+    const updated: Types.Bill = {
+      ...source,
+      clearedOccurrences: cleared,
+    };
+    await updateBillService(updated);
+  };
+
   const markPaid = async (bill: Types.Bill, advance = false) => {
     try {
-      await markBillPaidService(bill, advance);
+      const meta = (bill as BillWithMeta).__meta__;
+      if (meta?.virtual && meta.occurrenceDate) {
+        await settleVirtualOccurrence(meta.source ?? bill, meta.occurrenceDate);
+      } else {
+        await markBillPaidService(stripMeta(meta?.source ?? bill), advance);
+      }
       if (isLocalMode) syncLocal();
     } catch (error) {
       console.error("Erro ao marcar como pago:", error);
@@ -116,7 +163,12 @@ export default function useFirebaseBills(activeBookId?: string | null) {
 
   const unmarkPaid = async (bill: Types.Bill) => {
     try {
-      await unmarkBillPaidService(bill);
+      const meta = (bill as BillWithMeta).__meta__;
+      if (meta?.virtual && meta.occurrenceDate) {
+        await removeVirtualOccurrence(meta.source ?? bill, meta.occurrenceDate);
+      } else {
+        await unmarkBillPaidService(stripMeta(meta?.source ?? bill));
+      }
       if (isLocalMode) syncLocal();
     } catch (error) {
       console.error("Erro ao desmarcar como pago:", error);
@@ -127,4 +179,3 @@ export default function useFirebaseBills(activeBookId?: string | null) {
 
   return { bills, loading, addBill, updateBill, upsertBill, removeBill, markPaid, unmarkPaid } as const;
 }
-
